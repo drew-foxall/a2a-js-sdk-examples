@@ -1,0 +1,45 @@
+{
+  "name": "a2a-js-sdk-examples",
+  "version": "1.0.0",
+  "description": "AI SDK + Hono examples for @drew-foxall/a2a-js-sdk",
+  "author": "Drew Foxall",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drew-foxall/a2a-js-sdk-examples.git"
+  },
+  "bugs": {
+    "url": "https://github.com/drew-foxall/a2a-js-sdk-examples/issues"
+  },
+  "homepage": "https://github.com/drew-foxall/a2a-js-sdk-examples#readme",
+  "workspaces": [
+    "movie-agent-ai-sdk",
+    "coder-agent-ai-sdk",
+    "content-editor-agent-ai-sdk"
+  ],
+  "scripts": {
+    "install:all": "pnpm install",
+    "movie-agent": "pnpm --filter movie-agent-ai-sdk start",
+    "coder-agent": "pnpm --filter coder-agent-ai-sdk start",
+    "content-editor": "pnpm --filter content-editor-agent-ai-sdk start"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "a2a",
+    "agent",
+    "ai-sdk",
+    "hono",
+    "examples",
+    "vercel-ai-sdk",
+    "llm",
+    "openai",
+    "anthropic",
+    "google-ai"
+  ]
+}
+

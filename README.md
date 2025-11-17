@@ -1,0 +1,287 @@
+# A2A JS SDK Examples
+
+High-fidelity ports of [a2a-samples](https://github.com/a2aproject/a2a-samples) using **Vercel AI SDK** and **Hono**.
+
+> **Note**: These examples use [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk), a fork of [a2a-js](https://github.com/a2aproject/a2a-js) with Hono adapter support.
+
+## 📦 Available Examples
+
+| Example | Port | Original | Features |
+|---------|------|----------|----------|
+| [Movie Agent](./movie-agent-ai-sdk/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
+| [Coder Agent](./coder-agent-ai-sdk/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
+| [Content Editor](./content-editor-agent-ai-sdk/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+1. **Node.js** >= 18.0.0
+2. **pnpm** (recommended) or npm
+3. **API Keys**:
+   - One LLM provider (OpenAI, Anthropic, or Google)
+   - TMDB API key (for Movie Agent only)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/drew-foxall/a2a-js-sdk-examples.git
+cd a2a-js-sdk-examples
+
+# Install all dependencies
+pnpm install
+```
+
+### Setup Environment Variables
+
+```bash
+# LLM Provider (pick one)
+export OPENAI_API_KEY=your_key          # OpenAI (default)
+export ANTHROPIC_API_KEY=your_key       # Anthropic (recommended for code/writing)
+export GOOGLE_GENERATIVE_AI_API_KEY=your_key  # Google
+
+# Optionally set provider (defaults to openai)
+export AI_PROVIDER=openai  # or: anthropic, google
+
+# For Movie Agent only
+export TMDB_API_KEY=your_tmdb_key
+```
+
+### Run an Example
+
+```bash
+# Movie Info Agent
+pnpm movie-agent
+
+# Coder Agent
+pnpm coder-agent
+
+# Content Editor Agent
+pnpm content-editor
+```
+
+## 📖 Example Details
+
+### 🎬 Movie Info Agent
+
+**Features:**
+- TMDB API integration for movies and people
+- Conversation history management
+- Multi-turn conversations
+- Goal metadata support
+- State parsing (COMPLETED/AWAITING_USER_INPUT)
+
+**Quick Start:**
+```bash
+cd movie-agent-ai-sdk
+export TMDB_API_KEY=your_key
+export OPENAI_API_KEY=your_key
+pnpm start
+```
+
+[Full Documentation](./movie-agent-ai-sdk/README.md)
+
+### 💻 Coder Agent
+
+**Features:**
+- Streaming code generation
+- Multi-file output support
+- Markdown code block parsing
+- Separate artifacts per file
+- Preamble/postamble support
+
+**Quick Start:**
+```bash
+cd coder-agent-ai-sdk
+export ANTHROPIC_API_KEY=your_key
+export AI_PROVIDER=anthropic
+pnpm start
+```
+
+[Full Documentation](./coder-agent-ai-sdk/README.md)
+
+### ✍️ Content Editor Agent
+
+**Features:**
+- Professional content editing
+- Grammar and spelling corrections
+- Style improvements
+- Voice preservation
+
+**Quick Start:**
+```bash
+cd content-editor-agent-ai-sdk
+export OPENAI_API_KEY=your_key
+pnpm start
+```
+
+[Full Documentation](./content-editor-agent-ai-sdk/README.md)
+
+## 🆚 Why AI SDK over Genkit?
+
+| Aspect | Genkit (Original) | AI SDK (These Examples) |
+|--------|------------------|------------------------|
+| **Provider Support** | Plugin-based | Native, unified API |
+| **TypeScript** | Good | Excellent |
+| **Bundle Size** | Larger | Smaller |
+| **Edge Runtime** | Limited | Full support |
+| **Streaming** | Custom | Built-in |
+| **Tool Calling** | Custom format | Standardized |
+| **Community** | Growing | Large |
+
+## 📚 Documentation
+
+Each example includes:
+- Comprehensive README with usage instructions
+- Feature comparison with original Genkit implementation
+- Environment variable documentation
+- Troubleshooting guide
+- Code examples showing Genkit vs AI SDK patterns
+
+## 🏗️ Architecture
+
+All examples follow the same pattern:
+
+```
+example-name/
+├── index.ts           # Main agent executor + server
+├── prompt.ts          # System prompts
+├── [utils].ts         # Agent-specific utilities
+├── package.json       # Dependencies
+└── README.md          # Full documentation
+```
+
+### Shared Utilities
+
+Located in `shared/utils.ts`:
+- `getModel()` - Provider-agnostic model selection
+- Supports: OpenAI, Anthropic, Google
+- Configured via `AI_PROVIDER` environment variable
+
+## 🔧 Development
+
+### Running Locally
+
+Each example can be run independently:
+
+```bash
+cd movie-agent-ai-sdk
+pnpm install
+pnpm start
+```
+
+Or use the workspace commands from the root:
+
+```bash
+pnpm movie-agent
+pnpm coder-agent
+pnpm content-editor
+```
+
+### Using with Development Version of SDK
+
+If you're developing the SDK locally:
+
+```json
+// In example's package.json
+{
+  "dependencies": {
+    "@drew-foxall/a2a-js-sdk": "file:../../a2a-js-sdk"
+  }
+}
+```
+
+## 🧪 Testing
+
+### Manual Testing
+
+```bash
+# Start an agent
+pnpm movie-agent
+
+# In another terminal, test with curl
+curl http://localhost:41241/.well-known/agent-card.json
+```
+
+## 📝 Environment Variables
+
+### Required for All Examples
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AI_PROVIDER` | AI provider to use | `openai` |
+
+**One of these (based on provider):**
+- `OPENAI_API_KEY` - OpenAI API key
+- `ANTHROPIC_API_KEY` - Anthropic API key  
+- `GOOGLE_GENERATIVE_AI_API_KEY` - Google AI API key
+
+### Movie Agent Specific
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `TMDB_API_KEY` | TMDB API key from [themoviedb.org](https://developer.themoviedb.org/docs/getting-started) | ✅ Yes |
+
+### Optional for All
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | Example-specific |
+
+## 🔗 Resources
+
+- **SDK Library**: [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)
+- **Original Samples**: [a2aproject/a2a-samples](https://github.com/a2aproject/a2a-samples)
+- **Vercel AI SDK**: [sdk.vercel.ai](https://sdk.vercel.ai/docs)
+- **Hono**: [hono.dev](https://hono.dev)
+- **A2A Protocol**: [github.com/google-a2a/A2A](https://github.com/google-a2a/A2A)
+
+## 🐛 Troubleshooting
+
+### "No API key found"
+- Make sure you've set the correct environment variable for your provider
+- Check that `AI_PROVIDER` matches your API key
+
+### "TMDB_API_KEY required" (Movie Agent)
+- Get a free API key from [TMDB](https://developer.themoviedb.org/docs/getting-started)
+- Export it: `export TMDB_API_KEY=your_key`
+
+### Port already in use
+```bash
+# Find and kill the process
+lsof -ti:41241 | xargs kill -9
+```
+
+### Module not found
+```bash
+# Reinstall dependencies
+pnpm install
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Check the [original implementation](https://github.com/a2aproject/a2a-samples) for reference
+2. Maintain feature parity with originals
+3. Add tests if adding new features
+4. Update documentation
+
+## 📄 License
+
+Apache-2.0 (same as parent projects)
+
+## 🙏 Acknowledgments
+
+- Original [a2a-samples](https://github.com/a2aproject/a2a-samples) by the A2A project team
+- [a2a-js](https://github.com/a2aproject/a2a-js) SDK
+- [Vercel AI SDK](https://sdk.vercel.ai/) team
+- [Hono](https://hono.dev) framework
+
+---
+
+**Made with ❤️ by Drew Foxall**
+
+These are high-fidelity ports that match the original implementations while leveraging AI SDK's modern, provider-agnostic API.
+
