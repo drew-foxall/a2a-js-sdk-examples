@@ -8,6 +8,21 @@
  * - Task state parsing (COMPLETED/AWAITING_USER_INPUT)
  * - Goal metadata support
  * - Multi-turn conversations
+ * 
+ * Architecture Decision: Custom AgentExecutor vs AI SDK Agent Class
+ * ----------------------------------------------------------------
+ * This agent uses a custom AgentExecutor implementation with direct
+ * generateText() calls rather than the AI SDK's Agent class because:
+ * 
+ * 1. A2A Protocol Integration: We need full control over task lifecycle,
+ *    event bus publishing, and A2A-specific message formats.
+ * 2. Custom History Management: Map-based contextId tracking that Agent
+ *    class doesn't support.
+ * 3. Task State Parsing: Custom logic to parse COMPLETED/AWAITING_USER_INPUT
+ *    states from LLM responses.
+ * 
+ * The Agent class would only save ~5% of code while requiring all the same
+ * A2A integration wrapper. See AI_SDK_AGENT_CLASS_ASSESSMENT.md for details.
  */
 
 import { Hono } from "hono";

@@ -19,6 +19,17 @@ a2a-js-sdk-examples/
 └── notebooks/           # Jupyter notebooks (coming soon)
 ```
 
+## 🏗️ Architecture
+
+All agents use **custom AgentExecutor implementations** with direct `generateText`/`streamText` calls rather than the AI SDK's Agent class. This design choice provides:
+
+- Full control over A2A protocol task lifecycle
+- Real-time streaming artifact emission (Coder Agent)
+- Custom conversation history management (Movie Agent)
+- Direct event bus integration for all A2A events
+
+See [**AI SDK Agent Class Assessment**](./AI_SDK_AGENT_CLASS_ASSESSMENT.md) for detailed analysis.
+
 ## 📦 Available Examples
 
 | Example | Port | Original | Features |

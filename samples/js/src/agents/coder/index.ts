@@ -8,6 +8,21 @@
  * - Markdown code block parsing
  * - Artifact generation per file
  * - Preamble/postamble support
+ * 
+ * Architecture Decision: Custom AgentExecutor vs AI SDK Agent Class
+ * ----------------------------------------------------------------
+ * This agent uses streamText() directly instead of the AI SDK Agent class
+ * because we need:
+ * 
+ * 1. Fine-grained Streaming Control: Per-chunk access to emit real-time
+ *    artifact-update events as code blocks complete.
+ * 2. Incremental Parsing: Parse markdown code blocks during streaming,
+ *    not just at the end.
+ * 3. Dynamic Artifact Emission: Emit TaskArtifactUpdateEvent for each
+ *    completed file as they're generated.
+ * 
+ * The Agent class doesn't expose the per-chunk hooks needed for this
+ * streaming artifact workflow. See AI_SDK_AGENT_CLASS_ASSESSMENT.md.
  */
 
 import { Hono } from "hono";

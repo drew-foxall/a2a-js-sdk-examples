@@ -6,6 +6,19 @@
  * - Content proof-reading and editing
  * - Grammar and style improvements
  * - Maintains user's voice
+ * 
+ * Architecture Decision: Custom AgentExecutor vs AI SDK Agent Class
+ * ----------------------------------------------------------------
+ * This agent uses a custom AgentExecutor with direct generateText() calls
+ * instead of the AI SDK Agent class to maintain consistency with other
+ * agents and because:
+ * 
+ * 1. A2A Protocol Integration: Full control over task lifecycle and event
+ *    bus publishing required.
+ * 2. Simplicity: No tools or complex logic - direct AI call is clearest.
+ * 3. Consistency: Matches pattern used by Movie and Coder agents.
+ * 
+ * See AI_SDK_AGENT_CLASS_ASSESSMENT.md for full analysis.
  */
 
 import { Hono } from "hono";
