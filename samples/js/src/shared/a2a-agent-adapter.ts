@@ -253,29 +253,38 @@ export class A2AAgentAdapter implements AgentExecutor {
         return;
       }
 
-      // Step 6: Call the ToolLoopAgent
+      // Step 6: Prepare call options (for agents with callOptionsSchema)
+      // Merge contextId with any metadata from task or message
+      const callOptions = {
+        contextId,
+        ...(existingTask?.metadata || {}),
+        ...(userMessage.metadata || {}),
+      };
+      this.log(`Call options: ${JSON.stringify(callOptions)}`);
+
+      // Step 7: Call the ToolLoopAgent
       this.log(`Calling agent for task ${taskId}...`);
       const result = await this.agent.generate({
         prompt: userPrompt,
         messages,
-        options: userMessage.metadata, // Pass metadata as call options
+        ...callOptions, // Spread call options at top level for AI SDK v6
       });
 
-      // Step 7: Check for cancellation after agent call
+      // Step 8: Check for cancellation after agent call
       if (this.cancelledTasks.has(taskId)) {
         this.publishCancellation(taskId, contextId, eventBus);
         return;
       }
 
-      // Step 8: Transform response text
+      // Step 9: Transform response text
       const responseText = this.options.transformResponse(result);
       this.log(`Agent responded with ${responseText.length} characters`);
 
-      // Step 9: Parse task state from response (if custom parser provided)
+      // Step 10: Parse task state from response (if custom parser provided)
       const taskState = this.options.parseTaskState(responseText) || "completed";
       this.log(`Final task state: ${taskState}`);
 
-      // Step 10: Publish final status update
+      // Step 11: Publish final status update
       const finalUpdate: TaskStatusUpdateEvent = {
         kind: "status-update",
         taskId: taskId,

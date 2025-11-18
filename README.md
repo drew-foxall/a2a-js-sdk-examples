@@ -319,7 +319,7 @@ Apache-2.0 (same as parent projects)
 
 ---
 
-**Made with ❤️ by Drew Foxall**
+**Made with 🤖 by Drew Foxall**
 
-These are high-fidelity ports that match the original implementations while leveraging AI SDK's modern, provider-agnostic API.
+These ports are intended to match the original implementations while leveraging AI SDK's, provider-agnostic API.
 
