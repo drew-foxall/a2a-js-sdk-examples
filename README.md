@@ -1,16 +1,31 @@
-# A2A JS SDK Examples
+# Agent2Agent (A2A) Samples - JavaScript
 
-High-fidelity ports of [a2a-samples](https://github.com/a2aproject/a2a-samples) using **Vercel AI SDK** and **Hono**.
+JavaScript/TypeScript implementations of [a2a-samples](https://github.com/a2aproject/a2a-samples) using **Vercel AI SDK** and **Hono**.
 
 > **Note**: These examples use [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk), a fork of [a2a-js](https://github.com/a2aproject/a2a-js) with Hono adapter support.
+
+## Repository Structure
+
+This repository mirrors the structure of [a2a-samples](https://github.com/a2aproject/a2a-samples) but focuses on JavaScript/TypeScript examples:
+
+```
+a2a-js-sdk-examples/
+├── samples/
+│   └── js/              # JavaScript/TypeScript samples
+│       └── src/
+│           └── agents/  # Agent implementations
+├── demo/                # Demo applications (coming soon)
+├── extensions/          # VS Code extensions (coming soon)
+└── notebooks/           # Jupyter notebooks (coming soon)
+```
 
 ## 📦 Available Examples
 
 | Example | Port | Original | Features |
 |---------|------|----------|----------|
-| [Movie Agent](./movie-agent-ai-sdk/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
-| [Coder Agent](./coder-agent-ai-sdk/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
-| [Content Editor](./content-editor-agent-ai-sdk/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |
+| [Movie Agent](./samples/js/src/agents/movie-agent/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
+| [Coder Agent](./samples/js/src/agents/coder/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
+| [Content Editor](./samples/js/src/agents/content-editor/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |
 
 ## 🚀 Quick Start
 
@@ -50,15 +65,27 @@ export TMDB_API_KEY=your_tmdb_key
 
 ### Run an Example
 
+#### Start All Agents at Once
+
+```bash
+# Start all three agents simultaneously
+./start-all-agents.sh
+
+# Stop all agents
+./stop-all-agents.sh
+```
+
+#### Start Individual Agents
+
 ```bash
 # Movie Info Agent
-pnpm movie-agent
+pnpm agents:movie-agent
 
 # Coder Agent
-pnpm coder-agent
+pnpm agents:coder
 
 # Content Editor Agent
-pnpm content-editor
+pnpm agents:content-editor
 ```
 
 ## 📖 Example Details
@@ -74,13 +101,13 @@ pnpm content-editor
 
 **Quick Start:**
 ```bash
-cd movie-agent-ai-sdk
+cd samples/js
 export TMDB_API_KEY=your_key
 export OPENAI_API_KEY=your_key
-pnpm start
+pnpm agents:movie-agent
 ```
 
-[Full Documentation](./movie-agent-ai-sdk/README.md)
+[Full Documentation](./samples/js/src/agents/movie-agent/README.md)
 
 ### 💻 Coder Agent
 
@@ -93,13 +120,13 @@ pnpm start
 
 **Quick Start:**
 ```bash
-cd coder-agent-ai-sdk
+cd samples/js
 export ANTHROPIC_API_KEY=your_key
 export AI_PROVIDER=anthropic
-pnpm start
+pnpm agents:coder
 ```
 
-[Full Documentation](./coder-agent-ai-sdk/README.md)
+[Full Documentation](./samples/js/src/agents/coder/README.md)
 
 ### ✍️ Content Editor Agent
 
@@ -111,12 +138,12 @@ pnpm start
 
 **Quick Start:**
 ```bash
-cd content-editor-agent-ai-sdk
+cd samples/js
 export OPENAI_API_KEY=your_key
-pnpm start
+pnpm agents:content-editor
 ```
 
-[Full Documentation](./content-editor-agent-ai-sdk/README.md)
+[Full Documentation](./samples/js/src/agents/content-editor/README.md)
 
 ## 🆚 Why AI SDK over Genkit?
 

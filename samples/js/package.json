@@ -1,0 +1,32 @@
+{
+  "name": "a2a-js-sdk-examples",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "type": "module",
+  "description": "JavaScript/TypeScript examples for A2A protocol using AI SDK + Hono",
+  "author": "Drew Foxall",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.0"
+  },
+  "scripts": {
+    "agents:movie-agent": "tsx src/agents/movie-agent/index.ts",
+    "agents:coder": "tsx src/agents/coder/index.ts",
+    "agents:content-editor": "tsx src/agents/content-editor/index.ts",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@drew-foxall/a2a-js-sdk": "^0.3.5",
+    "@ai-sdk/anthropic": "^1.0.10",
+    "@ai-sdk/google": "^1.0.10",
+    "@ai-sdk/openai": "^1.0.10",
+    "@hono/node-server": "^1.19.6",
+    "ai": "^4.0.30",
+    "hono": "^4.10.6",
+    "uuid": "^11.1.0"
+  },
+  "packageManager": "pnpm@10.11.1"
+}
+

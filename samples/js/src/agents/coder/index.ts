@@ -32,7 +32,7 @@ import {
   DefaultRequestHandler,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { getModel } from "../shared/utils.js";
+import { getModel } from "../../shared/utils.js";
 import { extractCodeBlocks, CODER_SYSTEM_PROMPT } from "./code-format.js";
 
 /**

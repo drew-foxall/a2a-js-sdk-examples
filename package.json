@@ -12,16 +12,11 @@
     "url": "https://github.com/drew-foxall/a2a-js-sdk-examples/issues"
   },
   "homepage": "https://github.com/drew-foxall/a2a-js-sdk-examples#readme",
-  "workspaces": [
-    "movie-agent-ai-sdk",
-    "coder-agent-ai-sdk",
-    "content-editor-agent-ai-sdk"
-  ],
   "scripts": {
     "install:all": "pnpm install",
-    "movie-agent": "pnpm --filter movie-agent-ai-sdk start",
-    "coder-agent": "pnpm --filter coder-agent-ai-sdk start",
-    "content-editor": "pnpm --filter content-editor-agent-ai-sdk start"
+    "agents:movie-agent": "cd samples/js && pnpm agents:movie-agent",
+    "agents:coder": "cd samples/js && pnpm agents:coder",
+    "agents:content-editor": "cd samples/js && pnpm agents:content-editor"
   },
   "devDependencies": {
     "tsx": "^4.19.2"

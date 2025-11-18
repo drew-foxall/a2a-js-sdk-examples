@@ -4,25 +4,25 @@
 export $(cat .env | grep -v '^#' | xargs)
 
 # Start Content Editor Agent (port 41243)
-cd content-editor-agent-ai-sdk
-npx tsx index.ts > /tmp/content-editor.log 2>&1 &
+cd samples/js
+pnpm agents:content-editor > /tmp/content-editor.log 2>&1 &
 CONTENT_PID=$!
 echo "Started Content Editor Agent (PID: $CONTENT_PID) on port 41243"
-cd ..
+cd ../..
 
 # Start Coder Agent (port 41242)
-cd coder-agent-ai-sdk
-npx tsx index.ts > /tmp/coder.log 2>&1 &
+cd samples/js
+pnpm agents:coder > /tmp/coder.log 2>&1 &
 CODER_PID=$!
 echo "Started Coder Agent (PID: $CODER_PID) on port 41242"
-cd ..
+cd ../..
 
 # Start Movie Agent (port 41241)
-cd movie-agent-ai-sdk
-npx tsx index.ts > /tmp/movie.log 2>&1 &
+cd samples/js
+pnpm agents:movie-agent > /tmp/movie.log 2>&1 &
 MOVIE_PID=$!
 echo "Started Movie Agent (PID: $MOVIE_PID) on port 41241"
-cd ..
+cd ../..
 
 echo ""
 echo "All agents started! Waiting 5 seconds for initialization..."
