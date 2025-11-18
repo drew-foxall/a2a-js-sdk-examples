@@ -42,32 +42,14 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 
 // Import our shared utilities
-import { getModel } from "../../shared/utils.js";
 import { A2AAgentAdapter } from "../../shared/a2a-agent-adapter.js";
-import { CONTENT_EDITOR_PROMPT } from "./prompt.js";
+// Import the agent definition (kept separate to avoid starting server when importing)
+import { contentEditorAgent } from "./agent.js";
 
 // ============================================================================
-// 1. Define the AI Agent (Pure, Protocol-Agnostic)
+// 1. AI Agent is defined in agent.ts (Pure, Protocol-Agnostic)
 // ============================================================================
-
-/**
- * Content Editor Agent - Pure AI SDK ToolLoopAgent
- * 
- * This agent can be used anywhere:
- * - Via A2A protocol (using A2AAgentAdapter)
- * - Via CLI tools
- * - Via REST API
- * - Via MCP protocol
- * - In automated tests
- * 
- * No A2A-specific code here!
- */
-export const contentEditorAgent = new ToolLoopAgent({
-  model: getModel(),
-  instructions: CONTENT_EDITOR_PROMPT,
-  // No tools needed - this is a simple editing agent
-  tools: {},
-});
+// See agent.ts for the ToolLoopAgent definition
 
 // ============================================================================
 // 2. Create A2A Adapter (Bridges Agent to A2A Protocol)
