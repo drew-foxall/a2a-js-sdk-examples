@@ -1,0 +1,6 @@
+packages:
+  - 'movie-agent-ai-sdk'
+  - 'coder-agent-ai-sdk'
+  - 'content-editor-agent-ai-sdk'
+  - 'shared'
+

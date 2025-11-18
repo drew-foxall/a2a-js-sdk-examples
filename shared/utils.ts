@@ -1,4 +1,4 @@
-import { Message } from "../../../../types.js";
+import { Message } from "@drew-foxall/a2a-js-sdk";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
