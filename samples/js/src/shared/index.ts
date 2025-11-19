@@ -22,5 +22,10 @@ export {
 } from "./a2a-adapter.js";
 
 // Export AI model utility
-export { getModel } from "./utils.js";
+export { getModel, extractText, getModelInfo } from "./utils.js";
+
+// Export agent factory functions for convenience
+export { createContentEditorAgent } from "../agents/content-editor/agent.js";
+export { createMovieAgent } from "../agents/movie-agent/agent.js";
+export { createCoderAgent } from "../agents/coder/agent.js";
 

@@ -155,11 +155,133 @@ export ANTHROPIC_API_KEY=your_key       # Anthropic (recommended for code/writin
 export GOOGLE_GENERATIVE_AI_API_KEY=your_key  # Google
 
 # Optionally set provider (defaults to openai)
-export AI_PROVIDER=openai  # or: anthropic, google
+export AI_PROVIDER=openai  # or: anthropic, google, azure, cohere, mistral, groq, ollama
 
 # For Movie Agent only
 export TMDB_API_KEY=your_tmdb_key
 ```
+
+### 🤖 Model Selection
+
+The examples support **all AI SDK providers** through three flexible approaches:
+
+#### Option 1: Environment Variables (Quickest) ⚡
+
+Set `AI_PROVIDER` and `AI_MODEL` to use any supported provider:
+
+```bash
+# OpenAI (default)
+export AI_PROVIDER=openai
+export AI_MODEL=gpt-4o          # optional, defaults to gpt-4o-mini
+
+# Anthropic
+export AI_PROVIDER=anthropic
+export AI_MODEL=claude-3-opus-20240229  # optional, defaults to claude-3-5-sonnet
+
+# Google
+export AI_PROVIDER=google
+export AI_MODEL=gemini-2.0-flash-exp    # optional
+
+# Azure OpenAI
+export AI_PROVIDER=azure
+export AZURE_RESOURCE_NAME=my-resource  # required
+export AZURE_OPENAI_API_KEY=your_key    # required
+export AI_MODEL=gpt-4                   # deployment name
+
+# Cohere
+export AI_PROVIDER=cohere
+export AI_MODEL=command-r-plus          # optional
+
+# Mistral
+export AI_PROVIDER=mistral
+export AI_MODEL=mistral-large-latest    # optional
+
+# Groq (fast inference)
+export AI_PROVIDER=groq
+export GROQ_API_KEY=your_key            # required
+export AI_MODEL=llama-3.1-70b-versatile # optional
+
+# Ollama (local models)
+export AI_PROVIDER=ollama
+export AI_MODEL=llama3.2                # optional
+export OLLAMA_BASE_URL=http://localhost:11434  # optional
+```
+
+#### Option 2: Custom Model (Most Flexible) 🎯
+
+For providers not covered by `getModel()` or custom configurations:
+
+```typescript
+import { createContentEditorAgent } from './agents/content-editor/agent.js';
+import { createOpenAI } from '@ai-sdk/openai';
+import { A2AAdapter } from './shared/a2a-adapter.js';
+
+// Use Together AI
+const together = createOpenAI({
+  baseURL: 'https://api.together.xyz/v1',
+  apiKey: process.env.TOGETHER_API_KEY,
+});
+const agent = createContentEditorAgent(together('meta-llama/Llama-3-70b-chat-hf'));
+const executor = new A2AAdapter(agent);
+
+// Use Replicate
+import { createOpenAI } from '@ai-sdk/openai';
+const replicate = createOpenAI({
+  baseURL: 'https://openai-proxy.replicate.com/v1',
+  apiKey: process.env.REPLICATE_API_KEY,
+});
+const agent = createContentEditorAgent(replicate('meta/llama-2-70b-chat'));
+
+// Use local model via Ollama
+const ollama = createOpenAI({
+  baseURL: 'http://localhost:11434/v1',
+  apiKey: 'ollama', // required but unused
+});
+const agent = createCoderAgent(ollama('codellama:13b'));
+```
+
+#### Option 3: Runtime Override 🔄
+
+Override model at runtime without changing agent code:
+
+```typescript
+import { contentEditorAgent } from './agents/content-editor/agent.js';
+import { anthropic } from '@ai-sdk/anthropic';
+import { A2AAdapter } from './shared/a2a-adapter.js';
+
+// Agent uses env vars by default, but you can override here
+const executor = new A2AAdapter(contentEditorAgent, {
+  // Use standard options...
+  workingMessage: "Editing...",
+});
+
+// Or create a new agent with different model
+import { createContentEditorAgent } from './agents/content-editor/agent.js';
+const customAgent = createContentEditorAgent(anthropic('claude-3-opus-20240229'));
+const customExecutor = new A2AAdapter(customAgent);
+```
+
+#### Supported Providers
+
+| Provider | Via getModel() | Via Custom | Notes |
+|----------|---------------|------------|-------|
+| OpenAI | ✅ | ✅ | Default, most models |
+| Anthropic | ✅ | ✅ | Claude family, best for code/writing |
+| Google | ✅ | ✅ | Gemini family |
+| Azure OpenAI | ✅ | ✅ | Enterprise, requires resource config |
+| Cohere | ✅ | ✅ | Command models |
+| Mistral | ✅ | ✅ | Mistral family |
+| Groq | ✅ | ✅ | Fast inference |
+| Ollama | ✅ | ✅ | Local models |
+| AWS Bedrock | ❌ | ✅ | Via custom setup |
+| Together AI | ❌ | ✅ | OpenAI-compatible |
+| Replicate | ❌ | ✅ | OpenAI-compatible |
+| Perplexity | ❌ | ✅ | OpenAI-compatible |
+| Custom | ❌ | ✅ | Any OpenAI-compatible API |
+
+**All AI SDK providers are supported!** Use `getModel()` for convenience, or agent factory functions for maximum flexibility.
+
+See [MODEL_SELECTION_ASSESSMENT.md](./MODEL_SELECTION_ASSESSMENT.md) for detailed guidance.
 
 ### Run an Example
 

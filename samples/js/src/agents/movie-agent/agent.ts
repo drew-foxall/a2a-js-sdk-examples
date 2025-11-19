@@ -13,7 +13,7 @@
  * - Tool loop: maxSteps for multi-turn tool calling
  */
 
-import { ToolLoopAgent, tool } from "ai";
+import { ToolLoopAgent, tool, type LanguageModelV1 } from "ai";
 import { z } from "zod";
 import { getModel } from "../../shared/utils.js";
 import { searchMovies, searchPeople } from "./tmdb.js";
@@ -43,7 +43,90 @@ const searchPeopleTool = tool({
 });
 
 /**
- * Movie Agent - AI SDK v6 ToolLoopAgent with Call Options
+ * Create Movie Agent with custom model
+ * 
+ * Use this factory function when you need:
+ * - Providers not supported by getModel() (Together AI, Replicate, etc.)
+ * - Custom model configurations
+ * - Azure OpenAI with specific settings
+ * - Local or self-hosted models
+ * - Runtime model selection
+ * 
+ * @param model - Any AI SDK LanguageModelV1 instance
+ * @returns Configured ToolLoopAgent with TMDB tools
+ * 
+ * @example
+ * // Use Groq for fast inference
+ * import { createOpenAI } from '@ai-sdk/openai';
+ * const groq = createOpenAI({
+ *   baseURL: 'https://api.groq.com/openai/v1',
+ *   apiKey: process.env.GROQ_API_KEY,
+ * });
+ * const agent = createMovieAgent(groq('llama-3.1-70b-versatile'));
+ */
+export function createMovieAgent(model: LanguageModelV1) {
+  return new ToolLoopAgent({
+    model,
+    
+    // Default instructions (overridden by prepareCall)
+    instructions: getMovieAgentPrompt(),
+    
+    // Tools for TMDB integration
+    tools: {
+      searchMovies: searchMoviesTool,
+      searchPeople: searchPeopleTool,
+    },
+    
+    // Allow multiple tool calls
+    maxSteps: 10,
+    
+    // ============================================================================
+    // AI SDK v6 Advanced Feature: Call Options
+    // ============================================================================
+    
+    /**
+     * callOptionsSchema: Define what options can be passed per request
+     * 
+     * This allows callers to pass dynamic configuration:
+     * - contextId: For conversation history (used by adapter)
+     * - goal: Optional task goal for prompt customization
+     */
+    callOptionsSchema: z.object({
+      contextId: z.string().describe("Conversation context ID for history tracking"),
+      goal: z.string().optional().describe("Optional task goal for prompt customization"),
+    }),
+    
+    /**
+     * prepareCall: Customize the agent for each request
+     * 
+     * This is called before each agent.generate() and allows:
+     * - Dynamic system prompt based on goal
+     * - Per-request configuration
+     * - Custom preprocessing
+     * 
+     * The adapter will pass { contextId, goal } as options.
+     */
+    prepareCall: async ({ options, ...settings }) => {
+      // Customize system prompt with goal if provided
+      const instructions = getMovieAgentPrompt(options?.goal);
+      
+      // Return settings with custom prompt
+      return {
+        ...settings,
+        instructions,
+      };
+    },
+  });
+}
+
+/**
+ * Default Movie Agent
+ * 
+ * Uses model from environment variables:
+ * - AI_PROVIDER: openai|anthropic|google|azure|cohere|mistral|groq|ollama
+ * - AI_MODEL: Specific model name (optional, uses defaults)
+ * 
+ * For custom providers or configurations, use createMovieAgent()
  * 
  * This agent demonstrates advanced AI SDK v6 features:
  * 
@@ -78,62 +161,11 @@ const searchPeopleTool = tool({
  * ```
  * 
  * This agent can be used in:
- * - A2A protocol (via A2AAgentAdapter in index.ts)
+ * - A2A protocol (via A2AAdapter in index.ts)
  * - CLI tools (direct usage)
  * - REST APIs (future)
  * - MCP servers (future)
  * - Automated tests (no mocking)
  */
-export const movieAgent = new ToolLoopAgent({
-  model: getModel(),
-  
-  // Default instructions (overridden by prepareCall)
-  instructions: getMovieAgentPrompt(),
-  
-  // Tools for TMDB integration
-  tools: {
-    searchMovies: searchMoviesTool,
-    searchPeople: searchPeopleTool,
-  },
-  
-  // Allow multiple tool calls
-  maxSteps: 10,
-  
-  // ============================================================================
-  // AI SDK v6 Advanced Feature: Call Options
-  // ============================================================================
-  
-  /**
-   * callOptionsSchema: Define what options can be passed per request
-   * 
-   * This allows callers to pass dynamic configuration:
-   * - contextId: For conversation history (used by adapter)
-   * - goal: Optional task goal for prompt customization
-   */
-  callOptionsSchema: z.object({
-    contextId: z.string().describe("Conversation context ID for history tracking"),
-    goal: z.string().optional().describe("Optional task goal for prompt customization"),
-  }),
-  
-  /**
-   * prepareCall: Customize the agent for each request
-   * 
-   * This is called before each agent.generate() and allows:
-   * - Dynamic system prompt based on goal
-   * - Per-request configuration
-   * - Custom preprocessing
-   * 
-   * The adapter will pass { contextId, goal } as options.
-   */
-  prepareCall: async ({ options, ...settings }) => {
-    // Customize system prompt with goal if provided
-    const instructions = getMovieAgentPrompt(options?.goal);
-    
-    // Return settings with custom prompt
-    return {
-      ...settings,
-      instructions,
-    };
-  },
-});
+export const movieAgent = createMovieAgent(getModel());
 
