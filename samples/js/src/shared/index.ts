@@ -11,6 +11,14 @@ export {
   type ToolLoopAgentLike,
 } from "./a2a-agent-adapter.js";
 
+// Export A2A Streaming Adapter
+export {
+  A2AStreamingAdapter,
+  type A2AStreamingAdapterOptions,
+  type ParsedArtifact,
+  type ParsedArtifacts,
+} from "./a2a-streaming-adapter.js";
+
 // Export AI model utility
 export { getModel } from "./utils.js";
 

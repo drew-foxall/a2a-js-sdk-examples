@@ -1,418 +1,191 @@
 /**
- * Coder Agent (AI SDK + Hono version)
- * High-fidelity port of the original Genkit implementation
+ * Coder Agent (AI SDK v6 + A2AStreamingAdapter)
+ * 
+ * PHASE 4 MIGRATION: Refactored to use ToolLoopAgent + A2AStreamingAdapter
  * 
  * Features:
  * - Streaming code generation
+ * - Real-time artifact emission (code files)
+ * - Markdown code block parsing during streaming
  * - Multi-file output support
- * - Markdown code block parsing
- * - Artifact generation per file
- * - Preamble/postamble support
+ * - File deduplication and ordering
  * 
- * Architecture Decision: Custom AgentExecutor vs AI SDK Agent Class
- * ----------------------------------------------------------------
- * This agent uses streamText() directly instead of the AI SDK Agent class
- * because we need:
+ * Architecture: AI SDK Agent + A2A Streaming Adapter Pattern
+ * -----------------------------------------------------------
+ * This agent demonstrates streaming + artifacts:
  * 
- * 1. Fine-grained Streaming Control: Per-chunk access to emit real-time
- *    artifact-update events as code blocks complete.
- * 2. Incremental Parsing: Parse markdown code blocks during streaming,
- *    not just at the end.
- * 3. Dynamic Artifact Emission: Emit TaskArtifactUpdateEvent for each
- *    completed file as they're generated.
+ * 1. AI Agent (ToolLoopAgent):
+ *    - Pure code generation logic
+ *    - Protocol-agnostic
+ *    - Streaming via streamCoderGeneration()
  * 
- * The Agent class doesn't expose the per-chunk hooks needed for this
- * streaming artifact workflow. See AI_SDK_AGENT_CLASS_ASSESSMENT.md.
+ * 2. A2A Streaming Adapter:
+ *    - Handles streaming chunks
+ *    - Parses code blocks incrementally
+ *    - Emits artifacts as files complete
+ *    - Manages A2A task lifecycle
+ * 
+ * 3. Server Setup: Standard Hono + A2A routes
+ * 
+ * Benefits over old implementation:
+ * - ~54% code reduction (439 lines → ~200 lines)
+ * - Agent is portable (CLI, tests, REST, MCP, A2A)
+ * - Cleaner separation of concerns
+ * - Streaming logic reusable across agents
+ * 
+ * See:
+ * - AI_SDK_AGENT_CLASS_ASSESSMENT.md (Architectural rationale)
+ * - samples/js/src/shared/README.md (Adapter docs)
+ * - PHASE4_STREAMING_RESEARCH.md (Streaming approach)
  */
 
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
-import { streamText } from "ai";
-import { v4 as uuidv4 } from "uuid";
-
-import {
-  AgentCard,
-  Task,
-  TaskArtifactUpdateEvent,
-  TaskState,
-  TaskStatusUpdateEvent,
-  TextPart,
-} from "@drew-foxall/a2a-js-sdk";
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { AgentCard } from '@drew-foxall/a2a-js-sdk';
 import {
   InMemoryTaskStore,
   TaskStore,
   AgentExecutor,
-  RequestContext,
-  ExecutionEventBus,
   DefaultRequestHandler,
-} from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { getModel } from "../../shared/utils.js";
-import { extractCodeBlocks, CODER_SYSTEM_PROMPT } from "./code-format.js";
+} from '@drew-foxall/a2a-js-sdk/server';
+import { A2AHonoApp } from '@drew-foxall/a2a-js-sdk/server/hono';
+
+// Import our shared utilities
+import { A2AStreamingAdapter, ParsedArtifacts } from '../../shared/a2a-streaming-adapter.js';
+// Import the agent definition
+import { coderAgent, streamCoderGeneration } from './agent.js';
+// Import code parsing utilities
+import { extractCodeBlocks } from './code-format.js';
+
+// ============================================================================
+// 1. AI Agent is defined in agent.ts (Pure, Protocol-Agnostic)
+// ============================================================================
+// See agent.ts for the ToolLoopAgent and streamCoderGeneration function
+
+// ============================================================================
+// 2. Create A2A Streaming Adapter (Bridges Agent to A2A Protocol)
+// ============================================================================
 
 /**
- * CoderAgentExecutor - Implements streaming code generation with artifacts
+ * Parse artifacts from accumulated text
+ * 
+ * This function is called after each chunk to extract completed code blocks.
+ * It uses the existing extractCodeBlocks() utility from code-format.ts.
  */
-class CoderAgentExecutor implements AgentExecutor {
-  private cancelledTasks = new Set<string>();
-
-  public cancelTask = async (
-    taskId: string,
-    eventBus: ExecutionEventBus
-  ): Promise<void> => {
-    this.cancelledTasks.add(taskId);
-    // The execute loop is responsible for publishing the final state
-  };
-
-  async execute(
-    requestContext: RequestContext,
-    eventBus: ExecutionEventBus
-  ): Promise<void> {
-    const userMessage = requestContext.userMessage;
-    const existingTask = requestContext.task;
-
-    const taskId = existingTask?.id || uuidv4();
-    const contextId = userMessage.contextId || existingTask?.contextId || uuidv4();
-
-    console.log(
-      `[CoderAgentExecutor] Processing message ${userMessage.messageId} for task ${taskId} (context: ${contextId})`
-    );
-
-    // 1. Publish initial Task event if it's a new task
-    if (!existingTask) {
-      const initialTask: Task = {
-        kind: "task",
-        id: taskId,
-        contextId: contextId,
-        status: {
-          state: "submitted",
-          timestamp: new Date().toISOString(),
-        },
-        history: [userMessage],
-        metadata: userMessage.metadata,
-        artifacts: [], // Initialize artifacts array
-      };
-      eventBus.publish(initialTask);
-    }
-
-    // 2. Publish "working" status update
-    const workingStatusUpdate: TaskStatusUpdateEvent = {
-      kind: "status-update",
-      taskId: taskId,
-      contextId: contextId,
-      status: {
-        state: "working",
-        message: {
-          kind: "message",
-          role: "agent",
-          messageId: uuidv4(),
-          parts: [{ kind: "text", text: "Generating code..." }],
-          taskId: taskId,
-          contextId: contextId,
-        },
-        timestamp: new Date().toISOString(),
+function parseCodeArtifacts(accumulatedText: string): ParsedArtifacts {
+  const parsed = extractCodeBlocks(accumulatedText);
+  
+  return {
+    artifacts: parsed.files.map(file => ({
+      filename: file.filename,
+      language: file.language,
+      content: file.content,
+      done: file.done,
+      metadata: {
+        preamble: file.preamble,
       },
-      final: false,
-    };
-    eventBus.publish(workingStatusUpdate);
-
-    // 3. Prepare messages for AI SDK
-    const historyForLLM = existingTask?.history ? [...existingTask.history] : [];
-    if (!historyForLLM.find((m) => m.messageId === userMessage.messageId)) {
-      historyForLLM.push(userMessage);
-    }
-
-    const messages = historyForLLM
-      .map((m) => {
-        const textParts = m.parts.filter(
-          (p): p is TextPart => p.kind === "text" && !!(p as TextPart).text
-        );
-        const text = textParts.map((p) => p.text).join("\n");
-
-        return {
-          role: (m.role === "agent" ? "assistant" : "user") as "user" | "assistant",
-          content: text,
-        };
-      })
-      .filter((m) => m.content.length > 0);
-
-    if (messages.length === 0) {
-      console.warn(
-        `[CoderAgentExecutor] No valid text messages found in history for task ${taskId}.`
-      );
-      const failureUpdate: TaskStatusUpdateEvent = {
-        kind: "status-update",
-        taskId: taskId,
-        contextId: contextId,
-        status: {
-          state: "failed",
-          message: {
-            kind: "message",
-            role: "agent",
-            messageId: uuidv4(),
-            parts: [{ kind: "text", text: "No input message found to process." }],
-            taskId: taskId,
-            contextId: contextId,
-          },
-          timestamp: new Date().toISOString(),
-        },
-        final: true,
-      };
-      eventBus.publish(failureUpdate);
-      return;
-    }
-
-    try {
-      // 4. Stream the response (matches original generateStream)
-      const { textStream, text: responsePromise } = streamText({
-        model: getModel(),
-        system: CODER_SYSTEM_PROMPT,
-        messages,
-      });
-
-      const fileContents = new Map<string, string>(); // Stores latest content per file
-      const fileOrder: string[] = []; // Store order of file appearance
-      let emittedFileCount = 0;
-      let accumulatedText = "";
-
-      // 5. Process streaming chunks
-      for await (const chunk of textStream) {
-        accumulatedText += chunk;
-
-        // Check if cancelled
-        if (this.cancelledTasks.has(taskId)) {
-          console.log(`[CoderAgentExecutor] Request cancelled for task: ${taskId}`);
-          const cancelledUpdate: TaskStatusUpdateEvent = {
-            kind: "status-update",
-            taskId: taskId,
-            contextId: contextId,
-            status: {
-              state: "canceled",
-              timestamp: new Date().toISOString(),
-            },
-            final: true,
-          };
-          eventBus.publish(cancelledUpdate);
-          return;
-        }
-
-        // Parse code blocks from accumulated text
-        const parsed = extractCodeBlocks(accumulatedText);
-
-        // Process completed files
-        for (const file of parsed.files) {
-          if (file.done && file.filename) {
-            const previousContent = fileContents.get(file.filename);
-            const currentContent = file.content.trim();
-
-            // Only emit if content has changed
-            if (previousContent !== currentContent) {
-              fileContents.set(file.filename, currentContent);
-
-              // Track file order for first appearance
-              if (!fileOrder.includes(file.filename)) {
-                fileOrder.push(file.filename);
-              }
-
-              // Emit artifact update
-              const artifactUpdate: TaskArtifactUpdateEvent = {
-                kind: "artifact-update",
-                taskId: taskId,
-                contextId: contextId,
-                artifact: {
-                  kind: "artifact",
-                  index: fileOrder.indexOf(file.filename),
-                  id: `${taskId}-${file.filename}`,
-                  name: file.filename,
-                  mimeType: "text/plain",
-                  data: currentContent,
-                  metadata: {
-                    language: file.language || "plaintext",
-                    preamble: file.preamble,
-                  },
-                },
-              };
-              eventBus.publish(artifactUpdate);
-              emittedFileCount++;
-
-              console.log(
-                `[CoderAgentExecutor] Emitted artifact for file: ${file.filename} (${currentContent.length} bytes)`
-              );
-            }
-          }
-        }
-      }
-
-      // Wait for full response
-      const fullResponse = await responsePromise;
-
-      // Check if cancelled one last time
-      if (this.cancelledTasks.has(taskId)) {
-        console.log(`[CoderAgentExecutor] Request cancelled for task: ${taskId}`);
-        const cancelledUpdate: TaskStatusUpdateEvent = {
-          kind: "status-update",
-          taskId: taskId,
-          contextId: contextId,
-          status: {
-            state: "canceled",
-            timestamp: new Date().toISOString(),
-          },
-          final: true,
-        };
-        eventBus.publish(cancelledUpdate);
-        return;
-      }
-
-      // 6. Parse final result for any remaining files
-      const finalParsed = extractCodeBlocks(fullResponse);
-      for (const file of finalParsed.files) {
-        if (file.filename) {
-          const previousContent = fileContents.get(file.filename);
-          const currentContent = file.content.trim();
-
-          if (previousContent !== currentContent) {
-            fileContents.set(file.filename, currentContent);
-
-            if (!fileOrder.includes(file.filename)) {
-              fileOrder.push(file.filename);
-            }
-
-            const artifactUpdate: TaskArtifactUpdateEvent = {
-              kind: "artifact-update",
-              taskId: taskId,
-              contextId: contextId,
-              artifact: {
-                kind: "artifact",
-                index: fileOrder.indexOf(file.filename),
-                id: `${taskId}-${file.filename}`,
-                name: file.filename,
-                mimeType: "text/plain",
-                data: currentContent,
-                metadata: {
-                  language: file.language || "plaintext",
-                  preamble: file.preamble,
-                },
-              },
-            };
-            eventBus.publish(artifactUpdate);
-            emittedFileCount++;
-
-            console.log(
-              `[CoderAgentExecutor] Final artifact for file: ${file.filename}`
-            );
-          }
-        }
-      }
-
-      // 7. Build final message
-      let finalMessageText = "";
-      if (finalParsed.files[0]?.preamble) {
-        finalMessageText = finalParsed.files[0].preamble + "\n\n";
-      }
-      if (emittedFileCount > 0) {
-        finalMessageText += `Generated ${emittedFileCount} file${emittedFileCount > 1 ? "s" : ""}: ${fileOrder.join(", ")}`;
-      } else {
-        finalMessageText += fullResponse;
-      }
-      if (finalParsed.postamble) {
-        finalMessageText += "\n\n" + finalParsed.postamble;
-      }
-
-      // 8. Publish final status
-      const finalUpdate: TaskStatusUpdateEvent = {
-        kind: "status-update",
-        taskId: taskId,
-        contextId: contextId,
-        status: {
-          state: "completed",
-          message: {
-            kind: "message",
-            role: "agent",
-            messageId: uuidv4(),
-            parts: [{ kind: "text", text: finalMessageText.trim() }],
-            taskId: taskId,
-            contextId: contextId,
-          },
-          timestamp: new Date().toISOString(),
-        },
-        final: true,
-      };
-      eventBus.publish(finalUpdate);
-
-      console.log(
-        `[CoderAgentExecutor] Task ${taskId} completed with ${emittedFileCount} files.`
-      );
-    } catch (error: any) {
-      console.error(
-        `[CoderAgentExecutor] Error processing task ${taskId}:`,
-        error
-      );
-      const errorUpdate: TaskStatusUpdateEvent = {
-        kind: "status-update",
-        taskId: taskId,
-        contextId: contextId,
-        status: {
-          state: "failed",
-          message: {
-            kind: "message",
-            role: "agent",
-            messageId: uuidv4(),
-            parts: [{ kind: "text", text: `Agent error: ${error.message}` }],
-            taskId: taskId,
-            contextId: contextId,
-          },
-          timestamp: new Date().toISOString(),
-        },
-        final: true,
-      };
-      eventBus.publish(errorUpdate);
-    }
-  }
+    })),
+    preamble: parsed.files[0]?.preamble,
+    postamble: parsed.postamble,
+  };
 }
 
-// --- Agent Card ---
+/**
+ * Build final message from artifacts
+ * 
+ * Shows what files were generated and includes preamble/postamble.
+ */
+function buildCoderFinalMessage(
+  artifacts: any[],
+  fullResponse: string,
+  preamble?: string,
+  postamble?: string
+): string {
+  // Filter to only artifacts with filenames
+  const namedArtifacts = artifacts.filter(a => a.filename);
+  const fileCount = namedArtifacts.length;
+  
+  let finalMessage = '';
+  
+  // Add preamble
+  if (preamble) {
+    finalMessage += preamble + '\n\n';
+  }
+  
+  // Add file summary
+  if (fileCount > 0) {
+    const fileNames = namedArtifacts.map(a => a.filename).filter(Boolean);
+    finalMessage += `Generated ${fileCount} file${fileCount > 1 ? 's' : ''}: ${fileNames.join(', ')}`;
+  } else {
+    // No files generated, return full response
+    finalMessage += fullResponse;
+  }
+  
+  // Add postamble
+  if (postamble) {
+    finalMessage += '\n\n' + postamble;
+  }
+  
+  return finalMessage;
+}
+
+/**
+ * Create the streaming adapter with code-specific options
+ */
+const agentExecutor: AgentExecutor = new A2AStreamingAdapter(coderAgent, {
+  streamFunction: streamCoderGeneration,
+  parseArtifacts: parseCodeArtifacts,
+  buildFinalMessage: buildCoderFinalMessage,
+  workingMessage: 'Generating code...',
+  debug: false,
+});
+
+// ============================================================================
+// 3. Define Agent Card (A2A Metadata)
+// ============================================================================
 
 const coderAgentCard: AgentCard = {
-  name: "Coder Agent (AI SDK)",
-  description: "A code-writing agent that emits full code files as artifacts.",
-  url: "http://localhost:41242/",
+  name: 'Coder Agent (AI SDK v6)',
+  description: 'A code-writing agent that emits full code files as artifacts.',
+  url: 'http://localhost:41242/',
   provider: {
-    organization: "A2A Samples (AI SDK Port)",
-    url: "https://github.com/drew-foxall/a2a-js-sdk",
+    organization: 'A2A Samples (AI SDK v6 + Streaming Adapter)',
+    url: 'https://github.com/drew-foxall/a2a-js-sdk-examples',
   },
-  version: "1.0.0",
-  protocolVersion: "0.3.0",
+  version: '2.0.0', // Bumped to 2.0.0 for migration
+  protocolVersion: '0.3.0',
   capabilities: {
     streaming: true,
     pushNotifications: false,
     stateTransitionHistory: true,
   },
-  defaultInputModes: ["text"],
-  defaultOutputModes: ["text", "artifact"],
+  defaultInputModes: ['text'],
+  defaultOutputModes: ['text', 'artifact'],
   skills: [
     {
-      id: "code_generation",
-      name: "Code Generation",
-      description: "Generate high-quality code files based on your requirements.",
-      tags: ["coding", "programming", "development"],
+      id: 'code_generation',
+      name: 'Code Generation',
+      description: 'Generate high-quality code files based on your requirements.',
+      tags: ['coding', 'programming', 'development'],
       examples: [
-        "Write a TypeScript function to calculate fibonacci numbers",
-        "Create a React component for a todo list",
-        "Build a REST API endpoint for user authentication",
-        "Generate a Python script to scrape websites",
+        'Write a TypeScript function to calculate fibonacci numbers',
+        'Create a React component for a todo list',
+        'Build a REST API endpoint for user authentication',
+        'Generate a Python script to scrape websites',
       ],
-      inputModes: ["text"],
-      outputModes: ["text", "artifact"],
+      inputModes: ['text'],
+      outputModes: ['text', 'artifact'],
     },
   ],
   supportsAuthenticatedExtendedCard: false,
 };
 
-// --- Server Setup ---
+// ============================================================================
+// 4. Server Setup (Standard A2A + Hono)
+// ============================================================================
 
 async function main() {
   const taskStore: TaskStore = new InMemoryTaskStore();
-  const agentExecutor: AgentExecutor = new CoderAgentExecutor();
 
   const requestHandler = new DefaultRequestHandler(
     coderAgentCard,
@@ -425,9 +198,19 @@ async function main() {
   appBuilder.setupRoutes(app);
 
   const PORT = Number(process.env.PORT) || 41242;
-  console.log(`[CoderAgent] Server using AI SDK + Hono started on http://localhost:${PORT}`);
-  console.log(`[CoderAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`);
-  console.log("[CoderAgent] Press Ctrl+C to stop the server");
+  console.log(
+    `[CoderAgent] ✅ AI SDK v6 + A2AStreamingAdapter started on http://localhost:${PORT}`
+  );
+  console.log(
+    `[CoderAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
+  );
+  console.log(
+    `[CoderAgent] 📦 Architecture: ToolLoopAgent + A2AStreamingAdapter Pattern (Streaming)`
+  );
+  console.log(
+    `[CoderAgent] ✨ Features: Real-time streaming, incremental artifacts, code parsing`
+  );
+  console.log('[CoderAgent] Press Ctrl+C to stop the server');
 
   serve({
     fetch: app.fetch,
@@ -436,3 +219,4 @@ async function main() {
 }
 
 main().catch(console.error);
+
