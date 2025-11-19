@@ -121,6 +121,7 @@ new A2AAdapter(agent, {
 
 | Example | Port | Original | Features |
 |---------|------|----------|----------|
+| [Hello World](./samples/js/src/agents/hello-world/) | 41244 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/helloworld) | Simplest agent, greeting responses, foundation pattern |
 | [Movie Agent](./samples/js/src/agents/movie-agent/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
 | [Coder Agent](./samples/js/src/agents/coder/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
 | [Content Editor](./samples/js/src/agents/content-editor/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |

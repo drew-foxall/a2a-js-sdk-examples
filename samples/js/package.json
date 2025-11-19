@@ -15,6 +15,7 @@
     "agents:movie-agent": "tsx src/agents/movie-agent/index.ts",
     "agents:coder": "tsx src/agents/coder/index.ts",
     "agents:content-editor": "tsx src/agents/content-editor/index.ts",
+    "agents:hello-world": "tsx src/agents/hello-world/index.ts",
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
