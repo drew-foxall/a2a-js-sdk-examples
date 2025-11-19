@@ -21,14 +21,63 @@ a2a-js-sdk-examples/
 
 ## 🏗️ Architecture
 
-All agents use **custom AgentExecutor implementations** with direct `generateText`/`streamText` calls rather than the AI SDK's Agent class. This design choice provides:
+All agents have been **migrated to AI SDK v6** using the **Adapter Pattern** for clean separation of concerns:
 
-- Full control over A2A protocol task lifecycle
-- Real-time streaming artifact emission (Coder Agent)
-- Custom conversation history management (Movie Agent)
-- Direct event bus integration for all A2A events
+### Layered Architecture
+```
+┌─────────────────────────────────────┐
+│   AI Agent (agent.ts)               │  ← Protocol-agnostic
+│   - ToolLoopAgent                   │     Portable to CLI, Tests,
+│   - Pure AI logic                   │     REST, MCP, A2A
+│   - No protocol knowledge           │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   A2A Adapter (shared/)             │  ← Protocol handler
+│   - A2AAgentAdapter (simple)        │     Reusable across agents
+│   - A2AStreamingAdapter (streaming) │     
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   Server (index.ts)                 │  ← Hono + A2A routes
+│   - Hono web server                 │
+│   - A2A protocol routes             │
+└─────────────────────────────────────┘
+```
 
-See [**AI SDK Agent Class Assessment**](./AI_SDK_AGENT_CLASS_ASSESSMENT.md) for detailed analysis.
+### Three Proven Patterns
+
+1. **Simple Agent** (Content Editor)
+   - `ToolLoopAgent` with basic configuration
+   - `A2AAgentAdapter` for A2A protocol
+   - Use for: Simple agents without tools or special logic
+
+2. **Advanced Agent** (Movie Agent)
+   - `callOptionsSchema` for dynamic configuration
+   - `prepareCall` for custom prompt generation
+   - Tools integration (TMDB API)
+   - Use for: Agents with tools, dynamic prompts, custom state parsing
+
+3. **Streaming Agent** (Coder Agent)
+   - Real-time streaming with `A2AStreamingAdapter`
+   - Incremental artifact emission
+   - Per-chunk processing
+   - Use for: Agents that need streaming and/or artifacts
+
+### Benefits
+- ✅ **Protocol-agnostic agents** - Work in CLI, tests, REST, MCP, A2A
+- ✅ **Clean separation** - Agent logic separate from protocol logic
+- ✅ **Reusable infrastructure** - Adapters shared across agents
+- ✅ **Easy testing** - Test agents directly without mocking
+- ✅ **26% code reduction** - Less boilerplate, cleaner code
+
+### Documentation
+- 📖 [**Migration Complete**](./MIGRATION_COMPLETE.md) - Full migration summary
+- 📖 [**Architecture Assessment**](./AI_SDK_AGENT_CLASS_ASSESSMENT.md) - Technical rationale
+- 📖 [**Adapter Documentation**](./samples/js/src/shared/README.md) - Usage guides
+- 📖 [**Phase Guides**](./PHASE1_SUMMARY.md) - Detailed migration steps
 
 ## 📦 Available Examples
 
