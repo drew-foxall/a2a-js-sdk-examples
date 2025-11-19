@@ -1,7 +1,7 @@
 /**
- * Movie Info Agent (AI SDK v6 + A2AAgentAdapter)
+ * Movie Info Agent (AI SDK v6 + Unified A2AAdapter)
  * 
- * PHASE 3 MIGRATION: Refactored to use ToolLoopAgent + A2AAgentAdapter
+ * UNIFIED ADAPTER MIGRATION: Now uses automatic A2AAdapter
  * 
  * Features:
  * - TMDB API integration (searchMovies, searchPeople)
@@ -10,9 +10,9 @@
  * - Goal metadata support
  * - Multi-turn conversations
  * 
- * Architecture: AI SDK Agent + A2A Adapter Pattern (Advanced)
- * -----------------------------------------------------------
- * This agent demonstrates the full power of the adapter pattern:
+ * Architecture: AI SDK Agent + Automatic A2A Adapter (Advanced)
+ * -------------------------------------------------------------
+ * This agent demonstrates the unified adapter with advanced features:
  * 
  * 1. AI Agent (ToolLoopAgent):
  *    - callOptionsSchema: Accepts contextId and goal per request
@@ -21,22 +21,21 @@
  *    - maxSteps: Multi-turn tool calling
  * 
  * 2. A2A Adapter:
- *    - includeHistory: true (uses contextId for conversation tracking)
+ *    - Automatically uses SIMPLE mode (no artifacts)
+ *    - includeHistory: true (conversation tracking)
  *    - parseTaskState: Custom parser for COMPLETED/AWAITING_USER_INPUT
- *    - Extracts goal metadata and passes to agent
+ *    - transformResponse: Removes state markers from output
  * 
  * 3. Server Setup: Standard Hono + A2A routes
  * 
- * Benefits over old implementation:
- * - ~53% code reduction (381 lines → ~180 lines)
- * - Agent is portable (CLI, tests, REST, MCP, A2A)
- * - Cleaner separation of concerns
- * - Demonstrates AI SDK v6 advanced features
+ * Benefits:
+ * - Single adapter for all use cases
+ * - Automatic mode selection (simple)
+ * - Configuration is self-documenting
  * 
  * See:
- * - AI_SDK_AGENT_CLASS_ASSESSMENT.md (Architectural rationale)
- * - samples/js/src/shared/README.md (A2AAgentAdapter docs)
- * - AI_SDK_V6_UPGRADE_COMPLETE.md (AI SDK v6 features)
+ * - AUTOMATIC_ADAPTER_ASSESSMENT.md (Why unified adapter)
+ * - samples/js/src/shared/a2a-adapter.ts (Implementation)
  */
 
 import { Hono } from "hono";
@@ -51,8 +50,8 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 
-// Import our shared utilities
-import { A2AAgentAdapter } from "../../shared/a2a-agent-adapter.js";
+// Import unified automatic adapter
+import { A2AAdapter } from "../../shared/a2a-adapter.js";
 // Import the agent definition
 import { movieAgent } from "./agent.js";
 
@@ -115,7 +114,7 @@ function transformMovieAgentResponse(result: any): any {
 /**
  * Create the adapter with advanced options
  */
-const agentExecutor: AgentExecutor = new A2AAgentAdapter(movieAgent, {
+const agentExecutor: AgentExecutor = new A2AAdapter(movieAgent, {
   workingMessage: "Processing your question, hang tight!",
   
   // Enable conversation history management
@@ -128,6 +127,8 @@ const agentExecutor: AgentExecutor = new A2AAgentAdapter(movieAgent, {
   transformResponse: transformMovieAgentResponse,
   
   debug: false,
+  
+  // No parseArtifacts → Automatically uses SIMPLE mode
 });
 
 // ============================================================================
@@ -191,13 +192,13 @@ async function main() {
 
   const PORT = Number(process.env.PORT) || 41241;
   console.log(
-    `[MovieAgent] ✅ AI SDK v6 + A2AAgentAdapter started on http://localhost:${PORT}`
+    `[MovieAgent] ✅ AI SDK v6 + Unified A2AAdapter started on http://localhost:${PORT}`
   );
   console.log(
     `[MovieAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
   );
   console.log(
-    `[MovieAgent] 📦 Architecture: ToolLoopAgent + A2AAgentAdapter Pattern (Advanced)`
+    `[MovieAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Simple Mode)`
   );
   console.log(
     `[MovieAgent] ✨ Features: callOptionsSchema, prepareCall, custom state parsing`

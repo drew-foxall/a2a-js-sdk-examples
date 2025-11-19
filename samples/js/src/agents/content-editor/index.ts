@@ -1,31 +1,30 @@
 /**
- * Content Editor Agent (AI SDK v6 + A2AAgentAdapter)
+ * Content Editor Agent (AI SDK v6 + Unified A2AAdapter)
  * 
- * PHASE 2 MIGRATION: Refactored to use ToolLoopAgent + A2AAgentAdapter
+ * UNIFIED ADAPTER MIGRATION: Now uses automatic A2AAdapter
  * 
  * Features:
  * - Content proof-reading and editing
  * - Grammar and style improvements
  * - Maintains user's voice
  * 
- * Architecture: AI SDK Agent + A2A Adapter Pattern
- * ------------------------------------------------
- * This agent demonstrates the recommended architecture from our assessment:
+ * Architecture: AI SDK Agent + Automatic A2A Adapter
+ * --------------------------------------------------
+ * This agent demonstrates the unified automatic adapter:
  * 
  * 1. AI Agent (ToolLoopAgent): Pure, protocol-agnostic logic for content editing
- * 2. A2A Adapter: Bridges the agent to A2A protocol (task lifecycle, events)
+ * 2. A2A Adapter: Automatically selects simple mode (no artifacts needed)
  * 3. Server Setup: Standard Hono + A2A routes
  * 
  * Benefits:
- * - ~80% code reduction (304 lines → ~60 lines)
- * - Agent is portable (can be used in CLI, tests, REST, MCP, etc.)
- * - Cleaner separation of concerns
- * - Easier testing and maintenance
+ * - Single adapter for all use cases
+ * - Automatic mode selection (simple vs streaming)
+ * - Zero decision overhead
+ * - Configuration is self-documenting
  * 
  * See:
- * - AI_SDK_AGENT_CLASS_ASSESSMENT.md (Architectural rationale)
- * - samples/js/src/shared/README.md (A2AAgentAdapter docs)
- * - AI_SDK_V6_UPGRADE_COMPLETE.md (AI SDK v6 features)
+ * - AUTOMATIC_ADAPTER_ASSESSMENT.md (Why unified adapter)
+ * - samples/js/src/shared/a2a-adapter.ts (Implementation)
  */
 
 import { Hono } from "hono";
@@ -41,8 +40,8 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 
-// Import our shared utilities
-import { A2AAgentAdapter } from "../../shared/a2a-agent-adapter.js";
+// Import unified automatic adapter
+import { A2AAdapter } from "../../shared/a2a-adapter.js";
 // Import the agent definition (kept separate to avoid starting server when importing)
 import { contentEditorAgent } from "./agent.js";
 
@@ -52,12 +51,13 @@ import { contentEditorAgent } from "./agent.js";
 // See agent.ts for the ToolLoopAgent definition
 
 // ============================================================================
-// 2. Create A2A Adapter (Bridges Agent to A2A Protocol)
+// 2. Create A2A Adapter (Automatically Uses Simple Mode)
 // ============================================================================
 
-const agentExecutor: AgentExecutor = new A2AAgentAdapter(contentEditorAgent, {
+const agentExecutor: AgentExecutor = new A2AAdapter(contentEditorAgent, {
   workingMessage: "Editing content...",
   debug: false,
+  // No parseArtifacts → Automatically uses SIMPLE mode
 });
 
 // ============================================================================
@@ -121,13 +121,13 @@ async function main() {
 
   const PORT = Number(process.env.PORT) || 41243;
   console.log(
-    `[ContentEditorAgent] ✅ AI SDK v6 + A2AAgentAdapter started on http://localhost:${PORT}`
+    `[ContentEditorAgent] ✅ AI SDK v6 + Unified A2AAdapter started on http://localhost:${PORT}`
   );
   console.log(
     `[ContentEditorAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
   );
   console.log(
-    `[ContentEditorAgent] 📦 Architecture: ToolLoopAgent + A2AAgentAdapter Pattern`
+    `[ContentEditorAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Simple Mode)`
   );
   console.log("[ContentEditorAgent] Press Ctrl+C to stop the server");
 

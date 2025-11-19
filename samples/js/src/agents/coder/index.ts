@@ -1,7 +1,7 @@
 /**
- * Coder Agent (AI SDK v6 + A2AStreamingAdapter)
+ * Coder Agent (AI SDK v6 + Unified A2AAdapter)
  * 
- * PHASE 4 MIGRATION: Refactored to use ToolLoopAgent + A2AStreamingAdapter
+ * UNIFIED ADAPTER MIGRATION: Now uses automatic A2AAdapter
  * 
  * Features:
  * - Streaming code generation
@@ -10,33 +10,31 @@
  * - Multi-file output support
  * - File deduplication and ordering
  * 
- * Architecture: AI SDK Agent + A2A Streaming Adapter Pattern
- * -----------------------------------------------------------
- * This agent demonstrates streaming + artifacts:
+ * Architecture: AI SDK Agent + Automatic A2A Adapter (Streaming)
+ * --------------------------------------------------------------
+ * This agent demonstrates automatic streaming mode detection:
  * 
  * 1. AI Agent (ToolLoopAgent):
  *    - Pure code generation logic
  *    - Protocol-agnostic
- *    - Streaming via streamCoderGeneration()
  * 
- * 2. A2A Streaming Adapter:
- *    - Handles streaming chunks
+ * 2. A2A Adapter:
+ *    - Automatically uses STREAMING mode (parseArtifacts provided)
+ *    - Calls agent.stream() automatically
  *    - Parses code blocks incrementally
  *    - Emits artifacts as files complete
- *    - Manages A2A task lifecycle
  * 
  * 3. Server Setup: Standard Hono + A2A routes
  * 
- * Benefits over old implementation:
- * - ~54% code reduction (439 lines → ~200 lines)
- * - Agent is portable (CLI, tests, REST, MCP, A2A)
- * - Cleaner separation of concerns
- * - Streaming logic reusable across agents
+ * Benefits:
+ * - Single adapter for all use cases
+ * - Automatic streaming detection (parseArtifacts triggers it)
+ * - No manual streamFunction needed
+ * - Configuration is self-documenting
  * 
  * See:
- * - AI_SDK_AGENT_CLASS_ASSESSMENT.md (Architectural rationale)
- * - samples/js/src/shared/README.md (Adapter docs)
- * - PHASE4_STREAMING_RESEARCH.md (Streaming approach)
+ * - AUTOMATIC_ADAPTER_ASSESSMENT.md (Why unified adapter)
+ * - samples/js/src/shared/a2a-adapter.ts (Implementation)
  */
 
 import { Hono } from 'hono';
@@ -50,10 +48,10 @@ import {
 } from '@drew-foxall/a2a-js-sdk/server';
 import { A2AHonoApp } from '@drew-foxall/a2a-js-sdk/server/hono';
 
-// Import our shared utilities
-import { A2AStreamingAdapter, ParsedArtifacts } from '../../shared/a2a-streaming-adapter.js';
+// Import unified automatic adapter
+import { A2AAdapter, ParsedArtifacts } from '../../shared/a2a-adapter.js';
 // Import the agent definition
-import { coderAgent, streamCoderGeneration } from './agent.js';
+import { coderAgent } from './agent.js';
 // Import code parsing utilities
 import { extractCodeBlocks } from './code-format.js';
 
@@ -130,11 +128,13 @@ function buildCoderFinalMessage(
 }
 
 /**
- * Create the streaming adapter with code-specific options
+ * Create the adapter with artifact parsing
+ * 
+ * The presence of parseArtifacts automatically triggers STREAMING mode!
+ * No need to manually specify streaming or provide streamFunction.
  */
-const agentExecutor: AgentExecutor = new A2AStreamingAdapter(coderAgent, {
-  streamFunction: streamCoderGeneration,
-  parseArtifacts: parseCodeArtifacts,
+const agentExecutor: AgentExecutor = new A2AAdapter(coderAgent, {
+  parseArtifacts: parseCodeArtifacts,  // ← Triggers STREAMING mode automatically!
   buildFinalMessage: buildCoderFinalMessage,
   workingMessage: 'Generating code...',
   debug: false,
@@ -199,16 +199,16 @@ async function main() {
 
   const PORT = Number(process.env.PORT) || 41242;
   console.log(
-    `[CoderAgent] ✅ AI SDK v6 + A2AStreamingAdapter started on http://localhost:${PORT}`
+    `[CoderAgent] ✅ AI SDK v6 + Unified A2AAdapter started on http://localhost:${PORT}`
   );
   console.log(
     `[CoderAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
   );
   console.log(
-    `[CoderAgent] 📦 Architecture: ToolLoopAgent + A2AStreamingAdapter Pattern (Streaming)`
+    `[CoderAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Streaming Mode)`
   );
   console.log(
-    `[CoderAgent] ✨ Features: Real-time streaming, incremental artifacts, code parsing`
+    `[CoderAgent] ✨ Features: Auto-streaming, incremental artifacts, code parsing`
   );
   console.log('[CoderAgent] Press Ctrl+C to stop the server');
 
