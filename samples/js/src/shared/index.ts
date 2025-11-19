@@ -10,6 +10,15 @@ export {
   type A2AAdapterConfig,
   type ParsedArtifact,
   type ParsedArtifacts,
+  type AIGenerateResult,
+  type AIStreamResult,
+} from "./a2a-adapter.js";
+
+// Export Logger interfaces and implementations
+export {
+  type A2ALogger,
+  ConsoleLogger,
+  NoOpLogger,
 } from "./a2a-adapter.js";
 
 // Export AI model utility

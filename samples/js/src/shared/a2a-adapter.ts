@@ -30,19 +30,99 @@
  * });
  */
 
-import { ToolLoopAgent } from 'ai';
+import { ToolLoopAgent, type ToolSet } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
 import {
   AgentExecutor,
   RequestContext,
   ExecutionEventBus,
+} from '@drew-foxall/a2a-js-sdk/server';
+import type {
   Task,
   TaskStatusUpdateEvent,
   TaskArtifactUpdateEvent,
   Message,
-  TextPart,
   TaskState,
-} from '@drew-foxall/a2a-js-sdk/server';
+} from '@drew-foxall/a2a-js-sdk';
+
+/**
+ * Logger interface for A2AAdapter
+ * 
+ * Allows consumers to inject custom logging implementations
+ * (Winston, Pino, Bunyan, etc.) or create mock loggers for testing.
+ */
+export interface A2ALogger {
+  debug(message: string, meta?: Record<string, unknown>): void;
+  info(message: string, meta?: Record<string, unknown>): void;
+  warn(message: string, meta?: Record<string, unknown>): void;
+  error(message: string, meta?: Record<string, unknown>): void;
+}
+
+/**
+ * Default console logger implementation
+ */
+export class ConsoleLogger implements A2ALogger {
+  constructor(private prefix: string = '[A2AAdapter]') {}
+  
+  debug(message: string, meta?: Record<string, unknown>): void {
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    console.log(`${this.prefix} [DEBUG] ${message}${metaStr}`);
+  }
+  
+  info(message: string, meta?: Record<string, unknown>): void {
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    console.log(`${this.prefix} [INFO] ${message}${metaStr}`);
+  }
+  
+  warn(message: string, meta?: Record<string, unknown>): void {
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    console.warn(`${this.prefix} [WARN] ${message}${metaStr}`);
+  }
+  
+  error(message: string, meta?: Record<string, unknown>): void {
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    console.error(`${this.prefix} [ERROR] ${message}${metaStr}`);
+  }
+}
+
+/**
+ * No-op logger for when debug is disabled
+ * Still logs errors to ensure critical issues are visible
+ */
+export class NoOpLogger implements A2ALogger {
+  debug(): void {}
+  info(): void {}
+  warn(): void {}
+  error(message: string, meta?: Record<string, unknown>): void {
+    // Always log errors even in production
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    console.error(`[A2AAdapter] ERROR: ${message}${metaStr}`);
+  }
+}
+
+/**
+ * AI SDK generate result interface
+ * Represents the result from agent.generate()
+ */
+export interface AIGenerateResult {
+  text: string;
+  steps?: Array<{
+    stepType: string;
+    toolCalls?: Array<Record<string, unknown>>;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
+/**
+ * AI SDK stream result interface
+ * Represents the result from agent.stream()
+ */
+export interface AIStreamResult {
+  stream: AsyncIterable<{ text: string; [key: string]: unknown }>;
+  text: Promise<string>;
+  [key: string]: unknown;
+}
 
 /**
  * Parsed artifact from streaming chunks
@@ -118,9 +198,10 @@ export interface A2AAdapterConfig {
    * Transform agent response before creating A2A message (simple mode)
    * 
    * Useful for extracting final text when agent includes metadata.
+   * Can return either a modified result object or just a string.
    * 
    * @param result - The raw agent generation result
-   * @returns The transformed result with cleaned text
+   * @returns The transformed result with cleaned text, or just the text string
    * 
    * @example
    * transformResponse: (result) => {
@@ -128,7 +209,7 @@ export interface A2AAdapterConfig {
    *   return { ...result, text: lines.slice(0, -1).join('\n') };
    * }
    */
-  transformResponse?: (result: any) => any;
+  transformResponse?: (result: AIGenerateResult) => AIGenerateResult | string;
 
   /**
    * Whether to include conversation history in agent calls.
@@ -145,11 +226,31 @@ export interface A2AAdapterConfig {
   workingMessage?: string;
 
   /**
-   * Whether to log debug information
+   * Whether to enable debug logging
    * 
    * @default false
    */
   debug?: boolean;
+
+  /**
+   * Custom logger implementation
+   * 
+   * If not provided, uses ConsoleLogger (when debug: true) or NoOpLogger.
+   * Allows integration with Winston, Pino, Bunyan, or any custom logging system.
+   * 
+   * @example
+   * // Using Winston
+   * import winston from 'winston';
+   * const winstonLogger = winston.createLogger({...});
+   * 
+   * logger: {
+   *   debug: (msg, meta) => winstonLogger.debug(msg, meta),
+   *   info: (msg, meta) => winstonLogger.info(msg, meta),
+   *   warn: (msg, meta) => winstonLogger.warn(msg, meta),
+   *   error: (msg, meta) => winstonLogger.error(msg, meta),
+   * }
+   */
+  logger?: A2ALogger;
 }
 
 /**
@@ -168,15 +269,28 @@ export interface A2AAdapterConfig {
  * - Message conversion (A2A ↔ AI SDK)
  * - Status updates (working, completed, failed, canceled)
  * - Error handling
- * - Debug logging
+ * - Flexible logging
+ * 
+ * GENERICS:
+ * @template TModel - The AI model type (e.g., specific OpenAI model)
+ * @template TTools - The tools schema type
+ * @template TCallOptions - The call options schema type
+ * 
+ * The generics match ToolLoopAgent to maintain type safety throughout.
  */
-export class A2AAdapter implements AgentExecutor {
+export class A2AAdapter<
+  TModel = unknown,
+  TTools extends ToolSet = ToolSet,
+  TCallOptions = unknown
+> implements AgentExecutor {
   private cancelledTasks = new Set<string>();
-  private config: Required<Omit<A2AAdapterConfig, 'parseArtifacts' | 'parseTaskState' | 'transformResponse' | 'buildFinalMessage'>> & 
+  private logger: A2ALogger;
+  private config: Required<Omit<A2AAdapterConfig, 'parseArtifacts' | 'parseTaskState' | 'transformResponse' | 'buildFinalMessage' | 'logger'>> & 
     Pick<A2AAdapterConfig, 'parseArtifacts' | 'parseTaskState' | 'transformResponse' | 'buildFinalMessage'>;
 
   constructor(
-    private agent: ToolLoopAgent<any, any, any>,
+    // @ts-expect-error - AI SDK ToolLoopAgent has complex generic constraints that are safe to ignore here
+    private agent: ToolLoopAgent<TModel, TTools, TCallOptions>,
     config?: A2AAdapterConfig
   ) {
     // Set defaults for required options
@@ -190,6 +304,10 @@ export class A2AAdapter implements AgentExecutor {
       transformResponse: config?.transformResponse,
       buildFinalMessage: config?.buildFinalMessage,
     };
+
+    // Initialize logger
+    this.logger = config?.logger || 
+      (this.config.debug ? new ConsoleLogger() : new NoOpLogger());
   }
 
   /**
@@ -200,7 +318,7 @@ export class A2AAdapter implements AgentExecutor {
     eventBus: ExecutionEventBus
   ): Promise<void> => {
     this.cancelledTasks.add(taskId);
-    this.log(`Task ${taskId} marked for cancellation`);
+    this.logger.info(`Task ${taskId} marked for cancellation`, { taskId });
   };
 
   /**
@@ -219,9 +337,11 @@ export class A2AAdapter implements AgentExecutor {
     const taskId = existingTask?.id || uuidv4();
     const contextId = userMessage.contextId || existingTask?.contextId || uuidv4();
 
-    this.log(
-      `Processing message ${userMessage.messageId} for task ${taskId} (context: ${contextId})`
-    );
+    this.logger.debug(`Processing message`, {
+      messageId: userMessage.messageId,
+      taskId,
+      contextId,
+    });
 
     // Step 1: Publish initial Task event if it's a new task
     if (!existingTask) {
@@ -238,7 +358,7 @@ export class A2AAdapter implements AgentExecutor {
         artifacts: [], // Initialize artifacts array
       };
       eventBus.publish(initialTask);
-      this.log(`Published initial task ${taskId}`);
+      this.logger.debug(`Published initial task`, { taskId });
     }
 
     // Step 2: Publish "working" status update
@@ -248,7 +368,7 @@ export class A2AAdapter implements AgentExecutor {
     const userPrompt = this.extractTextFromMessage(userMessage);
 
     if (!userPrompt) {
-      this.log(`No text found in message ${userMessage.messageId}`);
+      this.logger.warn(`No text found in message`, { messageId: userMessage.messageId });
       this.publishFailure(taskId, contextId, 'No message text to process', eventBus);
       return;
     }
@@ -259,15 +379,16 @@ export class A2AAdapter implements AgentExecutor {
     // Step 5: AUTOMATIC MODE DETECTION AND EXECUTION
     try {
       if (this.isStreamingMode()) {
-        this.log(`Executing in STREAMING mode (artifacts configured)`);
+        this.logger.debug(`Executing in STREAMING mode (artifacts configured)`, { taskId });
         await this.executeStreaming(taskId, contextId, messages, eventBus);
       } else {
-        this.log(`Executing in SIMPLE mode (no artifacts)`);
+        this.logger.debug(`Executing in SIMPLE mode (no artifacts)`, { taskId });
         await this.executeSimple(taskId, contextId, messages, eventBus);
       }
-    } catch (error: any) {
-      this.log(`Error in task ${taskId}: ${error.message}`, true);
-      this.publishFailure(taskId, contextId, error.message, eventBus);
+    } catch (error: unknown) {
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Error in task`, { taskId, error: errorMessage });
+      this.publishFailure(taskId, contextId, errorMessage, eventBus);
     } finally {
       // Clean up cancelled tasks
       this.cancelledTasks.delete(taskId);
@@ -303,12 +424,13 @@ export class A2AAdapter implements AgentExecutor {
     }
 
     // Call the ToolLoopAgent (blocking)
-    this.log(`Calling agent.generate() for task ${taskId}...`);
-    const result = await this.agent.generate({
+    this.logger.debug(`Calling agent.generate()`, { taskId });
+    const rawResult = await this.agent.generate({
       prompt: messages[messages.length - 1]?.content || '',
       messages: messages.slice(0, -1),
       contextId, // Pass contextId for agents that support callOptionsSchema
-    });
+    } as unknown as Parameters<typeof this.agent.generate>[0]);
+    const result = rawResult as unknown as AIGenerateResult;
 
     // Check for cancellation after agent call
     if (this.cancelledTasks.has(taskId)) {
@@ -317,18 +439,26 @@ export class A2AAdapter implements AgentExecutor {
     }
 
     // Transform response if configured
-    const transformedResult = this.config.transformResponse
+    const transformed = this.config.transformResponse
       ? this.config.transformResponse(result)
       : result;
 
-    const responseText = transformedResult.text || transformedResult;
-    this.log(`Agent responded with ${responseText.length} characters`);
+    // Extract text from transformed result
+    const responseText = typeof transformed === 'string' 
+      ? transformed 
+      : transformed.text;
+
+    this.logger.debug(`Agent responded`, { 
+      taskId, 
+      responseLength: responseText.length 
+    });
 
     // Parse task state from response if configured
     const taskState = this.config.parseTaskState
       ? this.config.parseTaskState(responseText) || 'completed'
       : 'completed';
-    this.log(`Final task state: ${taskState}`);
+    
+    this.logger.debug(`Final task state`, { taskId, state: taskState });
 
     // Publish final status update
     const finalUpdate: TaskStatusUpdateEvent = {
@@ -350,7 +480,7 @@ export class A2AAdapter implements AgentExecutor {
       final: true,
     };
     eventBus.publish(finalUpdate);
-    this.log(`Task ${taskId} completed with state: ${taskState}`);
+    this.logger.info(`Task completed`, { taskId, state: taskState });
   }
 
   /**
@@ -366,12 +496,13 @@ export class A2AAdapter implements AgentExecutor {
     eventBus: ExecutionEventBus
   ): Promise<void> {
     // Call the ToolLoopAgent (streaming)
-    this.log(`Calling agent.stream() for task ${taskId}...`);
-    const { stream, text: responsePromise } = await this.agent.stream({
+    this.logger.debug(`Calling agent.stream()`, { taskId });
+    const rawStreamResult = await this.agent.stream({
       prompt: messages[messages.length - 1]?.content || '',
       messages: messages.slice(0, -1),
       contextId,
-    });
+    } as unknown as Parameters<typeof this.agent.stream>[0]);
+    const { stream, text: responsePromise } = rawStreamResult as unknown as AIStreamResult;
 
     let accumulatedText = '';
     const artifactContents = new Map<string, string>();
@@ -384,7 +515,7 @@ export class A2AAdapter implements AgentExecutor {
 
       // Check for cancellation
       if (this.cancelledTasks.has(taskId)) {
-        this.log(`Request cancelled for task: ${taskId}`);
+        this.logger.info(`Request cancelled`, { taskId });
         this.publishCancellation(taskId, contextId, eventBus);
         return;
       }
@@ -413,7 +544,6 @@ export class A2AAdapter implements AgentExecutor {
               taskId: taskId,
               contextId: contextId,
               artifact: {
-                kind: 'artifact',
                 index: artifactOrder.indexOf(artifact.filename),
                 id: `${taskId}-${artifact.filename}`,
                 name: artifact.filename,
@@ -423,14 +553,16 @@ export class A2AAdapter implements AgentExecutor {
                   language: artifact.language || 'plaintext',
                   ...artifact.metadata,
                 },
-              },
+              } as unknown as TaskArtifactUpdateEvent['artifact'],
             };
             eventBus.publish(artifactUpdate);
             emittedArtifactCount++;
 
-            this.log(
-              `Emitted artifact: ${artifact.filename} (${currentContent.length} bytes)`
-            );
+            this.logger.debug(`Emitted artifact`, {
+              taskId,
+              filename: artifact.filename,
+              size: currentContent.length,
+            });
           }
         }
       }
@@ -463,7 +595,6 @@ export class A2AAdapter implements AgentExecutor {
             taskId: taskId,
             contextId: contextId,
             artifact: {
-              kind: 'artifact',
               index: artifactOrder.indexOf(artifact.filename),
               id: `${taskId}-${artifact.filename}`,
               name: artifact.filename,
@@ -473,12 +604,15 @@ export class A2AAdapter implements AgentExecutor {
                 language: artifact.language || 'plaintext',
                 ...artifact.metadata,
               },
-            },
+            } as unknown as TaskArtifactUpdateEvent['artifact'],
           };
           eventBus.publish(artifactUpdate);
           emittedArtifactCount++;
 
-          this.log(`Final artifact: ${artifact.filename}`);
+          this.logger.debug(`Final artifact`, { 
+            taskId, 
+            filename: artifact.filename 
+          });
         }
       }
     }
@@ -521,7 +655,10 @@ export class A2AAdapter implements AgentExecutor {
     };
     eventBus.publish(finalUpdate);
 
-    this.log(`Task ${taskId} completed with ${emittedArtifactCount} artifacts.`);
+    this.logger.info(`Task completed with artifacts`, { 
+      taskId, 
+      artifactCount: emittedArtifactCount 
+    });
   }
 
   /**
@@ -529,9 +666,10 @@ export class A2AAdapter implements AgentExecutor {
    */
   private extractTextFromMessage(message: Message): string {
     const textParts = message.parts.filter(
-      (p): p is TextPart => p.kind === 'text' && !!(p as TextPart).text
+      (part): part is Extract<typeof part, { kind: 'text' }> => 
+        part.kind === 'text'
     );
-    return textParts.map((p: TextPart) => p.text).join('\n');
+    return textParts.map((part) => 'text' in part ? part.text : '').join('\n');
   }
 
   /**
@@ -592,7 +730,7 @@ export class A2AAdapter implements AgentExecutor {
       final: false,
     };
     eventBus.publish(workingStatusUpdate);
-    this.log(`Task ${taskId} status: working`);
+    this.logger.debug(`Task status: working`, { taskId });
   }
 
   /**
@@ -623,6 +761,7 @@ export class A2AAdapter implements AgentExecutor {
       final: true,
     };
     eventBus.publish(failureUpdate);
+    this.logger.error(`Task failed`, { taskId, error: errorMessage });
   }
 
   /**
@@ -633,7 +772,7 @@ export class A2AAdapter implements AgentExecutor {
     contextId: string,
     eventBus: ExecutionEventBus
   ): void {
-    this.log(`Task ${taskId} cancelled`);
+    this.logger.info(`Task cancelled`, { taskId });
     const cancelledUpdate: TaskStatusUpdateEvent = {
       kind: 'status-update',
       taskId: taskId,
@@ -645,6 +784,24 @@ export class A2AAdapter implements AgentExecutor {
       final: true,
     };
     eventBus.publish(cancelledUpdate);
+  }
+
+  /**
+   * Extract error message from unknown error type
+   * 
+   * Safely extracts error message without using 'any'.
+   */
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    if (error && typeof error === 'object' && 'message' in error) {
+      return String(error.message);
+    }
+    return 'Unknown error occurred';
   }
 
   /**
@@ -675,19 +832,5 @@ export class A2AAdapter implements AgentExecutor {
     }
 
     return finalMessageText;
-  }
-
-  /**
-   * Log debug information
-   */
-  private log(message: string, isError: boolean = false): void {
-    if (!this.config.debug) return;
-
-    const prefix = '[A2AAdapter]';
-    if (isError) {
-      console.error(`${prefix} ${message}`);
-    } else {
-      console.log(`${prefix} ${message}`);
-    }
   }
 }
