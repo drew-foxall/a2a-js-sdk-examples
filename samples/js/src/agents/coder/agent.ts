@@ -14,7 +14,7 @@
  * The streaming function can be used directly or via A2AAdapter.
  */
 
-import { ToolLoopAgent, streamText, type LanguageModelV1 } from 'ai';
+import { ToolLoopAgent, streamText, type LanguageModel } from 'ai';
 import { getModel } from '../../shared/utils.js';
 import { CODER_SYSTEM_PROMPT } from './code-format.js';
 
@@ -54,7 +54,7 @@ import { CODER_SYSTEM_PROMPT } from './code-format.js';
  * });
  * const agent = createCoderAgent(ollama('codellama'));
  */
-export function createCoderAgent(model: LanguageModelV1) {
+export function createCoderAgent(model: LanguageModel) {
   return new ToolLoopAgent({
     model,
     instructions: CODER_SYSTEM_PROMPT,
@@ -101,11 +101,11 @@ export const coderAgent = createCoderAgent(getModel());
  * @returns AsyncGenerator yielding text chunks
  */
 export async function* streamCoderGeneration(
-  agent: ToolLoopAgent<any, any, any>,
+  agent: ToolLoopAgent<LanguageModel, Record<string, never>, never>,
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
 ): AsyncGenerator<string> {
   // Try ToolLoopAgent.stream() if available (AI SDK v6 may have this)
-  if ('stream' in agent && typeof (agent as any).stream === 'function') {
+  if ('stream' in agent && typeof agent.stream === 'function') {
     try {
       const result = await (agent as any).stream({ messages });
       
@@ -147,7 +147,7 @@ export async function* streamCoderGeneration(
  * ```
  */
 export async function generateCode(
-  agent: ToolLoopAgent<any, any, any>,
+  agent: ToolLoopAgent<LanguageModel, Record<string, never>, never>,
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<string> {
   let result = '';

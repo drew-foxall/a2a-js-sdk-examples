@@ -5,18 +5,21 @@ This directory contains example agents implementing the A2A protocol using AI SD
 ## Available Agents
 
 ### 🎬 Movie Agent
+
 **Port**: 41241  
 **Features**: TMDB API integration, conversation history, multi-turn conversations
 
 [View Documentation](./movie-agent/README.md)
 
 ### 💻 Coder Agent
+
 **Port**: 41242  
 **Features**: Streaming code generation, multi-file output, artifacts
 
 [View Documentation](./coder/README.md)
 
 ### ✍️ Content Editor Agent
+
 **Port**: 41243  
 **Features**: Professional editing, grammar checking, style improvements
 
@@ -58,4 +61,3 @@ All agents use shared utilities in `../shared/utils.ts` for model selection.
 
 - See individual agent READMEs for detailed documentation
 - Check [parent README](../../README.md) for setup instructions
-

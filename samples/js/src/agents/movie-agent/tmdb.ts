@@ -7,6 +7,12 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
 /**
+ * TMDB API Response Types
+ * Using a more specific type structure for better AI SDK compatibility
+ */
+export type TMDBResponse = Record<string, unknown>;
+
+/**
  * Call the TMDB API
  * @param endpoint The TMDB API endpoint (e.g., 'movie', 'person')
  * @param query The search query

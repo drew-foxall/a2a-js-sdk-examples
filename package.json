@@ -21,6 +21,11 @@
   "devDependencies": {
     "tsx": "^4.19.2"
   },
+  "pnpm": {
+    "overrides": {
+      "@ai-sdk/provider": "3.0.0-beta.16"
+    }
+  },
   "engines": {
     "node": ">=18.0.0"
   },

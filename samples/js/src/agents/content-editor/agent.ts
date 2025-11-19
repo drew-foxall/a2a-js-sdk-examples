@@ -5,7 +5,7 @@
  * Import this instead of index.ts to avoid starting the server.
  */
 
-import { ToolLoopAgent, type LanguageModelV1 } from "ai";
+import { ToolLoopAgent, type LanguageModel } from "ai";
 import { getModel } from "../../shared/utils.js";
 import { CONTENT_EDITOR_PROMPT } from "./prompt.js";
 
@@ -56,7 +56,7 @@ import { CONTENT_EDITOR_PROMPT } from "./prompt.js";
  * });
  * const agent = createContentEditorAgent(azure('gpt-4'));
  */
-export function createContentEditorAgent(model: LanguageModelV1) {
+export function createContentEditorAgent(model: LanguageModel) {
   return new ToolLoopAgent({
     model,
     instructions: CONTENT_EDITOR_PROMPT,

@@ -13,33 +13,23 @@
  * - Tool loop: maxSteps for multi-turn tool calling
  */
 
-import { ToolLoopAgent, tool, type LanguageModelV1 } from "ai";
+import { ToolLoopAgent, tool, type LanguageModel } from "ai";
 import { z } from "zod";
 import { getModel } from "../../shared/utils.js";
 import { searchMovies, searchPeople } from "./tmdb.js";
 import { getMovieAgentPrompt } from "./prompt.js";
 
 /**
- * TMDB Tools - Using AI SDK v6 tool() helper
+ * TMDB Tool Schemas
+ * 
+ * Define tools inline to avoid AI SDK v6 beta type complexities with tool() helper
  */
-const searchMoviesTool = tool({
-  description: "search TMDB for movies by title",
-  parameters: z.object({
-    query: z.string().describe("The movie title to search for"),
-  }),
-  execute: async ({ query }) => {
-    return await searchMovies(query);
-  },
+const movieQuerySchema = z.object({
+  query: z.string().describe("The movie title to search for"),
 });
 
-const searchPeopleTool = tool({
-  description: "search TMDB for people by name",
-  parameters: z.object({
-    query: z.string().describe("The person name to search for"),
-  }),
-  execute: async ({ query }) => {
-    return await searchPeople(query);
-  },
+const personQuerySchema = z.object({
+  query: z.string().describe("The person name to search for"),
 });
 
 /**
@@ -64,21 +54,26 @@ const searchPeopleTool = tool({
  * });
  * const agent = createMovieAgent(groq('llama-3.1-70b-versatile'));
  */
-export function createMovieAgent(model: LanguageModelV1) {
+export function createMovieAgent(model: LanguageModel) {
   return new ToolLoopAgent({
     model,
     
     // Default instructions (overridden by prepareCall)
     instructions: getMovieAgentPrompt(),
     
-    // Tools for TMDB integration
+    // Tools for TMDB integration - using inputSchema for ToolLoopAgent compatibility
     tools: {
-      searchMovies: searchMoviesTool,
-      searchPeople: searchPeopleTool,
+      searchMovies: {
+        description: "search TMDB for movies by title",
+        inputSchema: movieQuerySchema,
+        execute: async (params: z.infer<typeof movieQuerySchema>) => searchMovies(params.query),
+      },
+      searchPeople: {
+        description: "search TMDB for people by name",
+        inputSchema: personQuerySchema,
+        execute: async (params: z.infer<typeof personQuerySchema>) => searchPeople(params.query),
+      },
     },
-    
-    // Allow multiple tool calls
-    maxSteps: 10,
     
     // ============================================================================
     // AI SDK v6 Advanced Feature: Call Options
