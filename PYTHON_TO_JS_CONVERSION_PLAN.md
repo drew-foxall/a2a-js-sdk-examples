@@ -87,23 +87,33 @@ These examples establish baseline patterns and progressively demonstrate core ca
 
 ---
 
-### Phase 3: Advanced Framework Examples
+### Phase 3: Advanced Framework Examples ✅ **COMPLETE**
 
-#### 5. LangGraph Currency Converter
+#### 5. Currency Agent (LangGraph Equivalent) ✅ **IMPLEMENTED**
 - **Source**: `/samples/python/agents/langgraph/`
+- **Target**: `/samples/js/src/agents/currency-agent/` (Port 41248)
 - **Complexity**: ⭐⭐⭐ (Moderate)
 - **Purpose**: Multi-turn conversation, tool usage, streaming
-- **Features**:
-  - Currency conversion API integration
-  - Multi-turn conversation handling
-  - Streaming updates
-  - Tool usage with external API
-- **Implementation Notes**:
-  - Use AI SDK `ToolLoopAgent`
-  - Integrate with currency API (e.g., exchangerate-api.com)
-  - Demonstrate conversation state management
-  - Good comparison point to LangGraph
-- **Priority**: **LOW** - Framework comparison example
+- **Status**: ✅ **COMPLETE** (Commit: fba3f92)
+- **Features Implemented**:
+  - ✅ Currency conversion via Frankfurter API (no API key required)
+  - ✅ Multi-turn conversation with `parseTaskState`
+  - ✅ Conversation memory via `contextId`
+  - ✅ Streaming with status updates
+  - ✅ Text artifacts for conversion results
+  - ✅ Custom state parsing (input-required vs completed)
+- **Implementation Highlights**:
+  - Used AI SDK `ToolLoopAgent` (equivalent to LangGraph ReAct)
+  - Implemented `get_exchange_rate` tool matching Python version
+  - Multi-turn conversation via text-based state detection
+  - Conversation history managed by A2AAdapter
+  - Demonstrates LangGraph → AI SDK equivalence
+- **Key Differences from Python**:
+  - Python: LangGraph with structured output (`ResponseFormat`)
+  - JavaScript: AI SDK with text parsing (`parseTaskState`)
+  - Both support multi-turn, memory, and streaming
+- **Lines of Code**: 846 lines (tools, agent, index, prompt, README)
+- **Priority**: **COMPLETED** - Framework comparison successful
 
 ---
 
@@ -217,8 +227,8 @@ These examples establish baseline patterns and progressively demonstrate core ca
 3. ✅ **GitHub Agent** - Validate external API integration
 4. ✅ **Analytics Agent** - Validate image artifact handling
 
-### Sprint 3: Advanced (Optional)
-5. ⏸️ **LangGraph Currency Converter** - Framework comparison
+### Sprint 3: Advanced ✅ **COMPLETE**
+5. ✅ **Currency Agent** - Multi-turn conversation + framework comparison
 
 ### Sprint 4: Multi-Agent Orchestration 🆕
 6. ✅ **Airbnb Planner Multi-Agent** - Demonstrate agent orchestration with `a2a-ai-provider`
