@@ -16,6 +16,7 @@
     "agents:coder": "tsx src/agents/coder/index.ts",
     "agents:content-editor": "tsx src/agents/content-editor/index.ts",
     "agents:hello-world": "tsx src/agents/hello-world/index.ts",
+    "agents:dice-agent": "tsx src/agents/dice-agent/index.ts",
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
