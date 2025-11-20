@@ -44,6 +44,9 @@ importers:
       '@octokit/rest':
         specifier: 22.0.1
         version: 22.0.1
+      a2a-ai-provider:
+        specifier: 0.4.0-alpha.2
+        version: 0.4.0-alpha.2(ai@6.0.0-beta.99(zod@3.25.76))
       ai:
         specifier: 6.0.0-beta.99
         version: 6.0.0-beta.99(zod@3.25.76)
@@ -74,6 +77,15 @@ importers:
         version: 5.9.3
 
 packages:
+
+  '@a2a-js/sdk@0.3.5':
+    resolution: {integrity: sha512-6xAApkiss2aCbJXmXLC845tifcbYJ/R4Dj22kQsOaanMbf9bvkYhebDEuYPAIu3aaR5MWaBqG7OCK3IF8dqZZQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      express: ^4.21.2 || ^5.1.0
+    peerDependenciesMeta:
+      express:
+        optional: true
 
   '@ai-sdk/anthropic@3.0.0-beta.54':
     resolution: {integrity: sha512-FwGoZxuq9aOet1xnKHfdpVQDYGUICnhWsDiW2ea0gHa9N298XWl28nr2ZDYZQnkn/MYndBOfz4WctpLp/NJ59g==}
@@ -415,6 +427,11 @@ packages:
     resolution: {integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==}
     engines: {node: '>= 20'}
 
+  a2a-ai-provider@0.4.0-alpha.2:
+    resolution: {integrity: sha512-jLFc3bRRe3MWfbsy6RanJBCisXEdaQcBI4XEZ1BS8ZfPEcmk/gYNQ+OY5JuQGyFRrXm9Cw+fEw7MtQmln9Cwcg==}
+    peerDependencies:
+      ai: '>=5.0.0 <6.0.0'
+
   ai@6.0.0-beta.99:
     resolution: {integrity: sha512-Z/TQByUwZepN2425FepmvDNNpqVufNtqv1QJju6tGL8uiWLwHc9HKN36+joSuCozeZq9JE77FaQ0TBuRh6Hh/A==}
     engines: {node: '>=18'}
@@ -608,6 +625,10 @@ packages:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
+
+  '@a2a-js/sdk@0.3.5':
+    dependencies:
+      uuid: 11.1.0
 
   '@ai-sdk/anthropic@3.0.0-beta.54(zod@3.25.76)':
     dependencies:
@@ -875,6 +896,13 @@ snapshots:
       undici-types: 6.21.0
 
   '@vercel/oidc@3.0.3': {}
+
+  a2a-ai-provider@0.4.0-alpha.2(ai@6.0.0-beta.99(zod@3.25.76)):
+    dependencies:
+      '@a2a-js/sdk': 0.3.5
+      ai: 6.0.0-beta.99(zod@3.25.76)
+    transitivePeerDependencies:
+      - express
 
   ai@6.0.0-beta.99(zod@3.25.76):
     dependencies:

@@ -126,9 +126,54 @@ new A2AAdapter(agent, {
 | [GitHub Agent](./samples/js/src/agents/github-agent/) | 41246 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/github-agent) | GitHub API, Octokit integration, repo queries, commit history |
 | [Analytics Agent](./samples/js/src/agents/analytics-agent/) | 41247 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/analytics) | Chart generation, Chart.js + canvas, PNG artifacts, streaming |
 | [Currency Agent](./samples/js/src/agents/currency-agent/) | 41248 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/langgraph) | Multi-turn conversation, currency conversion, Frankfurter API, memory |
+| [**Travel Planner** 🆕](./samples/js/src/agents/travel-planner-multiagent/) | 41250-41252 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/airbnb_planner_multiagent) | **Multi-agent orchestration**, a2a-ai-provider, specialist delegation, 3 agents |
 | [Movie Agent](./samples/js/src/agents/movie-agent/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
 | [Coder Agent](./samples/js/src/agents/coder/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
 | [Content Editor](./samples/js/src/agents/content-editor/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |
+
+### 🎭 Multi-Agent Orchestration
+
+The **Travel Planner** demonstrates advanced multi-agent coordination using `a2a-ai-provider`:
+
+```
+User Request → Travel Planner (Orchestrator)
+                    ├─→ Weather Agent (Specialist)
+                    └─→ Airbnb Agent (Specialist)
+```
+
+**Key Innovation:** A2A agents consumed as "models" using `a2a-ai-provider`:
+
+```typescript
+import { a2a } from "a2a-ai-provider";
+import { generateText } from "ai";
+
+// A2A agent consumed as a "model"!
+const result = await generateText({
+  model: a2a('http://localhost:41250/.well-known/agent-card.json'),
+  prompt: 'What is the weather in Paris?',
+});
+```
+
+**3 Agents:**
+- **Weather Agent** (Port 41250) - Weather forecasts via Open-Meteo API
+- **Airbnb Agent** (Port 41251) - Accommodation search (mock data)
+- **Travel Planner** (Port 41252) - Orchestrates both specialists
+
+**Start All**:
+```bash
+pnpm agents:weather-agent  # Terminal 1
+pnpm agents:airbnb-agent   # Terminal 2
+pnpm agents:travel-planner # Terminal 3
+```
+
+**Test**:
+```bash
+curl -X POST http://localhost:41252/plan \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Plan a trip to Paris for 2 people"}'
+```
+
+See [Multi-Agent README](./samples/js/src/agents/travel-planner-multiagent/) for details.
 
 ## 🚀 Quick Start
 
