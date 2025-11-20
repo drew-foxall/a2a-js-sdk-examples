@@ -4,6 +4,30 @@
 
 This document outlines the plan to convert Python agent examples from [`a2a-samples`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python) to JavaScript/TypeScript equivalents using the AI SDK + Hono + A2A architecture.
 
+## Python ↔ JavaScript Agent Name Mapping
+
+For easy cross-referencing between Python and JavaScript implementations:
+
+| Python Source | JavaScript Implementation | Status | Notes |
+|--------------|---------------------------|---------|-------|
+| `helloworld` | `hello-world` | ✅ Complete | Hyphenated for JS convention |
+| `dice_agent_rest` | `dice-agent` | ✅ Complete | Simplified name |
+| `github-agent` | `github-agent` | ✅ Complete | Exact match ✨ |
+| `analytics` | `analytics-agent` | ✅ Complete | Added `-agent` suffix |
+| `langgraph` | `currency-agent` | ✅ Complete | Named for functionality (currency) |
+| `airbnb_planner_multiagent` | `travel-planner-multiagent` | ✅ Complete | Named for purpose (travel planning) |
+| `content_planner` | *(not converted)* | ⏸️ Skipped | Similar to `content-editor` |
+| `birthday_planner_adk` | *(planned)* | ⏸️ Optional | Future multi-agent example |
+
+**JavaScript-Only Agents** (no Python equivalent):
+- `movie-agent` - TMDB API integration example
+- `coder` - Streaming code generation example  
+- `content-editor` - Text editing example
+
+**Naming Convention**: Future Python conversions will use **exact Python names** to avoid confusion. Current agents keep their JavaScript-idiomatic names for stability.
+
+See [AGENT_NAMING_ALIGNMENT.md](./AGENT_NAMING_ALIGNMENT.md) for detailed naming decisions.
+
 ## Current JavaScript Examples (Already Implemented)
 
 ✅ **Movie Agent** - TMDB API integration, tool usage, conversation history  
@@ -17,7 +41,8 @@ This document outlines the plan to convert Python agent examples from [`a2a-samp
 These examples establish baseline patterns and progressively demonstrate core capabilities:
 
 #### 1. Hello World Agent ⭐ **START HERE**
-- **Source**: `/samples/python/agents/helloworld/`
+- **Python Source**: [`helloworld`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/helloworld)
+- **JavaScript**: `hello-world` (Port 41244)
 - **Complexity**: ⭐ (Very Simple)
 - **Purpose**: Simplest possible A2A agent - baseline example
 - **Features**:
@@ -34,7 +59,8 @@ These examples establish baseline patterns and progressively demonstrate core ca
 ---
 
 #### 2. Dice Agent (REST)
-- **Source**: `/samples/python/agents/dice_agent_rest/`
+- **Python Source**: [`dice_agent_rest`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/dice_agent_rest)
+- **JavaScript**: `dice-agent` (Port 41249)
 - **Complexity**: ⭐⭐ (Simple)
 - **Purpose**: Demonstrates basic tool usage
 - **Features**:
@@ -52,7 +78,8 @@ These examples establish baseline patterns and progressively demonstrate core ca
 ### Phase 2: Real-World Utility Examples
 
 #### 3. GitHub Agent
-- **Source**: `/samples/python/agents/github-agent/`
+- **Python Source**: [`github-agent`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/github-agent)
+- **JavaScript**: `github-agent` (Port 41240) ✨ **Name Match**
 - **Complexity**: ⭐⭐⭐ (Moderate)
 - **Purpose**: Real-world API integration, developer utility
 - **Features**:
@@ -70,7 +97,8 @@ These examples establish baseline patterns and progressively demonstrate core ca
 ---
 
 #### 4. Analytics Agent
-- **Source**: `/samples/python/agents/analytics/`
+- **Python Source**: [`analytics`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/analytics)
+- **JavaScript**: `analytics-agent` (Port 41247)
 - **Complexity**: ⭐⭐⭐⭐ (Moderate-Complex)
 - **Purpose**: Chart generation, demonstrates image artifacts
 - **Features**:
@@ -90,10 +118,11 @@ These examples establish baseline patterns and progressively demonstrate core ca
 ### Phase 3: Advanced Framework Examples ✅ **COMPLETE**
 
 #### 5. Currency Agent (LangGraph Equivalent) ✅ **IMPLEMENTED**
-- **Source**: `/samples/python/agents/langgraph/`
-- **Target**: `/samples/js/src/agents/currency-agent/` (Port 41248)
+- **Python Source**: [`langgraph`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/langgraph)
+- **JavaScript**: `currency-agent` (Port 41248)
 - **Complexity**: ⭐⭐⭐ (Moderate)
 - **Purpose**: Multi-turn conversation, tool usage, streaming
+- **Note**: Python example uses LangGraph framework, JS uses AI SDK ToolLoopAgent (equivalent functionality)
 - **Status**: ✅ **COMPLETE** (Commit: fba3f92)
 - **Features Implemented**:
   - ✅ Currency conversion via Frankfurter API (no API key required)
@@ -117,42 +146,83 @@ These examples establish baseline patterns and progressively demonstrate core ca
 
 ---
 
-### Phase 4: Multi-Agent Orchestration 🆕
+### Phase 4: Multi-Agent Orchestration 🆕 ✅ **IMPLEMENTED**
 
-**NEW CAPABILITY**: Using [`a2a-ai-provider`](https://github.com/dracoblue/a2a-ai-provider), AI SDK agents can now **consume** A2A agents as if they were LLM providers. This enables powerful multi-agent orchestration patterns!
+**NEW CAPABILITIES**: 
+1. Using [`a2a-ai-provider`](https://github.com/dracoblue/a2a-ai-provider), AI SDK agents can **consume** A2A agents as if they were LLM providers
+2. Using [`@ai-sdk/mcp`](https://v6.ai-sdk.dev/cookbook/node/mcp-tools), AI SDK agents can **connect to MCP servers** for tools
 
-#### 6. Airbnb Planner Multi-Agent System
-- **Source**: `/samples/python/agents/airbnb_planner_multiagent/`
+#### 6. Travel Planner Multi-Agent System ✅ **IMPLEMENTED**
+- **Python Source**: [`airbnb_planner_multiagent`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/airbnb_planner_multiagent)
+- **JavaScript**: `travel-planner-multiagent` (Ports: 41245-41247)
 - **Complexity**: ⭐⭐⭐⭐⭐ (Advanced)
 - **Purpose**: Demonstrates multi-agent orchestration and delegation
-- **Features**:
-  - **Host Agent** (orchestrator) - Uses AI SDK + `a2a-ai-provider`
-  - **Airbnb Agent** (specialist) - Search and booking recommendations
-  - **Weather Agent** (specialist) - Weather forecast integration
+- **Note**: Named for functionality (travel planning) rather than specific service (Airbnb)
+- **Status**: ✅ **COMPLETE** (Phase 4)
+- **Components**:
+  - **Travel Planner** (orchestrator, Port 41247) - Uses AI SDK + `a2a-ai-provider`
+  - **Weather Agent** (specialist, Port 41245) - Weather forecasts via Open-Meteo API
+  - **Airbnb Agent** (specialist, Port 41246) - Accommodation search
   - Agent-to-agent communication via A2A protocol
-  - Real-world multi-agent coordination
-- **Implementation Notes**:
-  - Host agent uses `a2a('http://localhost:PORT/.well-known/agent-card.json')` as "models"
-  - Specialist agents are standalone A2A servers (like our existing agents)
-  - Demonstrates delegation patterns and result aggregation
-  - Shows how to build agent networks
-- **Key Concept**: 
+- **Features Implemented**:
+  - ✅ Multi-agent orchestration with `a2a-ai-provider`
+  - ✅ Weather Agent using **real API** (Open-Meteo, global coverage)
+  - ⚠️ Airbnb Agent using **mock data** (demonstration only)
+  - ✅ Specialist agent delegation
+  - ✅ Response synthesis
+  - ✅ Full A2A protocol integration
+- **Data Sources**:
+  - **Python Weather**: National Weather Service API (US-only)
+  - **JS Weather**: ✅ Open-Meteo API (global, **BETTER**)
+  - **Python Airbnb**: ✅ Real Airbnb API via `@openbnb/mcp-server-airbnb` MCP
+  - **JS Airbnb**: ⚠️ Mock data (12 hardcoded listings)
+- **Known Limitations**:
+  - Airbnb agent uses mock data instead of real MCP integration
+  - For production, should use MCP like Python version (see upgrade path below)
+- **Upgrade Path to Match Python**:
+  ```typescript
+  // Use AI SDK's MCP support to match Python's real Airbnb data
+  import { experimental_createMCPClient } from '@ai-sdk/mcp';
+  import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
+  
+  const transport = new Experimental_StdioMCPTransport({
+    command: 'npx',
+    args: ['-y', '@openbnb/mcp-server-airbnb', '--ignore-robots-txt'],
+  });
+  
+  const mcpClient = await experimental_createMCPClient({ transport });
+  const mcpTools = await mcpClient.tools();
+  
+  // Now agent has access to real Airbnb data via MCP
+  const agent = new ToolLoopAgent({
+    model: getModel(),
+    tools: mcpTools, // Real Airbnb search tools
+  });
+  ```
+- **Key Orchestration Pattern**: 
   ```typescript
   import { a2a } from "a2a-ai-provider";
   import { generateText } from "ai";
 
-  // Use A2A agent as a "model" in AI SDK
-  const result = await generateText({
-    model: a2a('http://localhost:41241/.well-known/agent-card.json'),
-    prompt: 'Search for listings in Paris',
+  // Travel Planner delegates to specialist A2A agents
+  const weatherResult = await generateText({
+    model: a2a('http://localhost:41245/.well-known/agent-card.json'),
+    prompt: 'Weather forecast for Paris',
+  });
+  
+  const airbnbResult = await generateText({
+    model: a2a('http://localhost:41246/.well-known/agent-card.json'),
+    prompt: 'Find accommodations in Paris',
   });
   ```
-- **Priority**: **MEDIUM** - Demonstrates agent orchestration
+- **Documentation**: See [PYTHON_VS_JS_MULTIAGENT_COMPARISON.md](./PYTHON_VS_JS_MULTIAGENT_COMPARISON.md)
+- **Priority**: ✅ **COMPLETED** - Multi-agent orchestration demonstrated
 
 ---
 
 #### 7. Birthday Planner Multi-Agent System (Optional)
-- **Source**: `/samples/python/agents/birthday_planner_adk/`
+- **Python Source**: [`birthday_planner_adk`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/birthday_planner_adk)
+- **JavaScript**: `birthday-planner-multiagent` (if implemented)
 - **Complexity**: ⭐⭐⭐⭐ (Advanced)
 - **Purpose**: Additional multi-agent orchestration example
 - **Features**:
@@ -170,17 +240,37 @@ These examples establish baseline patterns and progressively demonstrate core ca
 
 ## Comparison: Existing vs. New Examples
 
-| Feature | Movie | Coder | Editor | Hello | Dice | GitHub | Analytics | Lang | Airbnb | Birthday |
-|---------|-------|-------|--------|-------|------|--------|-----------|------|--------|----------|
-| **Tools** | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Streaming** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **External API** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| **Artifacts** | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **Multi-turn** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| **Multi-agent** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Feature | Movie | Coder | Editor | Hello | Dice | GitHub | Analytics | Currency | Travel | Birthday |
+|---------|-------|-------|--------|-------|------|--------|-----------|----------|--------|----------|
+| **Tools** | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏸️ |
+| **Streaming** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ⏸️ |
+| **External API** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ⚠️ | ⏸️ |
+| **Artifacts** | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ⏸️ |
+| **Multi-turn** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ⏸️ |
+| **Multi-agent** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⏸️ |
+| **MCP Integration** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⏸️ |
+| **Python Parity** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⏸️ |
+| **Status** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⏸️ |
 | **Complexity** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
 
-**Legend**: Movie = Movie Agent, Coder = Coder Agent, Editor = Content Editor, Hello = Hello World, Lang = LangGraph Currency, Airbnb = Airbnb Planner, Birthday = Birthday Planner
+**Legend**: 
+- Movie = Movie Agent
+- Coder = Coder Agent
+- Editor = Content Editor
+- Hello = Hello World
+- Currency = Currency Agent (LangGraph equivalent)
+- Travel = Travel Planner Multi-Agent (Airbnb Planner equivalent)
+- Birthday = Birthday Planner (optional)
+
+**Status Key**:
+- ✅ = Fully implemented
+- ⚠️ = Implemented with limitations (mock data instead of real API)
+- ⏸️ = Deferred/Optional
+
+**Notes**:
+- **Travel External API**: ✅ Weather uses real API (✅), Airbnb uses real MCP (✅)
+- **Travel MCP Integration**: ✅ Python uses MCP, JS now uses MCP (@openbnb/mcp-server-airbnb)
+- **Travel Python Parity**: ✅ Architecture matches, Airbnb agent upgraded to MCP - **FULL PARITY ACHIEVED!**
 
 ---
 
@@ -251,6 +341,70 @@ samples/js/src/agents/{agent-name}/
   └── README.md         # Documentation
 ```
 
+### MCP Integration Pattern 🆕
+
+For agents that use Model Context Protocol (matching Python MCP implementations):
+
+```typescript
+// Install MCP support
+// pnpm add @ai-sdk/mcp @modelcontextprotocol/sdk
+
+import { experimental_createMCPClient } from '@ai-sdk/mcp';
+import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
+
+// Connect to MCP server (stdio transport)
+const transport = new Experimental_StdioMCPTransport({
+  command: 'npx',
+  args: ['-y', '@openbnb/mcp-server-airbnb', '--ignore-robots-txt'],
+});
+
+const mcpClient = await experimental_createMCPClient({ transport });
+const mcpTools = await mcpClient.tools(); // Get tools from MCP server
+
+// Use MCP tools in AI SDK agent
+const agent = new ToolLoopAgent({
+  model: getModel(),
+  tools: mcpTools, // Real tools from MCP server
+});
+
+// Remember to close the client when done
+await mcpClient.close();
+```
+
+**Supported MCP Transports**:
+- **stdio**: Local MCP servers (Node.js commands)
+- **HTTP**: Remote MCP servers via HTTP
+- **SSE**: Server-Sent Events for streaming
+
+**Example - Multiple MCP Servers**:
+```typescript
+// Connect to multiple MCP servers
+const airbnbClient = await experimental_createMCPClient({
+  transport: new Experimental_StdioMCPTransport({
+    command: 'npx',
+    args: ['-y', '@openbnb/mcp-server-airbnb'],
+  }),
+});
+
+const weatherClient = await experimental_createMCPClient({
+  transport: { type: 'http', url: 'http://localhost:3000/mcp' },
+});
+
+// Combine tools from multiple sources
+const tools = {
+  ...(await airbnbClient.tools()),
+  ...(await weatherClient.tools()),
+};
+
+const agent = new ToolLoopAgent({ model: getModel(), tools });
+```
+
+**When to Use MCP**:
+- Python example uses MCP (match functionality)
+- Need to connect to existing MCP servers
+- Want to reuse MCP tools across languages
+- Complex external services with MCP adapters
+
 ### Multi-Agent Architecture 🆕
 
 Multi-agent examples demonstrate orchestration patterns:
@@ -291,6 +445,7 @@ const airbnbResult = await generateText({
 - **Pure Agent Layer**: AI SDK `ToolLoopAgent` with no A2A coupling
 - **A2A Adapter**: Unified `A2AAdapter` for A2A protocol integration
 - **A2A Provider**: Use `a2a-ai-provider` to consume A2A agents as "models"
+- **MCP Integration**: Use `@ai-sdk/mcp` for Model Context Protocol tools (matches Python)
 - **Tool Definitions**: Use `inputSchema` for Zod validation
 - **Type Safety**: Strong typing with generics, avoid `any`
 - **Flexible Models**: Support 8+ providers via `getModel()` utility
@@ -310,21 +465,195 @@ For each converted agent:
 
 ---
 
+## Python vs JavaScript Implementation Fidelity
+
+### Ensuring Accurate Conversions
+
+Each converted agent should match Python functionality:
+
+| Aspect | Python Implementation | JavaScript Equivalent | Status |
+|--------|----------------------|----------------------|---------|
+| **Framework** | LangGraph / ADK | AI SDK `ToolLoopAgent` | ✅ Equivalent |
+| **MCP Tools** | `langchain_mcp_adapters.client.MultiServerMCPClient` | `@ai-sdk/mcp` `experimental_createMCPClient` | ✅ Available |
+| **Multi-Agent** | ADK native delegation | `a2a-ai-provider` | ✅ Available |
+| **Streaming** | LangGraph `astream_events` | AI SDK `streamText` | ✅ Equivalent |
+| **Memory** | `MemorySaver` checkpointer | A2A `contextId` + adapter history | ✅ Equivalent |
+| **Tools** | LangChain tools | AI SDK tools with Zod schemas | ✅ Equivalent |
+
+### Data Source Parity
+
+Critical: JavaScript agents must use **real data sources** to match Python:
+
+#### Current Status
+
+| Agent | Python Data Source | JS Data Source | Parity |
+|-------|-------------------|----------------|---------|
+| **Weather** | NWS API (US-only) | Open-Meteo (global) | ✅ **JS Better** |
+| **Airbnb** | `@openbnb/mcp-server-airbnb` (real) | Mock data | ⚠️ **Needs MCP** |
+| **GitHub** | GitHub API via Octokit | GitHub API via Octokit | ✅ Match |
+| **Currency** | Frankfurter API | Frankfurter API | ✅ Match |
+
+#### Action Items for Full Parity
+
+1. **Airbnb Agent**: Upgrade to MCP using `@ai-sdk/mcp` (see MCP Integration Pattern above)
+2. **Verify all APIs**: Ensure JavaScript uses same endpoints as Python where applicable
+3. **Test outputs**: Compare response formats and data quality
+
+### Conversion Checklist
+
+For each agent conversion, verify:
+- [ ] Matches Python's tool definitions exactly
+- [ ] Uses same external APIs (or equivalent)
+- [ ] Implements MCP if Python version uses MCP
+- [ ] Supports same conversation patterns (multi-turn, etc.)
+- [ ] Returns similar response formats
+- [ ] Handles errors gracefully like Python version
+- [ ] Documentation reflects actual capabilities
+
 ## Resources
 
 - **Python Examples**: https://github.com/a2aproject/a2a-samples/tree/main/samples/python
 - **A2A Protocol**: https://google.github.io/A2A/
 - **AI SDK Docs**: https://sdk.vercel.ai/docs
+- **AI SDK MCP Support**: https://v6.ai-sdk.dev/cookbook/node/mcp-tools
 - **A2A JS SDK**: https://github.com/drew-foxall/a2a-js
 - **A2A AI Provider** 🆕: https://github.com/dracoblue/a2a-ai-provider (enables multi-agent orchestration)
+- **Model Context Protocol**: https://modelcontextprotocol.io/
+
+---
+
+## Upgrade Guide: Airbnb Agent to Real MCP Data
+
+To achieve full parity with Python's Airbnb agent, follow this upgrade path:
+
+### Step 1: Install MCP Dependencies
+
+```bash
+cd samples/js
+pnpm add @ai-sdk/mcp @modelcontextprotocol/sdk
+```
+
+### Step 2: Update Airbnb Agent to Use MCP
+
+Replace `tools.ts` mock data approach with MCP integration:
+
+```typescript
+// samples/js/src/agents/travel-planner-multiagent/airbnb-agent/agent.ts
+import { experimental_createMCPClient } from '@ai-sdk/mcp';
+import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
+import { ToolLoopAgent } from 'ai/agent';
+import { getModel } from '../../../shared/utils.js';
+
+let mcpClient: any = null;
+
+export async function createAirbnbAgent() {
+  // Initialize MCP client for Airbnb server
+  const transport = new Experimental_StdioMCPTransport({
+    command: 'npx',
+    args: ['-y', '@openbnb/mcp-server-airbnb', '--ignore-robots-txt'],
+  });
+
+  mcpClient = await experimental_createMCPClient({ transport });
+  const mcpTools = await mcpClient.tools();
+
+  return new ToolLoopAgent({
+    model: getModel(),
+    tools: mcpTools, // Real Airbnb search tools from MCP
+    system: `You are a specialized assistant for Airbnb accommodations...`,
+  });
+}
+
+// Cleanup function to close MCP client
+export async function closeAirbnbAgent() {
+  if (mcpClient) {
+    await mcpClient.close();
+  }
+}
+```
+
+### Step 3: Update Server to Manage MCP Lifecycle
+
+```typescript
+// samples/js/src/agents/travel-planner-multiagent/airbnb-agent/index.ts
+import { createAirbnbAgent, closeAirbnbAgent } from './agent.js';
+
+async function main() {
+  const agent = await createAirbnbAgent(); // Initializes MCP
+  const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+    workingMessage: "Searching Airbnb...",
+  });
+  
+  // ... server setup ...
+  
+  // Handle graceful shutdown
+  process.on('SIGINT', async () => {
+    console.log('Shutting down MCP client...');
+    await closeAirbnbAgent();
+    process.exit(0);
+  });
+  
+  serve({ fetch: app.fetch, port: PORT });
+}
+```
+
+### Step 4: Remove Mock Data
+
+Delete or comment out `tools.ts` mock data:
+
+```bash
+# Optionally keep for fallback
+mv samples/js/src/agents/travel-planner-multiagent/airbnb-agent/tools.ts \
+   samples/js/src/agents/travel-planner-multiagent/airbnb-agent/tools.mock.ts
+```
+
+### Step 5: Test with Real Data
+
+```bash
+# Start upgraded Airbnb agent
+pnpm agents:airbnb-agent
+
+# Test with real search
+curl -X POST http://localhost:41246/message/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": {
+      "role": "user",
+      "parts": [{"kind": "text", "text": "Find rooms in Paris, France for 2 adults, June 20-25, 2025"}]
+    }
+  }'
+```
+
+### Expected Results After Upgrade
+
+- ✅ Real Airbnb listings with actual availability
+- ✅ Current prices in local currency
+- ✅ Direct links to actual Airbnb properties
+- ✅ Photos, reviews, and ratings from real listings
+- ✅ Date-based availability checking
+- ✅ Full feature parity with Python version
+
+### Comparison: Before vs After
+
+| Feature | Mock Data (Current) | MCP Integration (Upgraded) |
+|---------|-------------------|---------------------------|
+| **Data Source** | Hardcoded | Real Airbnb API |
+| **Listings** | 12 fake | Unlimited real |
+| **Availability** | Always available | Real-time availability |
+| **Prices** | Fake ($75-$450) | Real current prices |
+| **Booking** | Not possible | Direct links |
+| **Photos** | Placeholder | Real photos |
+| **Search Features** | Limited | Full Airbnb search |
 
 ---
 
 ## Next Steps
 
-1. **Review and approve this plan** with stakeholders
-2. **Start with Hello World Agent** (Sprint 1, Item 1)
-3. **Iterate and refine** adapter pattern as needed
-4. **Document learnings** for each conversion
-5. **Update main README** as examples are completed
+1. ✅ **Review and approve this plan** with stakeholders
+2. ✅ **Foundation examples complete** (Hello World, Dice)
+3. ✅ **Utility examples complete** (GitHub, Analytics)
+4. ✅ **Advanced examples complete** (Currency)
+5. ✅ **Multi-agent orchestration complete** (Travel Planner)
+6. ⚠️ **Upgrade Airbnb agent to MCP** (optional, for production parity)
+7. **Document learnings** for each conversion
+8. ✅ **Update main README** with completed examples
 

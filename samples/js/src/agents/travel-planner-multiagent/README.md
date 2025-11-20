@@ -1,6 +1,15 @@
 # Travel Planner - Multi-Agent Orchestration System
 
+> **Python Equivalent**: [`airbnb_planner_multiagent`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/airbnb_planner_multiagent)  
+> JavaScript implementation using `a2a-ai-provider` for multi-agent orchestration (equivalent to Python's ADK).
+
 A comprehensive demonstration of **multi-agent orchestration** using the A2A protocol and `a2a-ai-provider`.
+
+> **📊 Data Sources:**
+> - **Weather Agent**: ✅ Uses **real API** (Open-Meteo) with global coverage
+> - **Airbnb Agent**: ✅ Uses **real MCP** (@openbnb/mcp-server-airbnb) with live data
+> 
+> **✨ PRODUCTION-READY**: Both agents now use real APIs! See [Python vs JavaScript Comparison](../../../../PYTHON_VS_JS_MULTIAGENT_COMPARISON.md) for architecture details.
 
 ## Overview
 
@@ -18,9 +27,9 @@ User Request: "Plan a trip to Paris for 2 people"
         ↓
 Travel Planner (Orchestrator - Port 41252)
         ├─→ Weather Agent (Specialist - Port 41250)
-        │   └─→ Open-Meteo API
+        │   └─→ Open-Meteo API (Real Weather Data)
         └─→ Airbnb Agent (Specialist - Port 41251)
-            └─→ Mock Listings Database
+            └─→ @openbnb/mcp-server-airbnb (Real Airbnb Data via MCP)
 ```
 
 ### Components
@@ -34,8 +43,9 @@ Travel Planner (Orchestrator - Port 41252)
 #### 2. Airbnb Agent (Specialist)
 - **Port**: 41251
 - **Purpose**: Searches for accommodations
-- **API**: Mock data (no real Airbnb API available)
-- **Features**: Listings with prices, ratings, amenities, booking links
+- **API**: Real MCP (@openbnb/mcp-server-airbnb)
+- **Features**: Real listings with current prices, ratings, amenities, booking links
+- **✨ NEW**: Upgraded to use real Airbnb data via Model Context Protocol!
 
 #### 3. Travel Planner (Orchestrator)
 - **Port**: 41252
@@ -53,10 +63,11 @@ travel-planner-multiagent/
 │   ├── tools.ts        # Open-Meteo API integration
 │   └── prompt.ts       # Weather agent instructions
 ├── airbnb-agent/
-│   ├── agent.ts        # AI SDK ToolLoopAgent (search tools)
+│   ├── agent.ts        # AI SDK ToolLoopAgent (MCP tools)
 │   ├── index.ts        # A2A server (port 41251)
-│   ├── tools.ts        # Mock Airbnb search
-│   └── prompt.ts       # Airbnb agent instructions
+│   ├── mcp-client.ts   # MCP client for @openbnb/mcp-server-airbnb
+│   ├── prompt.ts       # Airbnb agent instructions
+│   └── tools.mock.ts   # Mock data (backup, no longer used)
 ├── planner/
 │   ├── orchestrator.ts # Multi-agent coordinator (a2a-ai-provider)
 │   ├── index.ts        # Orchestrator server (port 41252)

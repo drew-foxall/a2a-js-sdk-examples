@@ -1,5 +1,8 @@
 # GitHub Agent
 
+> **Python Equivalent**: [`github-agent`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/github-agent)  
+> JavaScript implementation using Octokit, matching Python's GitHub API integration.
+
 An A2A agent that demonstrates external API integration using the GitHub REST API.
 
 ## Overview

@@ -1,5 +1,8 @@
 # Analytics Agent
 
+> **Python Equivalent**: [`analytics`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/analytics)  
+> JavaScript implementation generating charts as PNG artifacts using Chart.js.
+
 An A2A agent that demonstrates chart generation and image artifact streaming.
 
 ## Overview

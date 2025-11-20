@@ -4,6 +4,10 @@
  * Exposes the Hello World agent via the A2A protocol using Hono.
  * This demonstrates the simplest possible A2A agent integration.
  *
+ * ⚠️ IMPORTANT: This file follows the CORRECT A2A integration pattern.
+ * If you're creating a new agent, copy this pattern exactly!
+ * See: /A2A_INTEGRATION_PATTERN.md for detailed documentation.
+ *
  * Port: 41244 (by default)
  *
  * Usage:
@@ -13,13 +17,20 @@
  *   pnpm tsx src/agents/hello-world/index.ts
  */
 
+import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+// Core A2A types (from main package)
+import { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
+// Server components (from /server subpath) ✅
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-} from "@drew-foxall/a2a-js-sdk";
+  InMemoryTaskStore,
+  TaskStore,
+  AgentExecutor,
+  DefaultRequestHandler,
+} from "@drew-foxall/a2a-js-sdk/server";
+// Hono integration (from /server/hono subpath) ✅ NOT just /hono!
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+// Our adapter that bridges AI SDK agents to A2A
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
 import { createHelloWorldAgent } from "./agent.js";
 import { getModel } from "../../shared/utils.js";
@@ -53,13 +64,16 @@ const agentCard: AgentCard = {
   name: "Hello World Agent",
   description: "The simplest possible A2A agent - responds with friendly greetings",
   url: `${BASE_URL}/.well-known/agent-card.json`,
+  protocolVersion: "0.3.0", // ✅ Required field
   version: "1.0.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
+    // ✅ Plain object (NOT new AgentCapabilities())
     streaming: true,
-    statefulness: "stateless",
-  }),
+    pushNotifications: false,
+    stateTransitionHistory: true,
+  },
   skills: [helloWorldSkill],
 };
 
@@ -74,26 +88,39 @@ const agent = createHelloWorldAgent(model);
 // A2A Protocol Integration
 // ============================================================================
 
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
+// ✅ A2AAdapter IS the AgentExecutor - use it directly
+// ❌ WRONG: new A2AAdapter({ agent, agentCard })
+// ❌ WRONG: adapter.createAgentExecutor()
+const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  workingMessage: "Processing your greeting...",
+  includeHistory: true,
+  debug: false,
 });
 
 // ============================================================================
-// HTTP Server (Hono + A2A)
+// Server Setup
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+async function main() {
+  // Step 1: Create task store for managing conversation state
+  const taskStore: TaskStore = new InMemoryTaskStore();
 
-// ============================================================================
-// Start Server
-// ============================================================================
+  // Step 2: Create request handler (combines agentCard, taskStore, executor)
+  // ✅ CORRECT: DefaultRequestHandler takes 3 arguments
+  const requestHandler = new DefaultRequestHandler(
+    agentCard,
+    taskStore,
+    agentExecutor
+  );
 
-console.log(`
+  // Step 3: Create Hono app and set up A2A routes
+  const app = new Hono();
+  // ✅ CORRECT: A2AHonoApp takes a single requestHandler argument
+  // ❌ WRONG: new A2AHonoApp({ agentCard, agentExecutor })
+  const appBuilder = new A2AHonoApp(requestHandler);
+  appBuilder.setupRoutes(app); // Registers /.well-known/agent-card.json, /message/send, etc.
+
+  console.log(`
 🎉 Hello World Agent - A2A Server Starting...
 
 📍 Port: ${PORT}
@@ -118,9 +145,14 @@ console.log(`
 🚀 Ready to accept A2A requests...
 `);
 
-serve({
-  fetch: app.fetch,
-  port: PORT,
-  hostname: HOST,
-});
+  // Step 4: Start server
+  // ✅ Use app.fetch (the Hono instance), NOT appBuilder.fetch
+  serve({
+    fetch: app.fetch,
+    port: PORT,
+    hostname: HOST,
+  });
+}
+
+main().catch(console.error);
 

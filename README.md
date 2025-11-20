@@ -19,6 +19,50 @@ a2a-js-sdk-examples/
 └── notebooks/           # Jupyter notebooks (coming soon)
 ```
 
+## 📋 Creating a New Agent?
+
+**⚠️ Read this first:** [A2A Integration Pattern Guide](./A2A_INTEGRATION_PATTERN.md)
+
+This guide shows the **correct** way to integrate AI SDK agents with the A2A protocol:
+- ✅ Proper import paths (common pitfall!)
+- ✅ Correct API usage patterns
+- ✅ Complete working example
+- ✅ Troubleshooting guide for common errors
+
+**Reference Implementation:** [`samples/js/src/agents/hello-world/index.ts`](./samples/js/src/agents/hello-world/index.ts) - fully annotated example following the correct pattern.
+
+## 🔍 Comparing with Python Examples
+
+**New to multi-agent systems?** See [Python vs JavaScript Multi-Agent Comparison](./PYTHON_VS_JS_MULTIAGENT_COMPARISON.md)
+
+This document compares our JavaScript `travel-planner-multiagent` with the original Python `airbnb_planner_multiagent`, including:
+- Architecture similarities and differences
+- **Real APIs vs Mock Data** (important!)
+- Implementation trade-offs
+- Production considerations
+
+**TL;DR:** Our weather agent uses real global data (Open-Meteo API), but the Airbnb agent uses mock data for demonstration. See the comparison doc for upgrade paths to production.
+
+### Python ↔ JavaScript Agent Mapping
+
+For developers familiar with the [Python examples](https://github.com/a2aproject/a2a-samples/tree/main/samples/python):
+
+| Python Agent | JavaScript Agent | Port | Status |
+|-------------|------------------|------|--------|
+| `helloworld` | `hello-world` | 41244 | ✅ |
+| `dice_agent_rest` | `dice-agent` | 41249 | ✅ |
+| `github-agent` | `github-agent` | 41240 | ✅ |
+| `analytics` | `analytics-agent` | 41247 | ✅ |
+| `langgraph` | `currency-agent` | 41248 | ✅ |
+| `airbnb_planner_multiagent` | `travel-planner-multiagent` | 41245-41247 | ✅ |
+
+**JavaScript-Only Agents** (no Python equivalent):
+- `movie-agent` (41241) - TMDB API integration
+- `coder` (41242) - Streaming code generation
+- `content-editor` (41243) - Text editing
+
+See [AGENT_NAMING_ALIGNMENT.md](./AGENT_NAMING_ALIGNMENT.md) for detailed naming decisions and cross-reference information.
+
 ## 🏗️ Architecture
 
 All agents use **AI SDK v6** with a **Unified Automatic Adapter** for clean separation of concerns:
@@ -156,8 +200,10 @@ const result = await generateText({
 
 **3 Agents:**
 - **Weather Agent** (Port 41250) - Weather forecasts via Open-Meteo API
-- **Airbnb Agent** (Port 41251) - Accommodation search (mock data)
+- **Airbnb Agent** (Port 41251) - ✨ Accommodation search via **real MCP** (@openbnb/mcp-server-airbnb)
 - **Travel Planner** (Port 41252) - Orchestrates both specialists
+
+**✅ PRODUCTION-READY**: All agents now use real APIs!
 
 **Start All**:
 ```bash

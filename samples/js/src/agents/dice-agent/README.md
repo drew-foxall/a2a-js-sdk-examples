@@ -1,5 +1,8 @@
 # Dice Agent
 
+> **Python Equivalent**: [`dice_agent_rest`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/dice_agent_rest)  
+> JavaScript implementation of the Python dice_agent_rest using AI SDK + Hono.
+
 An A2A agent that demonstrates tool usage with pure computational functions.
 
 ## Overview

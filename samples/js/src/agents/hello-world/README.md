@@ -1,5 +1,8 @@
 # Hello World Agent
 
+> **Python Equivalent**: [`helloworld`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/helloworld)  
+> JavaScript implementation of the Python helloworld agent using AI SDK + Hono.
+
 The simplest possible A2A agent implementation using AI SDK + Hono.
 
 ## Overview

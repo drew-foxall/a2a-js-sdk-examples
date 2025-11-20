@@ -1,5 +1,8 @@
 # Currency Agent
 
+> **Python Equivalent**: [`langgraph`](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/langgraph)  
+> JavaScript implementation using AI SDK ToolLoopAgent (equivalent to Python's LangGraph).
+
 An A2A agent that demonstrates multi-turn conversation and currency conversion.
 
 ## Overview

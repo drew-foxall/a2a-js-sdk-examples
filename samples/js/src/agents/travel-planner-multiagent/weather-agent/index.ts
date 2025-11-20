@@ -13,13 +13,16 @@
  *   pnpm tsx src/agents/travel-planner-multiagent/weather-agent/index.ts
  */
 
+import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-} from "@drew-foxall/a2a-js-sdk";
+  InMemoryTaskStore,
+  TaskStore,
+  AgentExecutor,
+  DefaultRequestHandler,
+} from "@drew-foxall/a2a-js-sdk/server";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { A2AAdapter } from "../../../shared/a2a-adapter.js";
 import { createWeatherAgent } from "./agent.js";
 import { getModel } from "../../../shared/utils.js";
@@ -31,6 +34,22 @@ import { getModel } from "../../../shared/utils.js";
 const PORT = 41250;
 const HOST = "0.0.0.0";
 const BASE_URL = `http://localhost:${PORT}`;
+
+// ============================================================================
+// Agent Initialization
+// ============================================================================
+
+const model = getModel();
+const agent = createWeatherAgent(model);
+
+// ============================================================================
+// A2A Protocol Integration
+// ============================================================================
+
+const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  workingMessage: "Looking up weather forecast...",
+  debug: false,
+});
 
 // ============================================================================
 // Agent Card Configuration
@@ -48,52 +67,40 @@ const weatherForecastSkill: AgentSkill = {
   ],
 };
 
-const agentCard: AgentCard = {
+const weatherAgentCard: AgentCard = {
   name: "Weather Agent",
   description: "Specialized weather forecast assistant using Open-Meteo API",
   url: `${BASE_URL}/.well-known/agent-card.json`,
+  protocolVersion: "0.3.0",
   version: "1.0.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
     streaming: true,
-    statefulness: "stateless",
-  }),
+    pushNotifications: false,
+    stateTransitionHistory: true,
+  },
   skills: [weatherForecastSkill],
 };
-
-// ============================================================================
-// Agent Initialization
-// ============================================================================
-
-const model = getModel();
-const agent = createWeatherAgent(model);
-
-// ============================================================================
-// A2A Protocol Integration
-// ============================================================================
-
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
-  workingMessage: "Looking up weather forecast...",
-});
 
 // ============================================================================
 // HTTP Server (Hono + A2A)
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+async function main() {
+  const taskStore: TaskStore = new InMemoryTaskStore();
 
-// ============================================================================
-// Start Server
-// ============================================================================
+  const requestHandler = new DefaultRequestHandler(
+    weatherAgentCard,
+    taskStore,
+    agentExecutor
+  );
 
-console.log(`
+  const app = new Hono();
+  const appBuilder = new A2AHonoApp(requestHandler);
+  appBuilder.setupRoutes(app);
+
+  console.log(`
 🌤️  Weather Agent - A2A Server Starting...
 
 📍 Port: ${PORT}
@@ -135,9 +142,11 @@ console.log(`
 🚀 Ready to provide weather forecasts...
 `);
 
-serve({
-  fetch: app.fetch,
-  port: PORT,
-  hostname: HOST,
-});
+  serve({
+    fetch: app.fetch,
+    port: PORT,
+    hostname: HOST,
+  });
+}
 
+main().catch(console.error);

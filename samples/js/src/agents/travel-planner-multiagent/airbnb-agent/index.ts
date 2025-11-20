@@ -13,17 +13,23 @@
  *   pnpm tsx src/agents/travel-planner-multiagent/airbnb-agent/index.ts
  */
 
+import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-} from "@drew-foxall/a2a-js-sdk";
+  InMemoryTaskStore,
+  TaskStore,
+  AgentExecutor,
+  DefaultRequestHandler,
+} from "@drew-foxall/a2a-js-sdk/server";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { A2AAdapter } from "../../../shared/a2a-adapter.js";
 import { createAirbnbAgent } from "./agent.js";
 import { getModel } from "../../../shared/utils.js";
-import { getAvailableLocations } from "./tools.js";
+import {
+  getAirbnbMCPTools,
+  setupMCPShutdownHandlers,
+} from "./mcp-client.js";
 
 // ============================================================================
 // Configuration
@@ -32,6 +38,14 @@ import { getAvailableLocations } from "./tools.js";
 const PORT = 41251;
 const HOST = "0.0.0.0";
 const BASE_URL = `http://localhost:${PORT}`;
+
+// Note: Agent initialization moved to main() to support async MCP setup
+
+// ============================================================================
+// A2A Protocol Integration
+// ============================================================================
+
+// Note: agentExecutor initialization moved to main() to support async MCP setup
 
 // ============================================================================
 // Agent Card Configuration
@@ -49,52 +63,58 @@ const accommodationSearchSkill: AgentSkill = {
   ],
 };
 
-const agentCard: AgentCard = {
+const airbnbAgentCard: AgentCard = {
   name: "Airbnb Agent",
   description: "Specialized assistant for Airbnb accommodation search",
   url: `${BASE_URL}/.well-known/agent-card.json`,
+  protocolVersion: "0.3.0",
   version: "1.0.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
     streaming: true,
-    statefulness: "stateless",
-  }),
+    pushNotifications: false,
+    stateTransitionHistory: true,
+  },
   skills: [accommodationSearchSkill],
 };
-
-// ============================================================================
-// Agent Initialization
-// ============================================================================
-
-const model = getModel();
-const agent = createAirbnbAgent(model);
-
-// ============================================================================
-// A2A Protocol Integration
-// ============================================================================
-
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
-  workingMessage: "Searching for accommodations...",
-});
 
 // ============================================================================
 // HTTP Server (Hono + A2A)
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+async function main() {
+  // Setup MCP shutdown handlers for graceful cleanup
+  setupMCPShutdownHandlers();
 
-// ============================================================================
-// Start Server
-// ============================================================================
+  console.log("🚀 Initializing Airbnb Agent with MCP tools...\n");
 
-console.log(`
+  // Initialize MCP client and get real Airbnb tools
+  const mcpTools = await getAirbnbMCPTools();
+
+  // Create agent with MCP tools
+  const model = getModel();
+  const agent = createAirbnbAgent(model, mcpTools);
+
+  // Create A2A adapter
+  const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+    workingMessage: "Searching for accommodations...",
+    debug: false,
+  });
+
+  const taskStore: TaskStore = new InMemoryTaskStore();
+
+  const requestHandler = new DefaultRequestHandler(
+    airbnbAgentCard,
+    taskStore,
+    agentExecutor
+  );
+
+  const app = new Hono();
+  const appBuilder = new A2AHonoApp(requestHandler);
+  appBuilder.setupRoutes(app);
+
+  console.log(`
 🏠 Airbnb Agent - A2A Server Starting...
 
 📍 Port: ${PORT}
@@ -112,14 +132,12 @@ console.log(`
    - Can be consumed by orchestrator agents
 
 🏨 Accommodation Features:
+   - REAL Airbnb search via MCP (@openbnb/mcp-server-airbnb)
    - Search by location and dates
    - Filter by guest capacity
    - Detailed listings with prices and amenities
    - Direct booking links
-   - Mock data for demonstration
-
-📍 Available Locations:
-   ${getAvailableLocations().join(", ")}
+   - ✨ PRODUCTION-READY with real data!
 
 📝 Try it standalone:
    curl -X POST ${BASE_URL}/message/send \\
@@ -140,9 +158,11 @@ console.log(`
 🚀 Ready to search for accommodations...
 `);
 
-serve({
-  fetch: app.fetch,
-  port: PORT,
-  hostname: HOST,
-});
+  serve({
+    fetch: app.fetch,
+    port: PORT,
+    hostname: HOST,
+  });
+}
 
+main().catch(console.error);
