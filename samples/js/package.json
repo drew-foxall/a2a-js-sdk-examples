@@ -18,6 +18,7 @@
     "agents:hello-world": "tsx src/agents/hello-world/index.ts",
     "agents:dice-agent": "tsx src/agents/dice-agent/index.ts",
     "agents:github-agent": "tsx src/agents/github-agent/index.ts",
+    "agents:analytics-agent": "tsx src/agents/analytics-agent/index.ts",
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
@@ -31,6 +32,8 @@
     "@hono/node-server": "^1.19.6",
     "@octokit/rest": "22.0.1",
     "ai": "6.0.0-beta.99",
+    "canvas": "3.2.0",
+    "chart.js": "4.5.1",
     "hono": "^4.10.6",
     "uuid": "^11.1.0",
     "zod": "^3.24.1"
