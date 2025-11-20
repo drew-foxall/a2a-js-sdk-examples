@@ -19,6 +19,7 @@
     "agents:dice-agent": "tsx src/agents/dice-agent/index.ts",
     "agents:github-agent": "tsx src/agents/github-agent/index.ts",
     "agents:analytics-agent": "tsx src/agents/analytics-agent/index.ts",
+    "agents:currency-agent": "tsx src/agents/currency-agent/index.ts",
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
