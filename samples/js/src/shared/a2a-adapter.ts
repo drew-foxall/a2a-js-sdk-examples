@@ -138,14 +138,12 @@ export interface AgentStreamParams {
 /**
  * AI SDK generate result interface
  * Represents the result from agent.generate()
+ * 
+ * Note: This is a simplified interface. The actual GenerateTextResult
+ * has many more properties, but we only need text for basic usage.
  */
 export interface AIGenerateResult {
   text: string;
-  steps?: Array<{
-    stepType: string;
-    toolCalls?: Record<string, unknown>[];
-    [key: string]: unknown;
-  }>;
   [key: string]: unknown;
 }
 
@@ -256,7 +254,7 @@ export interface A2AAdapterConfig {
    * Useful for extracting final text when agent includes metadata.
    * Can return either a modified result object or just a string.
    *
-   * @param result - The raw agent generation result
+   * @param result - The raw agent generation result (has at least { text: string })
    * @returns The transformed result with cleaned text, or just the text string
    *
    * @example
@@ -265,7 +263,7 @@ export interface A2AAdapterConfig {
    *   return { ...result, text: lines.slice(0, -1).join('\n') };
    * }
    */
-  transformResponse?: (result: AIGenerateResult) => AIGenerateResult | string;
+  transformResponse?: (result: { text: string; [key: string]: unknown }) => { text: string; [key: string]: unknown } | string;
 
   /**
    * Whether to include conversation history in agent calls.
@@ -490,10 +488,14 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     // Call the ToolLoopAgent (blocking)
     this.logger.debug("Calling agent.generate()", { taskId });
     
+    // Convert A2A messages to AI SDK format
+    const aiMessages = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    
     const result = await this.agent.generate({
-      prompt: messages[messages.length - 1]?.content || "",
-      messages: messages.slice(0, -1),
-      contextId,
+      messages: aiMessages,
     });
 
     // Check for cancellation after agent call
@@ -503,9 +505,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     }
 
     // Transform response if configured
-    const transformed = this.config.transformResponse
-      ? this.config.transformResponse(result)
-      : result;
+    const transformed = this.config.transformResponse ? this.config.transformResponse(result) : result;
 
     // Extract text from transformed result
     const responseText = typeof transformed === "string" ? transformed : transformed.text;
@@ -547,7 +547,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
             artifact,
           };
 
-          eventBus.emit("artifact", artifactEvent);
+          eventBus.publish(artifactEvent);
         }
 
         this.logger.debug("Artifacts generated successfully", {
@@ -599,13 +599,17 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     // Call the ToolLoopAgent (streaming)
     this.logger.debug("Calling agent.stream()", { taskId });
     
+    // Convert A2A messages to AI SDK format
+    const aiMessages = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    
     const streamResult = await this.agent.stream({
-      prompt: messages[messages.length - 1]?.content || "",
-      messages: messages.slice(0, -1),
-      contextId,
+      messages: aiMessages,
     });
     
-    const { stream, text: responsePromise } = streamResult;
+    const { textStream, text: responsePromise } = streamResult;
 
     let accumulatedText = "";
     const artifactContents = new Map<string, string>();
@@ -613,8 +617,8 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     let emittedArtifactCount = 0;
 
     // Process chunks incrementally
-    for await (const chunk of stream) {
-      accumulatedText += chunk.text;
+    for await (const chunk of textStream) {
+      accumulatedText += chunk;
 
       // Check for cancellation
       if (this.cancelledTasks.has(taskId)) {
@@ -627,6 +631,8 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
       const parsed = this.config.parseArtifacts?.(accumulatedText);
 
       // Process completed artifacts
+      if (!parsed) continue;
+      
       for (const artifact of parsed.artifacts) {
         if (artifact.done && artifact.filename) {
           const previousContent = artifactContents.get(artifact.filename);
@@ -647,15 +653,14 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
               taskId: taskId,
               contextId: contextId,
               artifact: {
-                index: artifactOrder.indexOf(artifact.filename),
-                id: `${taskId}-${artifact.filename}`,
+                artifactId: `${taskId}-${artifact.filename}`,
                 name: artifact.filename,
-                mimeType: "text/plain",
-                data: currentContent,
-                metadata: {
-                  language: artifact.language || "plaintext",
-                  ...artifact.metadata,
-                },
+                parts: [
+                  {
+                    kind: "text" as const,
+                    text: currentContent,
+                  },
+                ],
               },
             };
             eventBus.publish(artifactUpdate);
@@ -681,6 +686,31 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     const fullResponse = await responsePromise;
     const finalParsed = this.config.parseArtifacts?.(accumulatedText);
 
+    if (!finalParsed) {
+      // No artifacts to process, publish simple completion
+      const finalUpdate: TaskStatusUpdateEvent = {
+        kind: "status-update",
+        taskId: taskId,
+        contextId: contextId,
+        status: {
+          state: "completed",
+          message: {
+            kind: "message",
+            role: "agent",
+            messageId: uuidv4(),
+            parts: [{ kind: "text", text: fullResponse }],
+            taskId: taskId,
+            contextId: contextId,
+          },
+          timestamp: new Date().toISOString(),
+        },
+        final: true,
+      };
+      eventBus.publish(finalUpdate);
+      this.logger.info("Task completed (no artifacts)", { taskId });
+      return;
+    }
+
     for (const artifact of finalParsed.artifacts) {
       if (artifact.filename) {
         const previousContent = artifactContents.get(artifact.filename);
@@ -698,15 +728,14 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
             taskId: taskId,
             contextId: contextId,
             artifact: {
-              index: artifactOrder.indexOf(artifact.filename),
-              id: `${taskId}-${artifact.filename}`,
+              artifactId: `${taskId}-${artifact.filename}`,
               name: artifact.filename,
-              mimeType: "text/plain",
-              data: currentContent,
-              metadata: {
-                language: artifact.language || "plaintext",
-                ...artifact.metadata,
-              },
+              parts: [
+                {
+                  kind: "text" as const,
+                  text: currentContent,
+                },
+              ],
             },
           };
           eventBus.publish(artifactUpdate);
