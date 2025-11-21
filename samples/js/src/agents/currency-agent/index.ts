@@ -120,7 +120,7 @@ function parseTaskState(response: string): "input-required" | "completed" {
  * Extracts the conversion result and creates a text artifact.
  * This mimics the Python version's behavior of creating a
  * "conversion_result" artifact.
- * 
+ *
  * Uses async artifact generation (generateArtifacts) instead of
  * parseArtifacts since this runs after the response is complete.
  */
@@ -155,7 +155,8 @@ async function generateConversionArtifacts(context: {
 // ============================================================================
 
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-  // Use generateArtifacts for async artifact creation after response
+  mode: "stream", // Real-time text streaming
+  // Use generateArtifacts for async artifact creation after streaming completes
   generateArtifacts: generateConversionArtifacts,
 
   // Custom state parser for multi-turn conversation

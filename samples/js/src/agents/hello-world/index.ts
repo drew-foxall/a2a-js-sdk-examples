@@ -87,6 +87,7 @@ const agent = createHelloWorldAgent(model);
 // ❌ WRONG: new A2AAdapter({ agent, agentCard })
 // ❌ WRONG: adapter.createAgentExecutor()
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Processing your greeting...",
   includeHistory: true,
   debug: false,

@@ -47,6 +47,7 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
+import type { GenerateTextResult } from "ai";
 import { Hono } from "hono";
 
 // Import unified automatic adapter
@@ -95,7 +96,9 @@ function parseMovieAgentTaskState(text: string): TaskState {
  * Since we parse the state from the last line, we should remove it
  * from the response text sent to the user.
  */
-function transformMovieAgentResponse(result: any): any {
+function transformMovieAgentResponse<TTools extends Record<string, unknown>>(
+  result: GenerateTextResult<TTools, never>
+): GenerateTextResult<TTools, never> {
   if (!result?.text) return result;
 
   const lines = result.text.trim().split("\n");
@@ -114,6 +117,7 @@ function transformMovieAgentResponse(result: any): any {
  * Create the adapter with advanced options
  */
 const agentExecutor: AgentExecutor = new A2AAdapter(movieAgent, {
+  mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Processing your question, hang tight!",
 
   // Enable conversation history management
@@ -126,8 +130,6 @@ const agentExecutor: AgentExecutor = new A2AAdapter(movieAgent, {
   transformResponse: transformMovieAgentResponse,
 
   debug: false,
-
-  // No parseArtifacts → Automatically uses SIMPLE mode
 });
 
 // ============================================================================

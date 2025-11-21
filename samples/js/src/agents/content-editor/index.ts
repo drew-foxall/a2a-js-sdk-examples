@@ -53,9 +53,9 @@ import { contentEditorAgent } from "./agent.js";
 // ============================================================================
 
 const agentExecutor: AgentExecutor = new A2AAdapter(contentEditorAgent, {
+  mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Editing content...",
   debug: false,
-  // No parseArtifacts → Automatically uses SIMPLE mode
 });
 
 // ============================================================================

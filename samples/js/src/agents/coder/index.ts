@@ -130,11 +130,12 @@ function buildCoderFinalMessage(
 /**
  * Create the adapter with artifact parsing
  *
- * The presence of parseArtifacts automatically triggers STREAMING mode!
- * No need to manually specify streaming or provide streamFunction.
+ * Uses STREAM mode for real-time code generation (like AI SDK's streamText).
+ * Text chunks and code artifacts are streamed to the client as they're generated.
  */
 const agentExecutor: AgentExecutor = new A2AAdapter(coderAgent, {
-  parseArtifacts: parseCodeArtifacts, // ← Triggers STREAMING mode automatically!
+  mode: "stream", // Real-time streaming (like AI SDK's streamText)
+  parseArtifacts: parseCodeArtifacts, // Extract code blocks incrementally
   buildFinalMessage: buildCoderFinalMessage,
   workingMessage: "Generating code...",
   debug: false,

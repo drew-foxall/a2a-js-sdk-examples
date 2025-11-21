@@ -92,7 +92,7 @@ const agent = createAnalyticsAgent(model);
 
 /**
  * Generate chart artifacts from agent response
- * 
+ *
  * Called after agent completes its response. Generates a PNG chart image
  * as an artifact that can be displayed to the user.
  */
@@ -132,10 +132,11 @@ async function generateChartArtifacts(context: {
 // A2A Protocol Integration
 // ============================================================================
 
-// Uses SIMPLE mode with async artifact generation
-// generateArtifacts is called after the agent responds
+// Uses STREAM mode with async artifact generation
+// Text streams in real-time, then generateArtifacts is called after streaming completes
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-  generateArtifacts: generateChartArtifacts,
+  mode: "stream", // Real-time text streaming
+  generateArtifacts: generateChartArtifacts, // Generate chart after text completes
   workingMessage: "Generating chart...",
   debug: false,
 });

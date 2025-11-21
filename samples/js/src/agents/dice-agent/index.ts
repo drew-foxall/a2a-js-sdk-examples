@@ -87,6 +87,7 @@ const agent = createDiceAgent(model);
 // ============================================================================
 
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  mode: "generate", // Simple awaited response (like AI SDK's generateText)
   workingMessage: "Rolling dice...",
   debug: false,
 });

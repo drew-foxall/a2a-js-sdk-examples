@@ -47,6 +47,7 @@ const agent = createWeatherAgent(model);
 // ============================================================================
 
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Looking up weather forecast...",
   debug: false,
 });

@@ -1,32 +1,53 @@
 /**
- * A2A Adapter - Automatic Unified Adapter
+ * A2A Adapter - Unified Adapter with Explicit Mode Switching
  *
- * This adapter automatically adapts its behavior based on configuration:
- * - If `parseArtifacts` is configured → Streaming mode (incremental artifacts)
- * - Otherwise → Simple mode (blocking, single response)
- *
- * NO manual mode selection required! The adapter detects what's needed.
+ * Bridges AI SDK ToolLoopAgent with A2A protocol.
+ * Mirrors AI SDK's streamText vs generateText model:
+ * - mode: 'stream' → Uses agent.stream() for real-time responses
+ * - mode: 'generate' → Uses agent.generate() for awaited responses
  *
  * Architecture:
- * ToolLoopAgent (AI SDK) → A2AAdapter (auto-detects mode) → A2A Server
+ * ToolLoopAgent (AI SDK) → A2AAdapter (explicit mode) → A2A Server
+ *
+ * MODE CAPABILITIES:
+ *
+ * STREAM MODE (mode: 'stream'):
+ * - Real-time text streaming (always enabled)
+ * - Incremental artifact parsing (via parseArtifacts)
+ * - Post-completion artifacts (via generateArtifacts)
+ * - Best for: Long-form content, code generation, chat
+ *
+ * GENERATE MODE (mode: 'generate'):
+ * - Single awaited response
+ * - Post-completion artifacts (via generateArtifacts)
+ * - Best for: Quick responses, simple agents, API-style interactions
  *
  * Usage Examples:
  *
- * // Content Editor (automatically simple mode)
+ * // Content Editor (generate mode - simple awaited response)
  * const executor = new A2AAdapter(agent, {
+ *   mode: 'generate',
  *   workingMessage: "Editing content...",
  * });
  *
- * // Movie Agent (automatically simple mode with custom state)
+ * // Movie Agent (generate mode with custom state)
  * const executor = new A2AAdapter(agent, {
+ *   mode: 'generate',
  *   parseTaskState: (text) => text.includes('COMPLETED') ? 'completed' : 'input-required',
  *   includeHistory: true,
  * });
  *
- * // Coder Agent (automatically streaming mode - detected from parseArtifacts)
+ * // Coder Agent (stream mode with text + artifacts)
  * const executor = new A2AAdapter(agent, {
- *   parseArtifacts: extractCodeBlocks,  // ← Triggers streaming automatically!
+ *   mode: 'stream',
+ *   parseArtifacts: extractCodeBlocks,  // Real-time code extraction
  *   workingMessage: "Generating code...",
+ * });
+ *
+ * // Analytics Agent (generate mode with async artifacts)
+ * const executor = new A2AAdapter(agent, {
+ *   mode: 'generate',
+ *   generateArtifacts: async (ctx) => [await generateChart(ctx.responseText)],
  * });
  */
 
@@ -221,19 +242,34 @@ export interface ParsedArtifacts {
 /**
  * Configuration options for A2AAdapter
  *
- * The adapter automatically detects execution mode based on configuration:
- * - parseArtifacts present → Streaming mode
- * - parseArtifacts absent → Simple mode
+ * Mirrors AI SDK's streamText vs generateText model:
+ * - 'stream': Uses agent.stream() - real-time incremental responses
+ * - 'generate': Uses agent.generate() - single awaited response
  */
 export interface A2AAdapterConfig {
   /**
-   * STREAMING MODE TRIGGER - Synchronous text parsing
+   * Execution mode - REQUIRED, mirrors AI SDK's model
    *
-   * Function to parse artifacts from accumulated text.
-   * If provided, adapter automatically uses streaming mode.
+   * - 'stream': Uses agent.stream() for real-time streaming (like streamText)
+   * - 'generate': Uses agent.generate() for single response (like generateText)
+   *
+   * This is an explicit choice, not auto-detected. Choose based on your UX needs:
+   * - Stream: Better UX for long responses, real-time feedback
+   * - Generate: Simpler, single response, good for quick agents
+   *
+   * @example
+   * mode: 'stream'   // Real-time streaming
+   * mode: 'generate' // Awaited response
+   */
+  mode: 'stream' | 'generate';
+
+  /**
+   * Parse artifacts from accumulated text during streaming (STREAM MODE ONLY)
    *
    * Called after each chunk to extract completed artifacts.
    * Should return all artifacts found so far (adapter handles deduplication).
+   *
+   * Only used in 'stream' mode. Ignored in 'generate' mode.
    *
    * Use this for extracting artifacts from streamed text (e.g., code blocks).
    *
@@ -243,10 +279,10 @@ export interface A2AAdapterConfig {
   parseArtifacts?: (accumulatedText: string) => ParsedArtifacts;
 
   /**
-   * SIMPLE MODE WITH ARTIFACTS - Async artifact generation
+   * Generate artifacts after response completion (BOTH MODES)
    *
-   * If provided (and parseArtifacts is NOT), generates artifacts after response completion.
-   * Called once with the complete response text in simple mode.
+   * Called once with the complete response text after agent finishes.
+   * Works in both 'stream' and 'generate' modes.
    *
    * Use this for async operations like chart generation, API calls, etc.
    *
@@ -400,10 +436,18 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
 
   constructor(
     private agent: ToolLoopAgent<never, TTools, never>,
-    config?: A2AAdapterConfig
+    config: A2AAdapterConfig
   ) {
+    // Validate required config
+    if (!config.mode) {
+      throw new Error(
+        "A2AAdapter requires 'mode' to be specified. Use 'stream' for real-time responses or 'generate' for awaited responses."
+      );
+    }
+
     // Set defaults for required options
     this.config = {
+      mode: config.mode,
       includeHistory: config?.includeHistory ?? false,
       workingMessage: config?.workingMessage || "Processing your request...",
       debug: config?.debug ?? false,
@@ -414,6 +458,14 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       transformResponse: config?.transformResponse,
       buildFinalMessage: config?.buildFinalMessage,
     };
+
+    // Validate mode-specific config
+    if (config.mode === 'generate' && config.parseArtifacts) {
+      this.logger = config?.logger || new ConsoleLogger();
+      this.logger.warn(
+        "parseArtifacts is ignored in 'generate' mode. Use 'stream' mode for incremental artifact parsing."
+      );
+    }
 
     // Initialize logger
     this.logger = config?.logger || (this.config.debug ? new ConsoleLogger() : new NoOpLogger());
@@ -430,8 +482,9 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
   /**
    * Execute an A2A request using the wrapped ToolLoopAgent
    *
-   * AUTOMATIC MODE SELECTION:
-   * Checks configuration to determine execution mode
+   * EXPLICIT MODE EXECUTION:
+   * - mode: 'stream' → Uses agent.stream() for real-time responses
+   * - mode: 'generate' → Uses agent.generate() for awaited responses
    */
   async execute(requestContext: RequestContext, eventBus: ExecutionEventBus): Promise<void> {
     const { userMessage, task: existingTask } = requestContext;
@@ -479,13 +532,13 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
     // Step 4: Prepare message history
     const messages = this.prepareMessages(userMessage, existingTask);
 
-    // Step 5: AUTOMATIC MODE DETECTION AND EXECUTION
+    // Step 5: EXECUTE BASED ON EXPLICIT MODE
     try {
-      if (this.isStreamingMode()) {
-        this.logger.debug("Executing in STREAMING mode (artifacts configured)", { taskId });
+      if (this.config.mode === 'stream') {
+        this.logger.debug("Executing in STREAM mode", { taskId });
         await this.executeStreaming(taskId, contextId, messages, eventBus);
       } else {
-        this.logger.debug("Executing in SIMPLE mode (no artifacts)", { taskId });
+        this.logger.debug("Executing in GENERATE mode", { taskId });
         await this.executeSimple(taskId, contextId, messages, eventBus);
       }
     } catch (error: unknown) {
@@ -499,20 +552,11 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
   }
 
   /**
-   * AUTOMATIC MODE DETECTION
+   * GENERATE MODE: Blocking execution with single response (agent.generate())
    *
-   * Returns true if streaming mode should be used.
-   * Streaming mode is triggered by presence of parseArtifacts configuration.
-   */
-  private isStreamingMode(): boolean {
-    return !!this.config.parseArtifacts;
-  }
-
-  /**
-   * SIMPLE MODE: Blocking execution with single response
-   *
-   * Used when no artifacts are configured.
+   * Mirrors AI SDK's generateText() function.
    * Calls agent.generate() and processes result once.
+   * Can use generateArtifacts for post-completion artifact generation.
    */
   private async executeSimple(
     taskId: string,
@@ -629,10 +673,15 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
   }
 
   /**
-   * STREAMING MODE: Incremental execution with artifact emission
+   * STREAM MODE: Incremental execution with real-time updates (agent.stream())
    *
-   * Used when parseArtifacts is configured.
+   * Mirrors AI SDK's streamText() function.
    * Calls agent.stream() and processes chunks incrementally.
+   *
+   * Features:
+   * - Text streaming (always enabled in stream mode)
+   * - Incremental artifact parsing (if parseArtifacts configured)
+   * - Post-completion artifacts (if generateArtifacts configured)
    */
   private async executeStreaming(
     taskId: string,
@@ -670,6 +719,34 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
         this.logger.info("Request cancelled", { taskId });
         this.publishCancellation(taskId, contextId, eventBus);
         return;
+      }
+
+      // Stream text chunk to client (always enabled in stream mode)
+      if (chunk.trim()) {
+        const textUpdate: TaskStatusUpdateEvent = {
+          kind: "status-update",
+          taskId: taskId,
+          contextId: contextId,
+          status: {
+            state: "working",
+            message: {
+              kind: "message",
+              role: "agent",
+              messageId: uuidv4(),
+              parts: [{ kind: "text", text: chunk }],
+              taskId: taskId,
+              contextId: contextId,
+            },
+            timestamp: new Date().toISOString(),
+          },
+          final: false, // Non-final: more chunks coming
+        };
+        eventBus.publish(textUpdate);
+
+        this.logger.debug("Streamed text chunk", {
+          taskId,
+          chunkLength: chunk.length,
+        });
       }
 
       // Parse artifacts from accumulated text

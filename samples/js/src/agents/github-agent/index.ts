@@ -81,6 +81,7 @@ const agent = createGitHubAgent(model);
 // ============================================================================
 
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Querying GitHub...",
   debug: false,
 });

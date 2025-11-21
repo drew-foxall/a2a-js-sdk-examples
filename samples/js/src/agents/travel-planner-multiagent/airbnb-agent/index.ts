@@ -95,6 +95,7 @@ async function main() {
 
   // Create A2A adapter
   const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+    mode: "stream", // Real-time text streaming (like AI SDK's streamText)
     workingMessage: "Searching for accommodations...",
     debug: false,
   });
