@@ -43,7 +43,7 @@ import type {
   ExecutionEventBus,
   RequestContext,
 } from "@drew-foxall/a2a-js-sdk/server";
-import type { ToolLoopAgent, ToolSet } from "ai";
+import type { GenerateTextResult, StreamTextResult, ToolLoopAgent, ToolSet } from "ai";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -254,7 +254,7 @@ export interface A2AAdapterConfig {
    * Useful for extracting final text when agent includes metadata.
    * Can return either a modified result object or just a string.
    *
-   * @param result - The raw agent generation result (has at least { text: string })
+   * @param result - The raw agent generation result from AI SDK
    * @returns The transformed result with cleaned text, or just the text string
    *
    * @example
@@ -263,7 +263,7 @@ export interface A2AAdapterConfig {
    *   return { ...result, text: lines.slice(0, -1).join('\n') };
    * }
    */
-  transformResponse?: (result: { text: string; [key: string]: unknown }) => { text: string; [key: string]: unknown } | string;
+  transformResponse?: (result: GenerateTextResult<ToolSet, never>) => GenerateTextResult<ToolSet, never> | string;
 
   /**
    * Whether to include conversation history in agent calls.
@@ -332,7 +332,7 @@ export interface A2AAdapterConfig {
  *
  * The generics match ToolLoopAgent to maintain type safety throughout.
  */
-export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCallOptions = unknown>
+export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
   implements AgentExecutor
 {
   private cancelledTasks = new Set<string>();
@@ -358,7 +358,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     >;
 
   constructor(
-    private agent: ToolLoopAgent<TModel, TTools, TCallOptions>,
+    private agent: ToolLoopAgent<TCallOptions, TTools, never>,
     config?: A2AAdapterConfig
   ) {
     // Set defaults for required options
@@ -488,14 +488,13 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     // Call the ToolLoopAgent (blocking)
     this.logger.debug("Calling agent.generate()", { taskId });
     
-    // Convert A2A messages to AI SDK format
-    const aiMessages = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-    
+    // Pass messages directly as prompt array
+    // AI SDK's AgentCallParameters accepts either `prompt: string | ModelMessage[]` or `messages: ModelMessage[]`
     const result = await this.agent.generate({
-      messages: aiMessages,
+      prompt: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
     });
 
     // Check for cancellation after agent call
@@ -599,14 +598,13 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     // Call the ToolLoopAgent (streaming)
     this.logger.debug("Calling agent.stream()", { taskId });
     
-    // Convert A2A messages to AI SDK format
-    const aiMessages = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-    
+    // Pass messages directly as prompt array
+    // AI SDK's AgentCallParameters accepts either `prompt: string | ModelMessage[]` or `messages: ModelMessage[]`
     const streamResult = await this.agent.stream({
-      messages: aiMessages,
+      prompt: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
     });
     
     const { textStream, text: responsePromise } = streamResult;
