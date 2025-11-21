@@ -64,12 +64,13 @@ const agentCard: AgentCard = {
   description: "An agent that can roll arbitrary dice and answer if numbers are prime",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
-  protocolVersion: "1.0",
+  protocolVersion: "0.3.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
   capabilities: {
     streaming: true,
-    statefulness: "stateless",
+    pushNotifications: false,
+    stateTransitionHistory: false,
   },
   skills: [rollDiceSkill, checkPrimeSkill],
 };

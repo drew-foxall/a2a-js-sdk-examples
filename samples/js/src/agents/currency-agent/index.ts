@@ -56,12 +56,13 @@ const agentCard: AgentCard = {
   description: "Helps with exchange rates for currencies using Frankfurter API",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
-  protocolVersion: "1.0",
+  protocolVersion: "0.3.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
   capabilities: {
     streaming: true,
-    statefulness: "contextual", // Maintains conversation context
+    pushNotifications: false,
+    stateTransitionHistory: true, // Maintains conversation context
   },
   skills: [currencyConversionSkill],
 };
@@ -114,13 +115,16 @@ function parseTaskState(response: string): "input-required" | "completed" {
 // ============================================================================
 
 /**
- * Parse artifacts from the agent's response.
+ * Generate conversion artifacts from the agent's response.
  *
  * Extracts the conversion result and creates a text artifact.
  * This mimics the Python version's behavior of creating a
  * "conversion_result" artifact.
+ *
+ * Uses async artifact generation (generateArtifacts) instead of
+ * parseArtifacts since this runs after the response is complete.
  */
-async function parseConversionArtifacts(response: string): Promise<Artifact[]> {
+async function generateConversionArtifacts(response: string): Promise<Artifact[]> {
   // Only create artifact if task is completed (not asking for input)
   const state = parseTaskState(response);
   if (state === "input-required") {
@@ -132,8 +136,12 @@ async function parseConversionArtifacts(response: string): Promise<Artifact[]> {
     {
       artifactId: `conversion-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       name: "conversion_result",
-      kind: "text/plain",
-      data: Buffer.from(response).toString("base64"),
+      parts: [
+        {
+          kind: "text" as const,
+          text: response,
+        },
+      ],
     },
   ];
 }
@@ -143,8 +151,8 @@ async function parseConversionArtifacts(response: string): Promise<Artifact[]> {
 // ============================================================================
 
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-  // Enable artifact parsing (triggers streaming mode)
-  parseArtifacts: parseConversionArtifacts,
+  // Use generateArtifacts for async artifact creation after response
+  generateArtifacts: generateConversionArtifacts,
 
   // Custom state parser for multi-turn conversation
   parseTaskState,

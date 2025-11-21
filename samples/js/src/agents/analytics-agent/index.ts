@@ -58,12 +58,13 @@ const agentCard: AgentCard = {
     "Generate bar charts from structured CSV-like data input. Returns charts as PNG images.",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
-  protocolVersion: "1.0",
+  protocolVersion: "0.3.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text", "image/png"],
   capabilities: {
     streaming: true,
-    statefulness: "stateless",
+    pushNotifications: false,
+    stateTransitionHistory: false,
   },
   skills: [chartGenerationSkill],
 };
@@ -82,26 +83,39 @@ const agent = createAnalyticsAgent(model);
 /**
  * Parse artifacts from the user's prompt
  *
- * This function extracts chart data from the prompt and generates
- * a PNG chart image as an artifact.
+ * Chart Generation with Async Artifacts
  *
- * The A2AAdapter will automatically:
- * 1. Use streaming mode (because parseArtifacts is configured)
- * 2. Call this function with the original prompt
- * 3. Emit each artifact via TaskArtifactUpdateEvent
+ * This agent uses the `generateArtifacts` config to create chart images after
+ * the agent completes its response. This allows for async operations like
+ * canvas rendering and image generation.
  */
-async function parseChartArtifacts(prompt: string): Promise<Artifact[]> {
-  try {
-    // Generate chart from prompt
-    const chart = await generateChartFromPrompt(prompt);
 
-    // Return as A2A artifact
+/**
+ * Generate chart artifacts from agent response
+ *
+ * Called after agent completes its response. Generates a PNG chart image
+ * as an artifact that can be displayed to the user.
+ */
+async function generateChartArtifacts(responseText: string): Promise<Artifact[]> {
+  try {
+    // Extract the prompt from the response (or use the response itself)
+    // In a real implementation, you might parse structured data from the response
+    const chart = await generateChartFromPrompt(responseText);
+
     return [
       {
         artifactId: chart.id,
         name: chart.name,
-        kind: "image/png",
-        data: chart.base64, // Base64-encoded PNG
+        parts: [
+          {
+            kind: "file" as const,
+            file: {
+              bytes: chart.base64, // Base64-encoded PNG
+              mimeType: "image/png",
+              name: `${chart.name}.png`,
+            },
+          },
+        ],
       },
     ];
   } catch (error) {
@@ -114,14 +128,11 @@ async function parseChartArtifacts(prompt: string): Promise<Artifact[]> {
 // A2A Protocol Integration
 // ============================================================================
 
+// Uses SIMPLE mode with async artifact generation
+// generateArtifacts is called after the agent responds
 const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-  // Enable artifact parsing (triggers streaming mode automatically)
-  parseArtifacts: parseChartArtifacts,
-
-  // Optional: Customize working message
+  generateArtifacts: generateChartArtifacts,
   workingMessage: "Generating chart...",
-
-  // Optional: Enable debug logging
   debug: false,
 });
 

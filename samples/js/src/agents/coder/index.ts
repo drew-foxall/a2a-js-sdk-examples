@@ -49,7 +49,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 
 // Import unified automatic adapter
-import { A2AAdapter, type ParsedArtifacts } from "../../shared/a2a-adapter.js";
+import { A2AAdapter, type ParsedArtifact, type ParsedArtifacts } from "../../shared/a2a-adapter.js";
 // Import the agent definition
 import { coderAgent } from "./agent.js";
 // Import code parsing utilities
@@ -94,7 +94,7 @@ function parseCodeArtifacts(accumulatedText: string): ParsedArtifacts {
  * Shows what files were generated and includes preamble/postamble.
  */
 function buildCoderFinalMessage(
-  artifacts: any[],
+  artifacts: ParsedArtifact[],
   fullResponse: string,
   preamble?: string,
   postamble?: string

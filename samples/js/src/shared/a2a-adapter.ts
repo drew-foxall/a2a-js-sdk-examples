@@ -31,6 +31,7 @@
  */
 
 import type {
+  Artifact,
   Message,
   Task,
   TaskArtifactUpdateEvent,
@@ -151,7 +152,7 @@ export interface ParsedArtifacts {
  */
 export interface A2AAdapterConfig {
   /**
-   * STREAMING MODE TRIGGER
+   * STREAMING MODE TRIGGER - Synchronous text parsing
    *
    * Function to parse artifacts from accumulated text.
    * If provided, adapter automatically uses streaming mode.
@@ -159,10 +160,32 @@ export interface A2AAdapterConfig {
    * Called after each chunk to extract completed artifacts.
    * Should return all artifacts found so far (adapter handles deduplication).
    *
+   * Use this for extracting artifacts from streamed text (e.g., code blocks).
+   *
    * @example
    * parseArtifacts: (text) => extractCodeBlocks(text)
    */
   parseArtifacts?: (accumulatedText: string) => ParsedArtifacts;
+
+  /**
+   * SIMPLE MODE WITH ARTIFACTS - Async artifact generation
+   *
+   * If provided (and parseArtifacts is NOT), generates artifacts after response completion.
+   * Called once with the complete response text in simple mode.
+   *
+   * Use this for async operations like chart generation, API calls, etc.
+   *
+   * @param responseText - The complete agent response
+   * @param context - Request context for accessing task/message info
+   * @returns Promise resolving to array of A2A artifacts
+   *
+   * @example
+   * generateArtifacts: async (responseText) => {
+   *   const chart = await generateChart(responseText);
+   *   return [{ artifactId: '...', name: 'chart', parts: [...] }];
+   * }
+   */
+  generateArtifacts?: (responseText: string, context: RequestContext) => Promise<Artifact[]>;
 
   /**
    * Build final message from artifacts and response (streaming mode)
@@ -456,6 +479,44 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
       : "completed";
 
     this.logger.debug("Final task state", { taskId, state: taskState });
+
+    // Generate artifacts if configured (async artifact generation)
+    if (this.config.generateArtifacts) {
+      this.logger.debug("Generating artifacts asynchronously", { taskId });
+      try {
+        const artifacts = await this.config.generateArtifacts(responseText, {
+          userMessage: { contextId, messageId: "", role: "user", parts: [] },
+          task: undefined,
+        } as RequestContext);
+
+        // Emit each generated artifact
+        for (const artifact of artifacts) {
+          this.logger.debug("Emitting generated artifact", {
+            taskId,
+            artifactId: artifact.artifactId,
+            name: artifact.name,
+          });
+
+          const artifactEvent: TaskArtifactUpdateEvent = {
+            kind: "artifact",
+            taskId,
+            contextId,
+            artifact,
+          };
+
+          eventBus.emit("artifact", artifactEvent);
+        }
+
+        this.logger.debug("Artifacts generated successfully", {
+          taskId,
+          count: artifacts.length,
+        });
+      } catch (error: unknown) {
+        const errorMessage = this.getErrorMessage(error);
+        this.logger.error("Error generating artifacts", { taskId, error: errorMessage });
+        // Don't fail the task - just log the error and continue
+      }
+    }
 
     // Publish final status update
     const finalUpdate: TaskStatusUpdateEvent = {
