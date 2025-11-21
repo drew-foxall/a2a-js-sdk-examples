@@ -25,6 +25,7 @@
     "agents:weather-agent": "tsx src/agents/travel-planner-multiagent/weather-agent/index.ts",
     "agents:airbnb-agent": "tsx src/agents/travel-planner-multiagent/airbnb-agent/index.ts",
     "agents:travel-planner": "tsx src/agents/travel-planner-multiagent/planner/index.ts",
+    "typecheck": "tsc --noEmit",
     "lint": "cd ../.. && pnpm biome check examples/agents/",
     "lint:fix": "cd ../.. && pnpm biome check --write --unsafe examples/agents/",
     "format": "cd ../.. && pnpm biome format examples/agents/",
