@@ -43,8 +43,51 @@ import type {
   ExecutionEventBus,
   RequestContext,
 } from "@drew-foxall/a2a-js-sdk/server";
-import type { GenerateTextResult, StreamTextResult, ToolLoopAgent, ToolSet } from "ai";
+import type { ModelMessage, ToolLoopAgent, ToolSet } from "ai";
 import { v4 as uuidv4 } from "uuid";
+
+/**
+ * ⚠️ CRITICAL AI SDK TYPE REFERENCE ⚠️
+ *
+ * DO NOT use deprecated "Core*" types from AI SDK:
+ * - ❌ CoreMessage (DEPRECATED)
+ * - ❌ CoreUserMessage (DEPRECATED)
+ * - ❌ CoreAssistantMessage (DEPRECATED)
+ * - ❌ CoreSystemMessage (DEPRECATED)
+ * - ❌ CoreToolMessage (DEPRECATED)
+ *
+ * ✅ USE CURRENT TYPES:
+ * - ModelMessage (union of all message types)
+ * - UserModelMessage
+ * - AssistantModelMessage
+ * - SystemModelMessage
+ * - ToolModelMessage
+ *
+ * Source: node_modules/ai/dist/index.d.ts (lines 1020-1061)
+ * The Core* types are explicitly marked @deprecated
+ *
+ * AgentCallParameters structure (AI SDK):
+ * ```typescript
+ * type AgentCallParameters<CALL_OPTIONS> =
+ *   ({ options?: never } | { options: CALL_OPTIONS }) &
+ *   ({ prompt: string | Array<ModelMessage>; messages?: never } |
+ *    { messages: Array<ModelMessage>; prompt?: never }) &
+ *   { abortSignal?: AbortSignal };
+ * ```
+ *
+ * ToolLoopAgent signature:
+ * ```typescript
+ * class ToolLoopAgent<CALL_OPTIONS = never, TOOLS extends ToolSet = {}, OUTPUT extends Output = never>
+ *   generate(params: AgentCallParameters<CALL_OPTIONS>): Promise<GenerateTextResult<TOOLS, OUTPUT>>
+ *   stream(params: AgentCallParameters<CALL_OPTIONS>): Promise<StreamTextResult<TOOLS, OUTPUT>>
+ * ```
+ *
+ * Key insights:
+ * 1. First generic is CALL_OPTIONS (not MODEL) - use `never` for no options
+ * 2. AgentCallParameters accepts EITHER `prompt` OR `messages` (not both)
+ * 3. Both accept `Array<ModelMessage>` (NOT CoreMessage[])
+ * 4. Default CALL_OPTIONS is `never`, not `unknown`
+ */
 
 /**
  * Logger interface for A2AAdapter
@@ -138,7 +181,7 @@ export interface AgentStreamParams {
 /**
  * AI SDK generate result interface
  * Represents the result from agent.generate()
- * 
+ *
  * Note: This is a simplified interface. The actual GenerateTextResult
  * has many more properties, but we only need text for basic usage.
  */
@@ -263,7 +306,7 @@ export interface A2AAdapterConfig {
    *   return { ...result, text: lines.slice(0, -1).join('\n') };
    * }
    */
-  transformResponse?: (result: GenerateTextResult<ToolSet, never>) => GenerateTextResult<ToolSet, never> | string;
+  transformResponse?: (result: { text: string }) => { text: string } | string;
 
   /**
    * Whether to include conversation history in agent calls.
@@ -332,9 +375,7 @@ export interface A2AAdapterConfig {
  *
  * The generics match ToolLoopAgent to maintain type safety throughout.
  */
-export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
-  implements AgentExecutor
-{
+export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecutor {
   private cancelledTasks = new Set<string>();
   private logger: A2ALogger;
   private config: Required<
@@ -358,7 +399,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
     >;
 
   constructor(
-    private agent: ToolLoopAgent<TCallOptions, TTools, never>,
+    private agent: ToolLoopAgent<never, TTools, never>,
     config?: A2AAdapterConfig
   ) {
     // Set defaults for required options
@@ -487,14 +528,16 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
 
     // Call the ToolLoopAgent (blocking)
     this.logger.debug("Calling agent.generate()", { taskId });
-    
-    // Pass messages directly as prompt array
-    // AI SDK's AgentCallParameters accepts either `prompt: string | ModelMessage[]` or `messages: ModelMessage[]`
+
+    // Convert A2A messages to AI SDK ModelMessage format
+    // AI SDK's AgentCallParameters: when CALL_OPTIONS is `never`, don't include options property
+    const aiMessages: ModelMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
     const result = await this.agent.generate({
-      prompt: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
+      prompt: aiMessages,
     });
 
     // Check for cancellation after agent call
@@ -504,7 +547,9 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
     }
 
     // Transform response if configured
-    const transformed = this.config.transformResponse ? this.config.transformResponse(result) : result;
+    const transformed = this.config.transformResponse
+      ? this.config.transformResponse(result)
+      : result;
 
     // Extract text from transformed result
     const responseText = typeof transformed === "string" ? transformed : transformed.text;
@@ -597,16 +642,18 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
   ): Promise<void> {
     // Call the ToolLoopAgent (streaming)
     this.logger.debug("Calling agent.stream()", { taskId });
-    
-    // Pass messages directly as prompt array
-    // AI SDK's AgentCallParameters accepts either `prompt: string | ModelMessage[]` or `messages: ModelMessage[]`
+
+    // Convert A2A messages to AI SDK ModelMessage format
+    // AI SDK's AgentCallParameters: when CALL_OPTIONS is `never`, don't include options property
+    const aiMessages: ModelMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
     const streamResult = await this.agent.stream({
-      prompt: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
+      prompt: aiMessages,
     });
-    
+
     const { textStream, text: responsePromise } = streamResult;
 
     let accumulatedText = "";
@@ -630,7 +677,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet, TCallOptions = never>
 
       // Process completed artifacts
       if (!parsed) continue;
-      
+
       for (const artifact of parsed.artifacts) {
         if (artifact.done && artifact.filename) {
           const previousContent = artifactContents.get(artifact.filename);
