@@ -102,6 +102,40 @@ export class NoOpLogger implements A2ALogger {
 }
 
 /**
+ * Context provided to generateArtifacts function
+ *
+ * Contains the minimal information needed for artifact generation.
+ * This is more honest than casting to full RequestContext which has fields we don't populate.
+ */
+export interface ArtifactGenerationContext {
+  taskId: string;
+  contextId: string;
+  responseText: string;
+}
+
+/**
+ * Parameters for agent.generate() calls
+ *
+ * This interface documents the expected input structure for AI SDK agents.
+ */
+export interface AgentGenerateParams {
+  prompt: string;
+  messages?: Array<{ role: "user" | "assistant"; content: string }>;
+  contextId?: string;
+}
+
+/**
+ * Parameters for agent.stream() calls
+ *
+ * This interface documents the expected input structure for streaming AI SDK agents.
+ */
+export interface AgentStreamParams {
+  prompt: string;
+  messages?: Array<{ role: "user" | "assistant"; content: string }>;
+  contextId?: string;
+}
+
+/**
  * AI SDK generate result interface
  * Represents the result from agent.generate()
  */
@@ -134,7 +168,7 @@ export interface ParsedArtifact {
   content: string;
   done: boolean;
   preamble?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ParsedArtifacts {
@@ -175,17 +209,16 @@ export interface A2AAdapterConfig {
    *
    * Use this for async operations like chart generation, API calls, etc.
    *
-   * @param responseText - The complete agent response
-   * @param context - Request context for accessing task/message info
+   * @param context - Context with taskId, contextId, and responseText
    * @returns Promise resolving to array of A2A artifacts
    *
    * @example
-   * generateArtifacts: async (responseText) => {
-   *   const chart = await generateChart(responseText);
+   * generateArtifacts: async (context) => {
+   *   const chart = await generateChart(context.responseText);
    *   return [{ artifactId: '...', name: 'chart', parts: [...] }];
    * }
    */
-  generateArtifacts?: (responseText: string, context: RequestContext) => Promise<Artifact[]>;
+  generateArtifacts?: (context: ArtifactGenerationContext) => Promise<Artifact[]>;
 
   /**
    * Build final message from artifacts and response (streaming mode)
@@ -309,16 +342,24 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
   private config: Required<
     Omit<
       A2AAdapterConfig,
-      "parseArtifacts" | "parseTaskState" | "transformResponse" | "buildFinalMessage" | "logger"
+      | "parseArtifacts"
+      | "generateArtifacts"
+      | "parseTaskState"
+      | "transformResponse"
+      | "buildFinalMessage"
+      | "logger"
     >
   > &
     Pick<
       A2AAdapterConfig,
-      "parseArtifacts" | "parseTaskState" | "transformResponse" | "buildFinalMessage"
+      | "parseArtifacts"
+      | "generateArtifacts"
+      | "parseTaskState"
+      | "transformResponse"
+      | "buildFinalMessage"
     >;
 
   constructor(
-    // @ts-expect-error - AI SDK ToolLoopAgent has complex generic constraints that are safe to ignore here
     private agent: ToolLoopAgent<TModel, TTools, TCallOptions>,
     config?: A2AAdapterConfig
   ) {
@@ -329,6 +370,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
       debug: config?.debug ?? false,
       // Optional configs
       parseArtifacts: config?.parseArtifacts,
+      generateArtifacts: config?.generateArtifacts,
       parseTaskState: config?.parseTaskState,
       transformResponse: config?.transformResponse,
       buildFinalMessage: config?.buildFinalMessage,
@@ -447,12 +489,12 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
 
     // Call the ToolLoopAgent (blocking)
     this.logger.debug("Calling agent.generate()", { taskId });
-    const rawResult = await this.agent.generate({
+    
+    const result = await this.agent.generate({
       prompt: messages[messages.length - 1]?.content || "",
       messages: messages.slice(0, -1),
-      contextId, // Pass contextId for agents that support callOptionsSchema
-    } as unknown as Parameters<typeof this.agent.generate>[0]);
-    const result = rawResult as unknown as AIGenerateResult;
+      contextId,
+    });
 
     // Check for cancellation after agent call
     if (this.cancelledTasks.has(taskId)) {
@@ -484,10 +526,11 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
     if (this.config.generateArtifacts) {
       this.logger.debug("Generating artifacts asynchronously", { taskId });
       try {
-        const artifacts = await this.config.generateArtifacts(responseText, {
-          userMessage: { contextId, messageId: "", role: "user", parts: [] },
-          task: undefined,
-        } as RequestContext);
+        const artifacts = await this.config.generateArtifacts({
+          taskId,
+          contextId,
+          responseText,
+        });
 
         // Emit each generated artifact
         for (const artifact of artifacts) {
@@ -498,7 +541,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
           });
 
           const artifactEvent: TaskArtifactUpdateEvent = {
-            kind: "artifact",
+            kind: "artifact-update",
             taskId,
             contextId,
             artifact,
@@ -555,12 +598,14 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
   ): Promise<void> {
     // Call the ToolLoopAgent (streaming)
     this.logger.debug("Calling agent.stream()", { taskId });
-    const rawStreamResult = await this.agent.stream({
+    
+    const streamResult = await this.agent.stream({
       prompt: messages[messages.length - 1]?.content || "",
       messages: messages.slice(0, -1),
       contextId,
-    } as unknown as Parameters<typeof this.agent.stream>[0]);
-    const { stream, text: responsePromise } = rawStreamResult as unknown as AIStreamResult;
+    });
+    
+    const { stream, text: responsePromise } = streamResult;
 
     let accumulatedText = "";
     const artifactContents = new Map<string, string>();
@@ -611,7 +656,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
                   language: artifact.language || "plaintext",
                   ...artifact.metadata,
                 },
-              } as unknown as TaskArtifactUpdateEvent["artifact"],
+              },
             };
             eventBus.publish(artifactUpdate);
             emittedArtifactCount++;
@@ -662,7 +707,7 @@ export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCal
                 language: artifact.language || "plaintext",
                 ...artifact.metadata,
               },
-            } as unknown as TaskArtifactUpdateEvent["artifact"],
+            },
           };
           eventBus.publish(artifactUpdate);
           emittedArtifactCount++;

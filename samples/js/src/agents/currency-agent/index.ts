@@ -120,13 +120,17 @@ function parseTaskState(response: string): "input-required" | "completed" {
  * Extracts the conversion result and creates a text artifact.
  * This mimics the Python version's behavior of creating a
  * "conversion_result" artifact.
- *
+ * 
  * Uses async artifact generation (generateArtifacts) instead of
  * parseArtifacts since this runs after the response is complete.
  */
-async function generateConversionArtifacts(response: string): Promise<Artifact[]> {
+async function generateConversionArtifacts(context: {
+  taskId: string;
+  contextId: string;
+  responseText: string;
+}): Promise<Artifact[]> {
   // Only create artifact if task is completed (not asking for input)
-  const state = parseTaskState(response);
+  const state = parseTaskState(context.responseText);
   if (state === "input-required") {
     return [];
   }
@@ -139,7 +143,7 @@ async function generateConversionArtifacts(response: string): Promise<Artifact[]
       parts: [
         {
           kind: "text" as const,
-          text: response,
+          text: context.responseText,
         },
       ],
     },

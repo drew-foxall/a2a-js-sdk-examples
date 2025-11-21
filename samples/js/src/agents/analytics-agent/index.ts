@@ -92,15 +92,19 @@ const agent = createAnalyticsAgent(model);
 
 /**
  * Generate chart artifacts from agent response
- *
+ * 
  * Called after agent completes its response. Generates a PNG chart image
  * as an artifact that can be displayed to the user.
  */
-async function generateChartArtifacts(responseText: string): Promise<Artifact[]> {
+async function generateChartArtifacts(context: {
+  taskId: string;
+  contextId: string;
+  responseText: string;
+}): Promise<Artifact[]> {
   try {
     // Extract the prompt from the response (or use the response itself)
     // In a real implementation, you might parse structured data from the response
-    const chart = await generateChartFromPrompt(responseText);
+    const chart = await generateChartFromPrompt(context.responseText);
 
     return [
       {
