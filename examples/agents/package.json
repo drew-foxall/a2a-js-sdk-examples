@@ -13,6 +13,7 @@
     "typescript": "^5.8.0"
   },
   "scripts": {
+    "dev": "echo '⚠️  Use root command: pnpm dev (starts all agents)' && echo 'Or run individual agents with pnpm agents:<name>'",
     "agents:movie-agent": "tsx src/agents/movie-agent/index.ts",
     "agents:coder": "tsx src/agents/coder/index.ts",
     "agents:content-editor": "tsx src/agents/content-editor/index.ts",
@@ -24,10 +25,10 @@
     "agents:weather-agent": "tsx src/agents/travel-planner-multiagent/weather-agent/index.ts",
     "agents:airbnb-agent": "tsx src/agents/travel-planner-multiagent/airbnb-agent/index.ts",
     "agents:travel-planner": "tsx src/agents/travel-planner-multiagent/planner/index.ts",
-    "lint": "cd ../.. && pnpm biome check samples/js/",
-    "lint:fix": "cd ../.. && pnpm biome check --write --unsafe samples/js/",
-    "format": "cd ../.. && pnpm biome format samples/js/",
-    "format:write": "cd ../.. && pnpm biome format --write samples/js/",
+    "lint": "cd ../.. && pnpm biome check examples/agents/",
+    "lint:fix": "cd ../.. && pnpm biome check --write --unsafe examples/agents/",
+    "format": "cd ../.. && pnpm biome format examples/agents/",
+    "format:write": "cd ../.. && pnpm biome format --write examples/agents/",
     "typecheck": "tsc --noEmit",
     "test": "echo \"No tests yet\""
   },
