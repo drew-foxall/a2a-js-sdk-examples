@@ -1,13 +1,16 @@
 {
+  // Base configuration from @total-typescript/tsconfig
+  // See: https://github.com/total-typescript/tsconfig
+  "extends": "@total-typescript/tsconfig/bundler/no-dom.json",
   "compilerOptions": {
-    "target": "es2022",
+    // Node.js-specific overrides for ESM support
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "skipLibCheck": true,
+    
+    // Output directory (for when tsc is used for type checking with --noEmit false)
     "outDir": "dist",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "strict": true,
+    
+    // Additional strictness (inherited from base but kept explicit)
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts"],

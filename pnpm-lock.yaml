@@ -72,6 +72,9 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
+      '@total-typescript/tsconfig':
+        specifier: 1.0.4
+        version: 1.0.4
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.1
@@ -440,6 +443,9 @@ packages:
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
+
+  '@total-typescript/tsconfig@1.0.4':
+    resolution: {integrity: sha512-fO4ctMPGz1kOFOQ4RCPBRBfMy3gDn+pegUfrGyUFRMv/Rd0ZM3/SHH3hFCYG4u6bPLG8OlmOGcBLDexvyr3A5w==}
 
   '@types/node@22.19.1':
     resolution: {integrity: sha512-LCCV0HdSZZZb34qifBsyWlUmok6W7ouER+oQIGBScS8EsZsQbrtFTUrDX4hOl+CS6p7cnNC4td+qrSVGSCTUfQ==}
@@ -1276,6 +1282,8 @@ snapshots:
   '@opentelemetry/api@1.9.0': {}
 
   '@standard-schema/spec@1.0.0': {}
+
+  '@total-typescript/tsconfig@1.0.4': {}
 
   '@types/node@22.19.1':
     dependencies:
