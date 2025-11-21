@@ -16,14 +16,10 @@
  * - Search for repositories with recent activity
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
 import { getGitHubAgentPrompt } from "./prompt.js";
-import {
-  getUserRepositories,
-  getRecentCommits,
-  searchRepositories,
-} from "./tools.js";
+import { getRecentCommits, getUserRepositories, searchRepositories } from "./tools.js";
 
 /**
  * Tool Schemas
@@ -47,15 +43,8 @@ const getUserRepositoriesSchema = z.object({
 });
 
 const getRecentCommitsSchema = z.object({
-  repoName: z
-    .string()
-    .describe('Repository name in format "owner/repo" (e.g., "facebook/react")'),
-  days: z
-    .number()
-    .int()
-    .positive()
-    .default(7)
-    .describe("Number of days to look back (default: 7)"),
+  repoName: z.string().describe('Repository name in format "owner/repo" (e.g., "facebook/react")'),
+  days: z.number().int().positive().default(7).describe("Number of days to look back (default: 7)"),
   limit: z
     .number()
     .int()
@@ -65,9 +54,7 @@ const getRecentCommitsSchema = z.object({
 });
 
 const searchRepositoriesSchema = z.object({
-  query: z
-    .string()
-    .describe('Search query (e.g., "machine learning", "python web framework")'),
+  query: z.string().describe('Search query (e.g., "machine learning", "python web framework")'),
   sort: z
     .enum(["updated", "stars", "forks"])
     .default("updated")
@@ -108,11 +95,7 @@ export function createGitHubAgent(model: LanguageModel) {
           "Get user repositories with recent updates. Optionally filter by username, days, and limit.",
         inputSchema: getUserRepositoriesSchema,
         execute: async (params: GetUserRepositoriesParams) => {
-          const result = await getUserRepositories(
-            params.username,
-            params.days,
-            params.limit
-          );
+          const result = await getUserRepositories(params.username, params.days, params.limit);
           return result;
         },
       },
@@ -122,11 +105,7 @@ export function createGitHubAgent(model: LanguageModel) {
           "Get recent commits for a specific repository. Requires repository name in format 'owner/repo'.",
         inputSchema: getRecentCommitsSchema,
         execute: async (params: GetRecentCommitsParams) => {
-          const result = await getRecentCommits(
-            params.repoName,
-            params.days,
-            params.limit
-          );
+          const result = await getRecentCommits(params.repoName, params.days, params.limit);
           return result;
         },
       },
@@ -136,11 +115,7 @@ export function createGitHubAgent(model: LanguageModel) {
           "Search for repositories with recent activity. Returns repositories matching the query.",
         inputSchema: searchRepositoriesSchema,
         execute: async (params: SearchRepositoriesParams) => {
-          const result = await searchRepositories(
-            params.query,
-            params.sort,
-            params.limit
-          );
+          const result = await searchRepositories(params.query, params.sort, params.limit);
           return result;
         },
       },

@@ -13,17 +13,19 @@
  *   pnpm tsx src/agents/analytics-agent/index.ts
  */
 
-import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import type { AgentCard, AgentSkill, Artifact } from "@drew-foxall/a2a-js-sdk";
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-  type Artifact,
-} from "@drew-foxall/a2a-js-sdk";
+  type AgentExecutor,
+  DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
+} from "@drew-foxall/a2a-js-sdk/server";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
-import { createAnalyticsAgent } from "./agent.js";
 import { getModel } from "../../shared/utils.js";
+import { createAnalyticsAgent } from "./agent.js";
 import { generateChartFromPrompt } from "./tools.js";
 
 // ============================================================================
@@ -41,8 +43,7 @@ const BASE_URL = `http://localhost:${PORT}`;
 const chartGenerationSkill: AgentSkill = {
   id: "chart_generator",
   name: "Chart Generator",
-  description:
-    "Generate bar charts from CSV-like data passed in natural language",
+  description: "Generate bar charts from CSV-like data passed in natural language",
   tags: ["chart", "visualization", "image", "analytics"],
   examples: [
     "Generate a chart of revenue: Jan,$1000 Feb,$2000 Mar,$1500",
@@ -57,12 +58,13 @@ const agentCard: AgentCard = {
     "Generate bar charts from structured CSV-like data input. Returns charts as PNG images.",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
+  protocolVersion: "1.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text", "image/png"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
     streaming: true,
     statefulness: "stateless",
-  }),
+  },
   skills: [chartGenerationSkill],
 };
 
@@ -98,7 +100,7 @@ async function parseChartArtifacts(prompt: string): Promise<Artifact[]> {
       {
         artifactId: chart.id,
         name: chart.name,
-        mimeType: chart.mimeType,
+        kind: "image/png",
         data: chart.base64, // Base64-encoded PNG
       },
     ];
@@ -112,26 +114,28 @@ async function parseChartArtifacts(prompt: string): Promise<Artifact[]> {
 // A2A Protocol Integration
 // ============================================================================
 
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
-
+const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
   // Enable artifact parsing (triggers streaming mode automatically)
   parseArtifacts: parseChartArtifacts,
 
   // Optional: Customize working message
   workingMessage: "Generating chart...",
+
+  // Optional: Enable debug logging
+  debug: false,
 });
+
+const taskStore: TaskStore = new InMemoryTaskStore();
+
+const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
 // ============================================================================
 // HTTP Server (Hono + A2A)
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+const app = new Hono();
+const appBuilder = new A2AHonoApp(requestHandler);
+appBuilder.setupRoutes(app);
 
 // ============================================================================
 // Start Server
@@ -173,4 +177,3 @@ serve({
   port: PORT,
   hostname: HOST,
 });
-

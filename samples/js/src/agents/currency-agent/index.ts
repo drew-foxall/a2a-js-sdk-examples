@@ -13,17 +13,19 @@
  *   pnpm tsx src/agents/currency-agent/index.ts
  */
 
-import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import type { AgentCard, AgentSkill, Artifact } from "@drew-foxall/a2a-js-sdk";
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-  type Artifact,
-} from "@drew-foxall/a2a-js-sdk";
+  type AgentExecutor,
+  DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
+} from "@drew-foxall/a2a-js-sdk/server";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
-import { createCurrencyAgent } from "./agent.js";
 import { getModel } from "../../shared/utils.js";
+import { createCurrencyAgent } from "./agent.js";
 
 // ============================================================================
 // Configuration
@@ -54,12 +56,13 @@ const agentCard: AgentCard = {
   description: "Helps with exchange rates for currencies using Frankfurter API",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
+  protocolVersion: "1.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
     streaming: true,
     statefulness: "contextual", // Maintains conversation context
-  }),
+  },
   skills: [currencyConversionSkill],
 };
 
@@ -117,9 +120,7 @@ function parseTaskState(response: string): "input-required" | "completed" {
  * This mimics the Python version's behavior of creating a
  * "conversion_result" artifact.
  */
-async function parseConversionArtifacts(
-  response: string
-): Promise<Artifact[]> {
+async function parseConversionArtifacts(response: string): Promise<Artifact[]> {
   // Only create artifact if task is completed (not asking for input)
   const state = parseTaskState(response);
   if (state === "input-required") {
@@ -131,7 +132,7 @@ async function parseConversionArtifacts(
     {
       artifactId: `conversion-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       name: "conversion_result",
-      mimeType: "text/plain",
+      kind: "text/plain",
       data: Buffer.from(response).toString("base64"),
     },
   ];
@@ -141,11 +142,7 @@ async function parseConversionArtifacts(
 // A2A Protocol Integration
 // ============================================================================
 
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
-
+const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
   // Enable artifact parsing (triggers streaming mode)
   parseArtifacts: parseConversionArtifacts,
 
@@ -154,16 +151,22 @@ const adapter = new A2AAdapter({
 
   // Status update message during processing
   workingMessage: "Looking up exchange rates...",
+
+  // Optional: Enable debug logging
+  debug: false,
 });
+
+const taskStore: TaskStore = new InMemoryTaskStore();
+
+const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
 // ============================================================================
 // HTTP Server (Hono + A2A)
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+const app = new Hono();
+const appBuilder = new A2AHonoApp(requestHandler);
+appBuilder.setupRoutes(app);
 
 // ============================================================================
 // Start Server
@@ -212,4 +215,3 @@ serve({
   port: PORT,
   hostname: HOST,
 });
-

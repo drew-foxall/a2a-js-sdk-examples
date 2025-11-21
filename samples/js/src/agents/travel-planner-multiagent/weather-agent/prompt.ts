@@ -44,4 +44,3 @@ You: [Call tool] "Here's the 7-day forecast for Paris, France: ..."
 
 Remember: Always use the tools and format responses clearly!`;
 }
-

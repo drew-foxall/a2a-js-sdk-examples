@@ -9,9 +9,9 @@
  * - Artifact creation
  */
 
-import { ChartConfiguration } from "chart.js/auto";
 import { createCanvas } from "canvas";
 import { Chart, registerables } from "chart.js";
+import type { ChartConfiguration } from "chart.js/auto";
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -51,7 +51,7 @@ export function parseChartData(prompt: string): ChartData {
   const values: number[] = [];
 
   // Remove common prefixes
-  let data = prompt
+  const data = prompt
     .replace(/generate\s+a?\s*chart\s+(of|for|with)?\s*/gi, "")
     .replace(/revenue:?/gi, "")
     .replace(/sales:?/gi, "")
@@ -172,9 +172,7 @@ export async function generateBarChart(
  * @param prompt - User prompt containing chart data
  * @returns Generated chart result
  */
-export async function generateChartFromPrompt(
-  prompt: string
-): Promise<ChartResult> {
+export async function generateChartFromPrompt(prompt: string): Promise<ChartResult> {
   // Parse data from prompt
   const data = parseChartData(prompt);
 
@@ -186,9 +184,7 @@ export async function generateChartFromPrompt(
 
   // Extract title from prompt
   let title = "Bar Chart";
-  const titleMatch = prompt.match(
-    /chart\s+(?:of|for)\s+([A-Za-z\s]+?)[:,$]/i
-  );
+  const titleMatch = prompt.match(/chart\s+(?:of|for)\s+([A-Za-z\s]+?)[:,$]/i);
   if (titleMatch) {
     title = titleMatch[1].trim();
   }
@@ -196,4 +192,3 @@ export async function generateChartFromPrompt(
   // Generate chart
   return await generateBarChart(data, title);
 }
-

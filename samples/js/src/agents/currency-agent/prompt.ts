@@ -45,4 +45,3 @@ You: [Call tool] "50 GBP is currently 87.25 CAD (exchange rate: 1 GBP = 1.745 CA
 
 Remember: Stay focused on currency conversions only!`;
 }
-

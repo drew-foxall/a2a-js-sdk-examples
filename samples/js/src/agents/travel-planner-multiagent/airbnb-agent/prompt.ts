@@ -62,4 +62,3 @@ Remember:
 - Include booking links when provided
 - You're working with REAL listings, not mock data!`;
 }
-

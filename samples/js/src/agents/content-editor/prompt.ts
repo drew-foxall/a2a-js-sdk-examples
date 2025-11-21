@@ -17,4 +17,3 @@ When editing:
 - Preserve the core message
 
 Provide the edited version of the content along with a brief summary of changes made.`;
-

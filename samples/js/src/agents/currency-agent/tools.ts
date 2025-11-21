@@ -91,4 +91,3 @@ export function isExchangeRateError(
 ): response is ExchangeRateError {
   return "error" in response;
 }
-

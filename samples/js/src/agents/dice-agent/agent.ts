@@ -2,7 +2,7 @@
  * Dice Agent
  *
  * A protocol-agnostic AI agent that demonstrates tool usage.
- * 
+ *
  * Features:
  * - Two simple computational tools (rollDice, checkPrime)
  * - No external APIs or dependencies
@@ -15,10 +15,10 @@
  * - Discuss dice roll outcomes
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
 import { getDiceAgentPrompt } from "./prompt.js";
-import { rollDice, checkPrime } from "./tools.js";
+import { checkPrime, rollDice } from "./tools.js";
 
 /**
  * Tool Schemas
@@ -35,9 +35,7 @@ const rollDiceSchema = z.object({
 });
 
 const checkPrimeSchema = z.object({
-  numbers: z
-    .array(z.number().int())
-    .describe("Array of integers to check for primality"),
+  numbers: z.array(z.number().int()).describe("Array of integers to check for primality"),
 });
 
 /**
@@ -91,4 +89,3 @@ export function createDiceAgent(model: LanguageModel) {
     },
   });
 }
-

@@ -40,7 +40,7 @@ export function extractCodeBlocks(source: string): CodeMessageData {
         const parts = trimmedLine.substring(3).trim().split(/\s+/);
         const language = parts[0] || undefined;
         const filename = parts[1] || undefined;
-        
+
         // Start a new file entry
         files.push({
           preamble: currentPreamble.trim(),
@@ -64,15 +64,15 @@ export function extractCodeBlocks(source: string): CodeMessageData {
     if (inCodeBlock) {
       // Add to the current file's content
       if (files.length > 0) {
-        files[files.length - 1].content += line + "\n";
+        files[files.length - 1].content += `${line}\n`;
       }
     } else {
       // If we're past all code blocks and have content, this is postamble
       if (files.length > 0 && files[files.length - 1].done) {
-        postamble += line + "\n";
+        postamble += `${line}\n`;
       } else {
         // Otherwise this is preamble for the next file
-        currentPreamble += line + "\n";
+        currentPreamble += `${line}\n`;
       }
     }
   }
@@ -110,4 +110,3 @@ When generating code, always include a brief comment (using whatever comment syn
 "use client";
 // ... rest of code generated below
 \`\`\``;
-

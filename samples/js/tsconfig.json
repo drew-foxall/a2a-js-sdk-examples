@@ -1,19 +1,18 @@
 {
   // Base configuration from @total-typescript/tsconfig
   // See: https://github.com/total-typescript/tsconfig
-  "extends": "@total-typescript/tsconfig/bundler/no-dom.json",
+  "extends": "@total-typescript/tsconfig/bundler/no-dom",
   "compilerOptions": {
     // Node.js-specific overrides for ESM support
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    
+
     // Output directory (for when tsc is used for type checking with --noEmit false)
     "outDir": "dist",
-    
+
     // Additional strictness (inherited from base but kept explicit)
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
-

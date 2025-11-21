@@ -17,23 +17,23 @@
  *   pnpm tsx src/agents/hello-world/index.ts
  */
 
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
 // Core A2A types (from main package)
-import { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
+import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 // Server components (from /server subpath) ✅
 import {
-  InMemoryTaskStore,
-  TaskStore,
-  AgentExecutor,
+  type AgentExecutor,
   DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 // Hono integration (from /server/hono subpath) ✅ NOT just /hono!
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 // Our adapter that bridges AI SDK agents to A2A
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
-import { createHelloWorldAgent } from "./agent.js";
 import { getModel } from "../../shared/utils.js";
+import { createHelloWorldAgent } from "./agent.js";
 
 // ============================================================================
 // Configuration
@@ -52,12 +52,7 @@ const helloWorldSkill: AgentSkill = {
   name: "Returns hello world",
   description: "A simple greeting agent that responds with friendly hello messages",
   tags: ["hello world", "greeting", "simple"],
-  examples: [
-    "hi",
-    "hello world",
-    "greet me",
-    "say hello",
-  ],
+  examples: ["hi", "hello world", "greet me", "say hello"],
 };
 
 const agentCard: AgentCard = {
@@ -107,11 +102,7 @@ async function main() {
 
   // Step 2: Create request handler (combines agentCard, taskStore, executor)
   // ✅ CORRECT: DefaultRequestHandler takes 3 arguments
-  const requestHandler = new DefaultRequestHandler(
-    agentCard,
-    taskStore,
-    agentExecutor
-  );
+  const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
   // Step 3: Create Hono app and set up A2A routes
   const app = new Hono();
@@ -155,4 +146,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

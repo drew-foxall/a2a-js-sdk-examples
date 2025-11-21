@@ -5,10 +5,7 @@
  * This matches the Python implementation's use of MCP for real data.
  */
 
-import {
-  experimental_createMCPClient,
-  type experimental_MCPClient,
-} from "@ai-sdk/mcp";
+import { experimental_createMCPClient, type experimental_MCPClient } from "@ai-sdk/mcp";
 import { Experimental_StdioMCPTransport } from "@ai-sdk/mcp/mcp-stdio";
 
 /**
@@ -97,4 +94,3 @@ export function setupMCPShutdownHandlers(): void {
   process.on("SIGINT", shutdownHandler);
   process.on("SIGTERM", shutdownHandler);
 }
-

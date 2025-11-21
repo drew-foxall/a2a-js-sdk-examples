@@ -27,9 +27,7 @@ function getGitHubClient(): Octokit {
       console.log("✅ GitHub client initialized with authentication");
     } else {
       octokit = new Octokit();
-      console.log(
-        "⚠️  GitHub client initialized without authentication (60 req/hour limit)"
-      );
+      console.log("⚠️  GitHub client initialized without authentication (60 req/hour limit)");
     }
   }
   return octokit;

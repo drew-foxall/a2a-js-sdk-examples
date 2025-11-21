@@ -13,16 +13,19 @@
  *   pnpm tsx src/agents/github-agent/index.ts
  */
 
-import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-} from "@drew-foxall/a2a-js-sdk";
+  type AgentExecutor,
+  DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
+} from "@drew-foxall/a2a-js-sdk/server";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
-import { createGitHubAgent } from "./agent.js";
 import { getModel } from "../../shared/utils.js";
+import { createGitHubAgent } from "./agent.js";
 
 // ============================================================================
 // Configuration
@@ -39,8 +42,7 @@ const BASE_URL = `http://localhost:${PORT}`;
 const githubSkill: AgentSkill = {
   id: "github_repositories",
   name: "GitHub Repositories",
-  description:
-    "Query GitHub repositories, recent updates, commits, and project activity",
+  description: "Query GitHub repositories, recent updates, commits, and project activity",
   tags: ["github", "repositories", "commits", "api"],
   examples: [
     "Show recent repository updates for facebook",
@@ -56,12 +58,13 @@ const agentCard: AgentCard = {
     "An agent that can query GitHub repositories and recent project updates using the GitHub API",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
+  protocolVersion: "1.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
     streaming: true,
     statefulness: "stateless",
-  }),
+  },
   skills: [githubSkill],
 };
 
@@ -76,20 +79,22 @@ const agent = createGitHubAgent(model);
 // A2A Protocol Integration
 // ============================================================================
 
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
+const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  workingMessage: "Querying GitHub...",
+  debug: false,
 });
+
+const taskStore: TaskStore = new InMemoryTaskStore();
+
+const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
 // ============================================================================
 // HTTP Server (Hono + A2A)
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+const app = new Hono();
+const appBuilder = new A2AHonoApp(requestHandler);
+appBuilder.setupRoutes(app);
 
 // ============================================================================
 // Start Server

@@ -1,9 +1,9 @@
 /**
  * Movie Agent Export (No Server)
- * 
+ *
  * This file exports just the agent for use in tests, CLI, etc.
  * Import this instead of index.ts to avoid starting the server.
- * 
+ *
  * PHASE 3 MIGRATION: Demonstrates AI SDK v6 advanced features
  * -----------------------------------------------------------
  * This agent showcases:
@@ -13,15 +13,15 @@
  * - Tool loop: maxSteps for multi-turn tool calling
  */
 
-import { ToolLoopAgent, tool, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
 import { getModel } from "../../shared/utils.js";
-import { searchMovies, searchPeople } from "./tmdb.js";
 import { getMovieAgentPrompt } from "./prompt.js";
+import { searchMovies, searchPeople } from "./tmdb.js";
 
 /**
  * TMDB Tool Schemas
- * 
+ *
  * Define tools inline to avoid AI SDK v6 beta type complexities with tool() helper
  */
 const movieQuerySchema = z.object({
@@ -34,17 +34,17 @@ const personQuerySchema = z.object({
 
 /**
  * Create Movie Agent with custom model
- * 
+ *
  * Use this factory function when you need:
  * - Providers not supported by getModel() (Together AI, Replicate, etc.)
  * - Custom model configurations
  * - Azure OpenAI with specific settings
  * - Local or self-hosted models
  * - Runtime model selection
- * 
+ *
  * @param model - Any AI SDK LanguageModelV1 instance
  * @returns Configured ToolLoopAgent with TMDB tools
- * 
+ *
  * @example
  * // Use Groq for fast inference
  * import { createOpenAI } from '@ai-sdk/openai';
@@ -57,10 +57,10 @@ const personQuerySchema = z.object({
 export function createMovieAgent(model: LanguageModel) {
   return new ToolLoopAgent({
     model,
-    
+
     // Default instructions (overridden by prepareCall)
     instructions: getMovieAgentPrompt(),
-    
+
     // Tools for TMDB integration - using inputSchema for ToolLoopAgent compatibility
     tools: {
       searchMovies: {
@@ -74,14 +74,14 @@ export function createMovieAgent(model: LanguageModel) {
         execute: async (params: z.infer<typeof personQuerySchema>) => searchPeople(params.query),
       },
     },
-    
+
     // ============================================================================
     // AI SDK v6 Advanced Feature: Call Options
     // ============================================================================
-    
+
     /**
      * callOptionsSchema: Define what options can be passed per request
-     * 
+     *
      * This allows callers to pass dynamic configuration:
      * - contextId: For conversation history (used by adapter)
      * - goal: Optional task goal for prompt customization
@@ -90,21 +90,21 @@ export function createMovieAgent(model: LanguageModel) {
       contextId: z.string().describe("Conversation context ID for history tracking"),
       goal: z.string().optional().describe("Optional task goal for prompt customization"),
     }),
-    
+
     /**
      * prepareCall: Customize the agent for each request
-     * 
+     *
      * This is called before each agent.generate() and allows:
      * - Dynamic system prompt based on goal
      * - Per-request configuration
      * - Custom preprocessing
-     * 
+     *
      * The adapter will pass { contextId, goal } as options.
      */
     prepareCall: async ({ options, ...settings }) => {
       // Customize system prompt with goal if provided
       const instructions = getMovieAgentPrompt(options?.goal);
-      
+
       // Return settings with custom prompt
       return {
         ...settings,
@@ -116,29 +116,29 @@ export function createMovieAgent(model: LanguageModel) {
 
 /**
  * Default Movie Agent
- * 
+ *
  * Uses model from environment variables:
  * - AI_PROVIDER: openai|anthropic|google|azure|cohere|mistral|groq|ollama
  * - AI_MODEL: Specific model name (optional, uses defaults)
- * 
+ *
  * For custom providers or configurations, use createMovieAgent()
- * 
+ *
  * This agent demonstrates advanced AI SDK v6 features:
- * 
+ *
  * 1. **callOptionsSchema**: Accepts dynamic options per request
  *    - contextId: For conversation history tracking
  *    - goal: Optional task goal for prompt customization
- * 
+ *
  * 2. **prepareCall**: Dynamically generates system prompt
  *    - Includes goal in prompt if provided
  *    - Can be customized per request
- * 
+ *
  * 3. **Tools**: TMDB API integration
  *    - searchMovies: Find movies by title
  *    - searchPeople: Find people by name
- * 
+ *
  * 4. **Tool Loop**: maxSteps for multi-turn tool calls
- * 
+ *
  * Usage:
  * ```typescript
  * // With goal
@@ -147,14 +147,14 @@ export function createMovieAgent(model: LanguageModel) {
  *   contextId: 'conv-123',
  *   goal: 'Help user find sci-fi movies',
  * });
- * 
+ *
  * // Without goal
  * const result = await movieAgent.generate({
  *   messages: [{ role: 'user', content: 'Who directed The Matrix?' }],
  *   contextId: 'conv-456',
  * });
  * ```
- * 
+ *
  * This agent can be used in:
  * - A2A protocol (via A2AAdapter in index.ts)
  * - CLI tools (direct usage)
@@ -163,4 +163,3 @@ export function createMovieAgent(model: LanguageModel) {
  * - Automated tests (no mocking)
  */
 export const movieAgent = createMovieAgent(getModel());
-

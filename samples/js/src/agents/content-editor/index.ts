@@ -1,44 +1,42 @@
 /**
  * Content Editor Agent (AI SDK v6 + Unified A2AAdapter)
- * 
+ *
  * UNIFIED ADAPTER MIGRATION: Now uses automatic A2AAdapter
- * 
+ *
  * Features:
  * - Content proof-reading and editing
  * - Grammar and style improvements
  * - Maintains user's voice
- * 
+ *
  * Architecture: AI SDK Agent + Automatic A2A Adapter
  * --------------------------------------------------
  * This agent demonstrates the unified automatic adapter:
- * 
+ *
  * 1. AI Agent (ToolLoopAgent): Pure, protocol-agnostic logic for content editing
  * 2. A2A Adapter: Automatically selects simple mode (no artifacts needed)
  * 3. Server Setup: Standard Hono + A2A routes
- * 
+ *
  * Benefits:
  * - Single adapter for all use cases
  * - Automatic mode selection (simple vs streaming)
  * - Zero decision overhead
  * - Configuration is self-documenting
- * 
+ *
  * See:
  * - AUTOMATIC_ADAPTER_ASSESSMENT.md (Why unified adapter)
  * - samples/js/src/shared/a2a-adapter.ts (Implementation)
  */
 
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
-import { ToolLoopAgent } from "ai";
-
-import { AgentCard } from "@drew-foxall/a2a-js-sdk";
+import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
-  InMemoryTaskStore,
-  TaskStore,
-  AgentExecutor,
+  type AgentExecutor,
   DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 
 // Import unified automatic adapter
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
@@ -66,8 +64,7 @@ const agentExecutor: AgentExecutor = new A2AAdapter(contentEditorAgent, {
 
 const contentEditorAgentCard: AgentCard = {
   name: "Content Editor Agent (AI SDK v6)",
-  description:
-    "An agent that can proof-read and polish your content, improving clarity and style.",
+  description: "An agent that can proof-read and polish your content, improving clarity and style.",
   url: "http://localhost:41243/",
   provider: {
     organization: "A2A Samples (AI SDK v6 + Adapter)",
@@ -86,8 +83,7 @@ const contentEditorAgentCard: AgentCard = {
     {
       id: "content_editing",
       name: "Content Editing",
-      description:
-        "Proof-read and improve content for clarity, grammar, and style.",
+      description: "Proof-read and improve content for clarity, grammar, and style.",
       tags: ["editing", "proofreading", "content"],
       examples: [
         "Please review and improve this blog post",
@@ -127,7 +123,7 @@ async function main() {
     `[ContentEditorAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
   );
   console.log(
-    `[ContentEditorAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Simple Mode)`
+    "[ContentEditorAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Simple Mode)"
   );
   console.log("[ContentEditorAgent] Press Ctrl+C to stop the server");
 
@@ -138,4 +134,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

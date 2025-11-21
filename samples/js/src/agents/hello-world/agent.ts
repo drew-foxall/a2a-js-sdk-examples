@@ -12,7 +12,7 @@
  * It serves as the baseline example for the AI SDK + A2A architecture.
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { getHelloWorldPrompt } from "./prompt.js";
 
 /**
@@ -32,4 +32,3 @@ export function createHelloWorldAgent(model: LanguageModel) {
     tools: {},
   });
 }
-

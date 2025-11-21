@@ -36,9 +36,7 @@ export async function callTmdbApi(endpoint: string, query: string) {
     const response = await fetch(url.toString());
 
     if (!response.ok) {
-      throw new Error(
-        `TMDB API error: ${response.status} ${response.statusText}`
-      );
+      throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
     }
 
     return await response.json();
@@ -116,4 +114,3 @@ export async function searchPeople(query: string) {
     throw error;
   }
 }
-

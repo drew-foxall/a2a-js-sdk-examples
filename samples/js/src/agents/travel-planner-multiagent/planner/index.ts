@@ -19,8 +19,8 @@
 
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { TravelPlannerOrchestrator } from "./orchestrator.js";
 import { getModel } from "../../../shared/utils.js";
+import { TravelPlannerOrchestrator } from "./orchestrator.js";
 
 // ============================================================================
 // Configuration
@@ -81,7 +81,7 @@ app.post("/plan", async (c) => {
 
     console.log(`\n📝 Received request: "${query}"`);
     const response = await orchestrator.processRequest(query);
-    console.log(`✅ Response generated\n`);
+    console.log("✅ Response generated\n");
 
     return c.json({ query, response });
   } catch (error) {
@@ -157,4 +157,3 @@ serve({
   port: PORT,
   hostname: HOST,
 });
-

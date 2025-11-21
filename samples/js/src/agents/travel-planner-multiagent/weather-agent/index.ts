@@ -13,19 +13,19 @@
  *   pnpm tsx src/agents/travel-planner-multiagent/weather-agent/index.ts
  */
 
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
-  InMemoryTaskStore,
-  TaskStore,
-  AgentExecutor,
+  type AgentExecutor,
   DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { A2AAdapter } from "../../../shared/a2a-adapter.js";
-import { createWeatherAgent } from "./agent.js";
 import { getModel } from "../../../shared/utils.js";
+import { createWeatherAgent } from "./agent.js";
 
 // ============================================================================
 // Configuration
@@ -90,11 +90,7 @@ const weatherAgentCard: AgentCard = {
 async function main() {
   const taskStore: TaskStore = new InMemoryTaskStore();
 
-  const requestHandler = new DefaultRequestHandler(
-    weatherAgentCard,
-    taskStore,
-    agentExecutor
-  );
+  const requestHandler = new DefaultRequestHandler(weatherAgentCard, taskStore, agentExecutor);
 
   const app = new Hono();
   const appBuilder = new A2AHonoApp(requestHandler);

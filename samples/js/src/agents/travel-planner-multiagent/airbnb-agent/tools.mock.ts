@@ -78,8 +78,7 @@ const MOCK_LISTINGS: Record<string, AirbnbListing[]> = {
       beds: 2,
       baths: 1,
       amenities: ["WiFi", "Kitchen", "Washer", "Beach access"],
-      description:
-        "Charming apartment just 2 blocks from Santa Monica Beach.",
+      description: "Charming apartment just 2 blocks from Santa Monica Beach.",
       imageUrl: "https://example.com/la-002.jpg",
       url: "https://www.airbnb.com/rooms/la-002",
     },
@@ -99,8 +98,7 @@ const MOCK_LISTINGS: Record<string, AirbnbListing[]> = {
       beds: 2,
       baths: 1,
       amenities: ["WiFi", "Kitchen", "Washer", "City view"],
-      description:
-        "Beautiful loft in the heart of Le Marais with stunning Eiffel Tower views.",
+      description: "Beautiful loft in the heart of Le Marais with stunning Eiffel Tower views.",
       imageUrl: "https://example.com/paris-001.jpg",
       url: "https://www.airbnb.com/rooms/paris-001",
     },
@@ -188,19 +186,14 @@ export async function searchAirbnbListings(
     // Find matching listings
     let listings: AirbnbListing[] = [];
     for (const [key, value] of Object.entries(MOCK_LISTINGS)) {
-      if (
-        normalizedLocation.includes(key) ||
-        key.includes(normalizedLocation)
-      ) {
+      if (normalizedLocation.includes(key) || key.includes(normalizedLocation)) {
         listings = value;
         break;
       }
     }
 
     // Filter by guest capacity
-    const filteredListings = listings.filter(
-      (listing) => listing.guests >= guests
-    );
+    const filteredListings = listings.filter((listing) => listing.guests >= guests);
 
     if (filteredListings.length === 0) {
       return {
@@ -237,8 +230,5 @@ export function isSearchError(
  * Get available search locations (for informational purposes)
  */
 export function getAvailableLocations(): string[] {
-  return Object.keys(MOCK_LISTINGS).map(
-    (key) => key.charAt(0).toUpperCase() + key.slice(1)
-  );
+  return Object.keys(MOCK_LISTINGS).map((key) => key.charAt(0).toUpperCase() + key.slice(1));
 }
-

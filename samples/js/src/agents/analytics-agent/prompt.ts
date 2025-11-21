@@ -37,4 +37,3 @@ You: "I'll generate a bar chart with three categories: A (100), B (200), and C (
 
 Remember: Focus on acknowledging the data and confirming what chart will be created. The actual chart generation happens automatically!`;
 }
-

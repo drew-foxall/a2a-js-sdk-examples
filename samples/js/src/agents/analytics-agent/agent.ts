@@ -15,7 +15,7 @@
  * - Return charts as image artifacts
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { getAnalyticsAgentPrompt } from "./prompt.js";
 
 /**
@@ -39,4 +39,3 @@ export function createAnalyticsAgent(model: LanguageModel) {
     tools: {},
   });
 }
-

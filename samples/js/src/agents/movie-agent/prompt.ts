@@ -5,7 +5,7 @@
 
 export function getMovieAgentPrompt(goal?: string): string {
   const now = new Date().toISOString();
-  
+
   return `You are a movie expert. Answer the user's question about movies and film industry personalities, using the searchMovies and searchPeople tools to find out more information as needed. Feel free to call them multiple times in parallel if necessary.${goal ? `\n\nYour goal in this task is: ${goal}` : ""}
 
 The current date and time is: ${now}
@@ -22,4 +22,3 @@ Output:
 Inception was released on July 16, 2010.
 COMPLETED`;
 }
-

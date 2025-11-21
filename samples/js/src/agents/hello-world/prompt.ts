@@ -18,4 +18,3 @@ Examples:
 
 Always be positive and welcoming.`;
 }
-

@@ -35,9 +35,7 @@ export interface WeatherForecast {
  *
  * Uses Open-Meteo Geocoding API
  */
-export async function geocodeLocation(
-  location: string
-): Promise<GeocodeResult | null> {
+export async function geocodeLocation(location: string): Promise<GeocodeResult | null> {
   try {
     const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
     url.searchParams.set("name", location);
@@ -90,7 +88,10 @@ export async function getWeatherForecast(
     const url = new URL("https://api.open-meteo.com/v1/forecast");
     url.searchParams.set("latitude", geocode.latitude.toString());
     url.searchParams.set("longitude", geocode.longitude.toString());
-    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code");
+    url.searchParams.set(
+      "daily",
+      "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code"
+    );
     url.searchParams.set("forecast_days", Math.min(days, 16).toString());
     url.searchParams.set("timezone", "auto");
     url.searchParams.set("temperature_unit", "fahrenheit");
@@ -163,4 +164,3 @@ export function isWeatherError(
 ): response is { error: string } {
   return "error" in response;
 }
-

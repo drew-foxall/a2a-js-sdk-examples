@@ -1,28 +1,28 @@
 /**
  * A2A Adapter - Automatic Unified Adapter
- * 
+ *
  * This adapter automatically adapts its behavior based on configuration:
  * - If `parseArtifacts` is configured → Streaming mode (incremental artifacts)
  * - Otherwise → Simple mode (blocking, single response)
- * 
+ *
  * NO manual mode selection required! The adapter detects what's needed.
- * 
+ *
  * Architecture:
  * ToolLoopAgent (AI SDK) → A2AAdapter (auto-detects mode) → A2A Server
- * 
+ *
  * Usage Examples:
- * 
+ *
  * // Content Editor (automatically simple mode)
  * const executor = new A2AAdapter(agent, {
  *   workingMessage: "Editing content...",
  * });
- * 
+ *
  * // Movie Agent (automatically simple mode with custom state)
  * const executor = new A2AAdapter(agent, {
  *   parseTaskState: (text) => text.includes('COMPLETED') ? 'completed' : 'input-required',
  *   includeHistory: true,
  * });
- * 
+ *
  * // Coder Agent (automatically streaming mode - detected from parseArtifacts)
  * const executor = new A2AAdapter(agent, {
  *   parseArtifacts: extractCodeBlocks,  // ← Triggers streaming automatically!
@@ -30,24 +30,24 @@
  * });
  */
 
-import { ToolLoopAgent, type ToolSet } from 'ai';
-import { v4 as uuidv4 } from 'uuid';
-import {
-  AgentExecutor,
-  RequestContext,
-  ExecutionEventBus,
-} from '@drew-foxall/a2a-js-sdk/server';
 import type {
-  Task,
-  TaskStatusUpdateEvent,
-  TaskArtifactUpdateEvent,
   Message,
+  Task,
+  TaskArtifactUpdateEvent,
   TaskState,
-} from '@drew-foxall/a2a-js-sdk';
+  TaskStatusUpdateEvent,
+} from "@drew-foxall/a2a-js-sdk";
+import type {
+  AgentExecutor,
+  ExecutionEventBus,
+  RequestContext,
+} from "@drew-foxall/a2a-js-sdk/server";
+import type { ToolLoopAgent, ToolSet } from "ai";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Logger interface for A2AAdapter
- * 
+ *
  * Allows consumers to inject custom logging implementations
  * (Winston, Pino, Bunyan, etc.) or create mock loggers for testing.
  */
@@ -62,25 +62,25 @@ export interface A2ALogger {
  * Default console logger implementation
  */
 export class ConsoleLogger implements A2ALogger {
-  constructor(private prefix: string = '[A2AAdapter]') {}
-  
+  constructor(private prefix: string = "[A2AAdapter]") {}
+
   debug(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
     console.log(`${this.prefix} [DEBUG] ${message}${metaStr}`);
   }
-  
+
   info(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
     console.log(`${this.prefix} [INFO] ${message}${metaStr}`);
   }
-  
+
   warn(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
     console.warn(`${this.prefix} [WARN] ${message}${metaStr}`);
   }
-  
+
   error(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
     console.error(`${this.prefix} [ERROR] ${message}${metaStr}`);
   }
 }
@@ -95,7 +95,7 @@ export class NoOpLogger implements A2ALogger {
   warn(): void {}
   error(message: string, meta?: Record<string, unknown>): void {
     // Always log errors even in production
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
     console.error(`[A2AAdapter] ERROR: ${message}${metaStr}`);
   }
 }
@@ -108,7 +108,7 @@ export interface AIGenerateResult {
   text: string;
   steps?: Array<{
     stepType: string;
-    toolCalls?: Array<Record<string, unknown>>;
+    toolCalls?: Record<string, unknown>[];
     [key: string]: unknown;
   }>;
   [key: string]: unknown;
@@ -144,7 +144,7 @@ export interface ParsedArtifacts {
 
 /**
  * Configuration options for A2AAdapter
- * 
+ *
  * The adapter automatically detects execution mode based on configuration:
  * - parseArtifacts present → Streaming mode
  * - parseArtifacts absent → Simple mode
@@ -152,13 +152,13 @@ export interface ParsedArtifacts {
 export interface A2AAdapterConfig {
   /**
    * STREAMING MODE TRIGGER
-   * 
+   *
    * Function to parse artifacts from accumulated text.
    * If provided, adapter automatically uses streaming mode.
-   * 
+   *
    * Called after each chunk to extract completed artifacts.
    * Should return all artifacts found so far (adapter handles deduplication).
-   * 
+   *
    * @example
    * parseArtifacts: (text) => extractCodeBlocks(text)
    */
@@ -166,7 +166,7 @@ export interface A2AAdapterConfig {
 
   /**
    * Build final message from artifacts and response (streaming mode)
-   * 
+   *
    * @default Shows count of artifacts generated
    */
   buildFinalMessage?: (
@@ -178,12 +178,12 @@ export interface A2AAdapterConfig {
 
   /**
    * Parse task state from agent response text (simple mode)
-   * 
+   *
    * Some agents output special state indicators (e.g., "COMPLETED", "AWAITING_USER_INPUT").
-   * 
+   *
    * @param responseText - The agent's text response
    * @returns The A2A task state, or undefined to use default ("completed")
-   * 
+   *
    * @example
    * parseTaskState: (text) => {
    *   const lastLine = text.trim().split('\n').at(-1);
@@ -196,13 +196,13 @@ export interface A2AAdapterConfig {
 
   /**
    * Transform agent response before creating A2A message (simple mode)
-   * 
+   *
    * Useful for extracting final text when agent includes metadata.
    * Can return either a modified result object or just a string.
-   * 
+   *
    * @param result - The raw agent generation result
    * @returns The transformed result with cleaned text, or just the text string
-   * 
+   *
    * @example
    * transformResponse: (result) => {
    *   const lines = result.text.split('\n');
@@ -213,36 +213,36 @@ export interface A2AAdapterConfig {
 
   /**
    * Whether to include conversation history in agent calls.
-   * 
+   *
    * @default false (stateless)
    */
   includeHistory?: boolean;
 
   /**
    * Working status message to show while agent is processing.
-   * 
+   *
    * @default "Processing your request..."
    */
   workingMessage?: string;
 
   /**
    * Whether to enable debug logging
-   * 
+   *
    * @default false
    */
   debug?: boolean;
 
   /**
    * Custom logger implementation
-   * 
+   *
    * If not provided, uses ConsoleLogger (when debug: true) or NoOpLogger.
    * Allows integration with Winston, Pino, Bunyan, or any custom logging system.
-   * 
+   *
    * @example
    * // Using Winston
    * import winston from 'winston';
    * const winstonLogger = winston.createLogger({...});
-   * 
+   *
    * logger: {
    *   debug: (msg, meta) => winstonLogger.debug(msg, meta),
    *   info: (msg, meta) => winstonLogger.info(msg, meta),
@@ -255,14 +255,14 @@ export interface A2AAdapterConfig {
 
 /**
  * A2AAdapter - Automatic Unified Adapter
- * 
+ *
  * Bridges AI SDK ToolLoopAgent with A2A protocol, automatically adapting
  * behavior based on configuration.
- * 
+ *
  * AUTOMATIC MODE DETECTION:
  * - If parseArtifacts configured → Streaming mode (agent.stream())
  * - Otherwise → Simple mode (agent.generate())
- * 
+ *
  * SHARED FEATURES:
  * - Task lifecycle management (create, update, complete)
  * - Cancellation support
@@ -270,23 +270,29 @@ export interface A2AAdapterConfig {
  * - Status updates (working, completed, failed, canceled)
  * - Error handling
  * - Flexible logging
- * 
+ *
  * GENERICS:
  * @template TModel - The AI model type (e.g., specific OpenAI model)
  * @template TTools - The tools schema type
  * @template TCallOptions - The call options schema type
- * 
+ *
  * The generics match ToolLoopAgent to maintain type safety throughout.
  */
-export class A2AAdapter<
-  TModel = unknown,
-  TTools extends ToolSet = ToolSet,
-  TCallOptions = unknown
-> implements AgentExecutor {
+export class A2AAdapter<TModel = unknown, TTools extends ToolSet = ToolSet, TCallOptions = unknown>
+  implements AgentExecutor
+{
   private cancelledTasks = new Set<string>();
   private logger: A2ALogger;
-  private config: Required<Omit<A2AAdapterConfig, 'parseArtifacts' | 'parseTaskState' | 'transformResponse' | 'buildFinalMessage' | 'logger'>> & 
-    Pick<A2AAdapterConfig, 'parseArtifacts' | 'parseTaskState' | 'transformResponse' | 'buildFinalMessage'>;
+  private config: Required<
+    Omit<
+      A2AAdapterConfig,
+      "parseArtifacts" | "parseTaskState" | "transformResponse" | "buildFinalMessage" | "logger"
+    >
+  > &
+    Pick<
+      A2AAdapterConfig,
+      "parseArtifacts" | "parseTaskState" | "transformResponse" | "buildFinalMessage"
+    >;
 
   constructor(
     // @ts-expect-error - AI SDK ToolLoopAgent has complex generic constraints that are safe to ignore here
@@ -296,7 +302,7 @@ export class A2AAdapter<
     // Set defaults for required options
     this.config = {
       includeHistory: config?.includeHistory ?? false,
-      workingMessage: config?.workingMessage || 'Processing your request...',
+      workingMessage: config?.workingMessage || "Processing your request...",
       debug: config?.debug ?? false,
       // Optional configs
       parseArtifacts: config?.parseArtifacts,
@@ -306,38 +312,31 @@ export class A2AAdapter<
     };
 
     // Initialize logger
-    this.logger = config?.logger || 
-      (this.config.debug ? new ConsoleLogger() : new NoOpLogger());
+    this.logger = config?.logger || (this.config.debug ? new ConsoleLogger() : new NoOpLogger());
   }
 
   /**
    * Cancel a running task
    */
-  public cancelTask = async (
-    taskId: string,
-    eventBus: ExecutionEventBus
-  ): Promise<void> => {
+  public cancelTask = async (taskId: string, _eventBus: ExecutionEventBus): Promise<void> => {
     this.cancelledTasks.add(taskId);
     this.logger.info(`Task ${taskId} marked for cancellation`, { taskId });
   };
 
   /**
    * Execute an A2A request using the wrapped ToolLoopAgent
-   * 
+   *
    * AUTOMATIC MODE SELECTION:
    * Checks configuration to determine execution mode
    */
-  async execute(
-    requestContext: RequestContext,
-    eventBus: ExecutionEventBus
-  ): Promise<void> {
+  async execute(requestContext: RequestContext, eventBus: ExecutionEventBus): Promise<void> {
     const { userMessage, task: existingTask } = requestContext;
 
     // Determine IDs for the task and context
     const taskId = existingTask?.id || uuidv4();
     const contextId = userMessage.contextId || existingTask?.contextId || uuidv4();
 
-    this.logger.debug(`Processing message`, {
+    this.logger.debug("Processing message", {
       messageId: userMessage.messageId,
       taskId,
       contextId,
@@ -346,11 +345,11 @@ export class A2AAdapter<
     // Step 1: Publish initial Task event if it's a new task
     if (!existingTask) {
       const initialTask: Task = {
-        kind: 'task',
+        kind: "task",
         id: taskId,
         contextId: contextId,
         status: {
-          state: 'submitted',
+          state: "submitted",
           timestamp: new Date().toISOString(),
         },
         history: [userMessage],
@@ -358,7 +357,7 @@ export class A2AAdapter<
         artifacts: [], // Initialize artifacts array
       };
       eventBus.publish(initialTask);
-      this.logger.debug(`Published initial task`, { taskId });
+      this.logger.debug("Published initial task", { taskId });
     }
 
     // Step 2: Publish "working" status update
@@ -368,8 +367,8 @@ export class A2AAdapter<
     const userPrompt = this.extractTextFromMessage(userMessage);
 
     if (!userPrompt) {
-      this.logger.warn(`No text found in message`, { messageId: userMessage.messageId });
-      this.publishFailure(taskId, contextId, 'No message text to process', eventBus);
+      this.logger.warn("No text found in message", { messageId: userMessage.messageId });
+      this.publishFailure(taskId, contextId, "No message text to process", eventBus);
       return;
     }
 
@@ -379,15 +378,15 @@ export class A2AAdapter<
     // Step 5: AUTOMATIC MODE DETECTION AND EXECUTION
     try {
       if (this.isStreamingMode()) {
-        this.logger.debug(`Executing in STREAMING mode (artifacts configured)`, { taskId });
+        this.logger.debug("Executing in STREAMING mode (artifacts configured)", { taskId });
         await this.executeStreaming(taskId, contextId, messages, eventBus);
       } else {
-        this.logger.debug(`Executing in SIMPLE mode (no artifacts)`, { taskId });
+        this.logger.debug("Executing in SIMPLE mode (no artifacts)", { taskId });
         await this.executeSimple(taskId, contextId, messages, eventBus);
       }
     } catch (error: unknown) {
       const errorMessage = this.getErrorMessage(error);
-      this.logger.error(`Error in task`, { taskId, error: errorMessage });
+      this.logger.error("Error in task", { taskId, error: errorMessage });
       this.publishFailure(taskId, contextId, errorMessage, eventBus);
     } finally {
       // Clean up cancelled tasks
@@ -397,7 +396,7 @@ export class A2AAdapter<
 
   /**
    * AUTOMATIC MODE DETECTION
-   * 
+   *
    * Returns true if streaming mode should be used.
    * Streaming mode is triggered by presence of parseArtifacts configuration.
    */
@@ -407,14 +406,14 @@ export class A2AAdapter<
 
   /**
    * SIMPLE MODE: Blocking execution with single response
-   * 
+   *
    * Used when no artifacts are configured.
    * Calls agent.generate() and processes result once.
    */
   private async executeSimple(
     taskId: string,
     contextId: string,
-    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    messages: Array<{ role: "user" | "assistant"; content: string }>,
     eventBus: ExecutionEventBus
   ): Promise<void> {
     // Check for cancellation before calling agent
@@ -424,9 +423,9 @@ export class A2AAdapter<
     }
 
     // Call the ToolLoopAgent (blocking)
-    this.logger.debug(`Calling agent.generate()`, { taskId });
+    this.logger.debug("Calling agent.generate()", { taskId });
     const rawResult = await this.agent.generate({
-      prompt: messages[messages.length - 1]?.content || '',
+      prompt: messages[messages.length - 1]?.content || "",
       messages: messages.slice(0, -1),
       contextId, // Pass contextId for agents that support callOptionsSchema
     } as unknown as Parameters<typeof this.agent.generate>[0]);
@@ -444,34 +443,32 @@ export class A2AAdapter<
       : result;
 
     // Extract text from transformed result
-    const responseText = typeof transformed === 'string' 
-      ? transformed 
-      : transformed.text;
+    const responseText = typeof transformed === "string" ? transformed : transformed.text;
 
-    this.logger.debug(`Agent responded`, { 
-      taskId, 
-      responseLength: responseText.length 
+    this.logger.debug("Agent responded", {
+      taskId,
+      responseLength: responseText.length,
     });
 
     // Parse task state from response if configured
     const taskState = this.config.parseTaskState
-      ? this.config.parseTaskState(responseText) || 'completed'
-      : 'completed';
-    
-    this.logger.debug(`Final task state`, { taskId, state: taskState });
+      ? this.config.parseTaskState(responseText) || "completed"
+      : "completed";
+
+    this.logger.debug("Final task state", { taskId, state: taskState });
 
     // Publish final status update
     const finalUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
+      kind: "status-update",
       taskId: taskId,
       contextId: contextId,
       status: {
         state: taskState,
         message: {
-          kind: 'message',
-          role: 'agent',
+          kind: "message",
+          role: "agent",
           messageId: uuidv4(),
-          parts: [{ kind: 'text', text: responseText || 'Completed.' }],
+          parts: [{ kind: "text", text: responseText || "Completed." }],
           taskId: taskId,
           contextId: contextId,
         },
@@ -480,31 +477,31 @@ export class A2AAdapter<
       final: true,
     };
     eventBus.publish(finalUpdate);
-    this.logger.info(`Task completed`, { taskId, state: taskState });
+    this.logger.info("Task completed", { taskId, state: taskState });
   }
 
   /**
    * STREAMING MODE: Incremental execution with artifact emission
-   * 
+   *
    * Used when parseArtifacts is configured.
    * Calls agent.stream() and processes chunks incrementally.
    */
   private async executeStreaming(
     taskId: string,
     contextId: string,
-    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    messages: Array<{ role: "user" | "assistant"; content: string }>,
     eventBus: ExecutionEventBus
   ): Promise<void> {
     // Call the ToolLoopAgent (streaming)
-    this.logger.debug(`Calling agent.stream()`, { taskId });
+    this.logger.debug("Calling agent.stream()", { taskId });
     const rawStreamResult = await this.agent.stream({
-      prompt: messages[messages.length - 1]?.content || '',
+      prompt: messages[messages.length - 1]?.content || "",
       messages: messages.slice(0, -1),
       contextId,
     } as unknown as Parameters<typeof this.agent.stream>[0]);
     const { stream, text: responsePromise } = rawStreamResult as unknown as AIStreamResult;
 
-    let accumulatedText = '';
+    let accumulatedText = "";
     const artifactContents = new Map<string, string>();
     const artifactOrder: string[] = [];
     let emittedArtifactCount = 0;
@@ -515,13 +512,13 @@ export class A2AAdapter<
 
       // Check for cancellation
       if (this.cancelledTasks.has(taskId)) {
-        this.logger.info(`Request cancelled`, { taskId });
+        this.logger.info("Request cancelled", { taskId });
         this.publishCancellation(taskId, contextId, eventBus);
         return;
       }
 
       // Parse artifacts from accumulated text
-      const parsed = this.config.parseArtifacts!(accumulatedText);
+      const parsed = this.config.parseArtifacts?.(accumulatedText);
 
       // Process completed artifacts
       for (const artifact of parsed.artifacts) {
@@ -540,25 +537,25 @@ export class A2AAdapter<
 
             // Emit artifact update
             const artifactUpdate: TaskArtifactUpdateEvent = {
-              kind: 'artifact-update',
+              kind: "artifact-update",
               taskId: taskId,
               contextId: contextId,
               artifact: {
                 index: artifactOrder.indexOf(artifact.filename),
                 id: `${taskId}-${artifact.filename}`,
                 name: artifact.filename,
-                mimeType: 'text/plain',
+                mimeType: "text/plain",
                 data: currentContent,
                 metadata: {
-                  language: artifact.language || 'plaintext',
+                  language: artifact.language || "plaintext",
                   ...artifact.metadata,
                 },
-              } as unknown as TaskArtifactUpdateEvent['artifact'],
+              } as unknown as TaskArtifactUpdateEvent["artifact"],
             };
             eventBus.publish(artifactUpdate);
             emittedArtifactCount++;
 
-            this.logger.debug(`Emitted artifact`, {
+            this.logger.debug("Emitted artifact", {
               taskId,
               filename: artifact.filename,
               size: currentContent.length,
@@ -576,7 +573,7 @@ export class A2AAdapter<
 
     // Parse final result for any remaining artifacts
     const fullResponse = await responsePromise;
-    const finalParsed = this.config.parseArtifacts!(accumulatedText);
+    const finalParsed = this.config.parseArtifacts?.(accumulatedText);
 
     for (const artifact of finalParsed.artifacts) {
       if (artifact.filename) {
@@ -591,27 +588,27 @@ export class A2AAdapter<
           }
 
           const artifactUpdate: TaskArtifactUpdateEvent = {
-            kind: 'artifact-update',
+            kind: "artifact-update",
             taskId: taskId,
             contextId: contextId,
             artifact: {
               index: artifactOrder.indexOf(artifact.filename),
               id: `${taskId}-${artifact.filename}`,
               name: artifact.filename,
-              mimeType: 'text/plain',
+              mimeType: "text/plain",
               data: currentContent,
               metadata: {
-                language: artifact.language || 'plaintext',
+                language: artifact.language || "plaintext",
                 ...artifact.metadata,
               },
-            } as unknown as TaskArtifactUpdateEvent['artifact'],
+            } as unknown as TaskArtifactUpdateEvent["artifact"],
           };
           eventBus.publish(artifactUpdate);
           emittedArtifactCount++;
 
-          this.logger.debug(`Final artifact`, { 
-            taskId, 
-            filename: artifact.filename 
+          this.logger.debug("Final artifact", {
+            taskId,
+            filename: artifact.filename,
           });
         }
       }
@@ -636,16 +633,16 @@ export class A2AAdapter<
 
     // Publish final status
     const finalUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
+      kind: "status-update",
       taskId: taskId,
       contextId: contextId,
       status: {
-        state: 'completed',
+        state: "completed",
         message: {
-          kind: 'message',
-          role: 'agent',
+          kind: "message",
+          role: "agent",
           messageId: uuidv4(),
-          parts: [{ kind: 'text', text: finalMessageText.trim() }],
+          parts: [{ kind: "text", text: finalMessageText.trim() }],
           taskId: taskId,
           contextId: contextId,
         },
@@ -655,9 +652,9 @@ export class A2AAdapter<
     };
     eventBus.publish(finalUpdate);
 
-    this.logger.info(`Task completed with artifacts`, { 
-      taskId, 
-      artifactCount: emittedArtifactCount 
+    this.logger.info("Task completed with artifacts", {
+      taskId,
+      artifactCount: emittedArtifactCount,
     });
   }
 
@@ -666,10 +663,9 @@ export class A2AAdapter<
    */
   private extractTextFromMessage(message: Message): string {
     const textParts = message.parts.filter(
-      (part): part is Extract<typeof part, { kind: 'text' }> => 
-        part.kind === 'text'
+      (part): part is Extract<typeof part, { kind: "text" }> => part.kind === "text"
     );
-    return textParts.map((part) => 'text' in part ? part.text : '').join('\n');
+    return textParts.map((part) => ("text" in part ? part.text : "")).join("\n");
   }
 
   /**
@@ -678,11 +674,10 @@ export class A2AAdapter<
   private prepareMessages(
     userMessage: Message,
     existingTask?: Task
-  ): Array<{ role: 'user' | 'assistant'; content: string }> {
+  ): Array<{ role: "user" | "assistant"; content: string }> {
     // Build history if configured
-    const historyForLLM = this.config.includeHistory && existingTask?.history
-      ? [...existingTask.history]
-      : [];
+    const historyForLLM =
+      this.config.includeHistory && existingTask?.history ? [...existingTask.history] : [];
 
     // Add current message if not already in history
     if (!historyForLLM.find((m) => m.messageId === userMessage.messageId)) {
@@ -696,11 +691,11 @@ export class A2AAdapter<
         if (!content) return null;
 
         return {
-          role: (m.role === 'agent' ? 'assistant' : 'user') as 'user' | 'assistant',
+          role: (m.role === "agent" ? "assistant" : "user") as "user" | "assistant",
           content,
         };
       })
-      .filter((m): m is { role: 'user' | 'assistant'; content: string } => m !== null);
+      .filter((m): m is { role: "user" | "assistant"; content: string } => m !== null);
   }
 
   /**
@@ -712,16 +707,16 @@ export class A2AAdapter<
     eventBus: ExecutionEventBus
   ): void {
     const workingStatusUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
+      kind: "status-update",
       taskId: taskId,
       contextId: contextId,
       status: {
-        state: 'working',
+        state: "working",
         message: {
-          kind: 'message',
-          role: 'agent',
+          kind: "message",
+          role: "agent",
           messageId: uuidv4(),
-          parts: [{ kind: 'text', text: this.config.workingMessage }],
+          parts: [{ kind: "text", text: this.config.workingMessage }],
           taskId: taskId,
           contextId: contextId,
         },
@@ -730,7 +725,7 @@ export class A2AAdapter<
       final: false,
     };
     eventBus.publish(workingStatusUpdate);
-    this.logger.debug(`Task status: working`, { taskId });
+    this.logger.debug("Task status: working", { taskId });
   }
 
   /**
@@ -743,16 +738,16 @@ export class A2AAdapter<
     eventBus: ExecutionEventBus
   ): void {
     const failureUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
+      kind: "status-update",
       taskId: taskId,
       contextId: contextId,
       status: {
-        state: 'failed',
+        state: "failed",
         message: {
-          kind: 'message',
-          role: 'agent',
+          kind: "message",
+          role: "agent",
           messageId: uuidv4(),
-          parts: [{ kind: 'text', text: `Agent error: ${errorMessage}` }],
+          parts: [{ kind: "text", text: `Agent error: ${errorMessage}` }],
           taskId: taskId,
           contextId: contextId,
         },
@@ -761,7 +756,7 @@ export class A2AAdapter<
       final: true,
     };
     eventBus.publish(failureUpdate);
-    this.logger.error(`Task failed`, { taskId, error: errorMessage });
+    this.logger.error("Task failed", { taskId, error: errorMessage });
   }
 
   /**
@@ -772,13 +767,13 @@ export class A2AAdapter<
     contextId: string,
     eventBus: ExecutionEventBus
   ): void {
-    this.logger.info(`Task cancelled`, { taskId });
+    this.logger.info("Task cancelled", { taskId });
     const cancelledUpdate: TaskStatusUpdateEvent = {
-      kind: 'status-update',
+      kind: "status-update",
       taskId: taskId,
       contextId: contextId,
       status: {
-        state: 'canceled',
+        state: "canceled",
         timestamp: new Date().toISOString(),
       },
       final: true,
@@ -788,47 +783,47 @@ export class A2AAdapter<
 
   /**
    * Extract error message from unknown error type
-   * 
+   *
    * Safely extracts error message without using 'any'.
    */
   private getErrorMessage(error: unknown): string {
     if (error instanceof Error) {
       return error.message;
     }
-    if (typeof error === 'string') {
+    if (typeof error === "string") {
       return error;
     }
-    if (error && typeof error === 'object' && 'message' in error) {
+    if (error && typeof error === "object" && "message" in error) {
       return String(error.message);
     }
-    return 'Unknown error occurred';
+    return "Unknown error occurred";
   }
 
   /**
    * Default final message builder for streaming mode
    */
   private buildDefaultFinalMessage(
-    artifacts: ParsedArtifact[],
+    _artifacts: ParsedArtifact[],
     fullResponse: string,
     artifactOrder: string[],
     emittedCount: number,
     preamble?: string,
     postamble?: string
   ): string {
-    let finalMessageText = '';
+    let finalMessageText = "";
 
     if (preamble) {
-      finalMessageText = preamble + '\n\n';
+      finalMessageText = `${preamble}\n\n`;
     }
 
     if (emittedCount > 0) {
-      finalMessageText += `Generated ${emittedCount} file${emittedCount > 1 ? 's' : ''}: ${artifactOrder.join(', ')}`;
+      finalMessageText += `Generated ${emittedCount} file${emittedCount > 1 ? "s" : ""}: ${artifactOrder.join(", ")}`;
     } else {
       finalMessageText += fullResponse;
     }
 
     if (postamble) {
-      finalMessageText += '\n\n' + postamble;
+      finalMessageText += `\n\n${postamble}`;
     }
 
     return finalMessageText;

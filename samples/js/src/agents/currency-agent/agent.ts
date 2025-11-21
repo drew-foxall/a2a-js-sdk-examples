@@ -16,7 +16,7 @@
  * - Maintain conversation context
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
 import { getCurrencyAgentPrompt } from "./prompt.js";
 import { getExchangeRate, isExchangeRateError } from "./tools.js";
@@ -25,18 +25,9 @@ import { getExchangeRate, isExchangeRateError } from "./tools.js";
  * Exchange rate tool parameter schema
  */
 const exchangeRateSchema = z.object({
-  currencyFrom: z
-    .string()
-    .length(3)
-    .describe("Source currency code (e.g., USD, EUR, GBP)"),
-  currencyTo: z
-    .string()
-    .length(3)
-    .describe("Target currency code (e.g., USD, EUR, GBP)"),
-  currencyDate: z
-    .string()
-    .optional()
-    .describe('Date for exchange rate (YYYY-MM-DD) or "latest"'),
+  currencyFrom: z.string().length(3).describe("Source currency code (e.g., USD, EUR, GBP)"),
+  currencyTo: z.string().length(3).describe("Target currency code (e.g., USD, EUR, GBP)"),
+  currencyDate: z.string().optional().describe('Date for exchange rate (YYYY-MM-DD) or "latest"'),
 });
 
 type ExchangeRateParams = z.infer<typeof exchangeRateSchema>;
@@ -59,8 +50,7 @@ export function createCurrencyAgent(model: LanguageModel) {
     instructions: getCurrencyAgentPrompt(),
     tools: {
       get_exchange_rate: {
-        description:
-          "Get current exchange rate between two currencies using Frankfurter API",
+        description: "Get current exchange rate between two currencies using Frankfurter API",
         inputSchema: exchangeRateSchema,
         execute: async (params: ExchangeRateParams) => {
           const result = await getExchangeRate(
@@ -89,4 +79,3 @@ export function createCurrencyAgent(model: LanguageModel) {
     },
   });
 }
-

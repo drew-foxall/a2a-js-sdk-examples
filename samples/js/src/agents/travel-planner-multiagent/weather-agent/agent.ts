@@ -5,28 +5,17 @@
  * Part of the Travel Planner Multi-Agent System.
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
 import { getWeatherAgentPrompt } from "./prompt.js";
-import {
-  getWeatherForecast,
-  getWeatherDescription,
-  isWeatherError,
-} from "./tools.js";
+import { getWeatherDescription, getWeatherForecast, isWeatherError } from "./tools.js";
 
 /**
  * Weather forecast tool parameter schema
  */
 const weatherForecastSchema = z.object({
-  location: z
-    .string()
-    .describe("Location to get weather for (city, state, country)"),
-  days: z
-    .number()
-    .min(1)
-    .max(7)
-    .optional()
-    .describe("Number of days to forecast (1-7, default 7)"),
+  location: z.string().describe("Location to get weather for (city, state, country)"),
+  days: z.number().min(1).max(7).optional().describe("Number of days to forecast (1-7, default 7)"),
 });
 
 type WeatherForecastParams = z.infer<typeof weatherForecastSchema>;
@@ -48,14 +37,10 @@ export function createWeatherAgent(model: LanguageModel) {
     instructions: getWeatherAgentPrompt(),
     tools: {
       get_weather_forecast: {
-        description:
-          "Get weather forecast for a location using Open-Meteo API (free, no API key)",
+        description: "Get weather forecast for a location using Open-Meteo API (free, no API key)",
         inputSchema: weatherForecastSchema,
         execute: async (params: WeatherForecastParams) => {
-          const forecast = await getWeatherForecast(
-            params.location,
-            params.days || 7
-          );
+          const forecast = await getWeatherForecast(params.location, params.days || 7);
 
           // Return error if API failed
           if (isWeatherError(forecast)) {
@@ -82,4 +67,3 @@ export function createWeatherAgent(model: LanguageModel) {
     },
   });
 }
-

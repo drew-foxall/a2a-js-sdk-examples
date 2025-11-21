@@ -52,4 +52,3 @@ export function checkPrime(numbers: number[]): string {
 
   return `${primes.join(", ")} are prime numbers.`;
 }
-

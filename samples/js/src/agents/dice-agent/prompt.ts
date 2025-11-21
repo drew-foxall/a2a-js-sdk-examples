@@ -37,4 +37,3 @@ EXAMPLES:
 
 Remember: You discuss dice rolls and prime numbers. That's your specialty!`;
 }
-

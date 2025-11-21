@@ -5,9 +5,8 @@
  * It demonstrates how an AI SDK agent can consume A2A agents as "models".
  */
 
-import { generateText, type LanguageModel } from "ai";
 import { a2a } from "a2a-ai-provider";
-import { getTravelPlannerPrompt } from "./prompt.js";
+import { generateText, type LanguageModel } from "ai";
 
 /**
  * Specialist agent configuration
@@ -59,15 +58,11 @@ export class TravelPlannerOrchestrator {
    * @returns The orchestrated response
    */
   async processRequest(userQuery: string): Promise<string> {
-    this.config.logger.log(
-      `🎭 Orchestrator: Processing request: "${userQuery}"`
-    );
+    this.config.logger.log(`🎭 Orchestrator: Processing request: "${userQuery}"`);
 
     // Step 1: Analyze the request to determine which agents to use
     const analysis = await this.analyzeRequest(userQuery);
-    this.config.logger.log(
-      `📊 Analysis: ${JSON.stringify(analysis, null, 2)}`
-    );
+    this.config.logger.log(`📊 Analysis: ${JSON.stringify(analysis, null, 2)}`);
 
     // Step 2: Delegate to appropriate specialist agent(s)
     const responses: string[] = [];
@@ -143,13 +138,8 @@ Examples:
       // Fallback: try to detect keywords
       const lowerQuery = userQuery.toLowerCase();
       return {
-        needsWeather: /weather|forecast|temperature|rain|sunny|cloudy/.test(
-          lowerQuery
-        ),
-        needsAccommodation:
-          /airbnb|accommodation|hotel|room|stay|lodging|booking/.test(
-            lowerQuery
-          ),
+        needsWeather: /weather|forecast|temperature|rain|sunny|cloudy/.test(lowerQuery),
+        needsAccommodation: /airbnb|accommodation|hotel|room|stay|lodging|booking/.test(lowerQuery),
       };
     }
   }
@@ -201,4 +191,3 @@ Examples:
     return [this.config.weatherAgent, this.config.airbnbAgent];
   }
 }
-

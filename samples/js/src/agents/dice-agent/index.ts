@@ -13,16 +13,19 @@
  *   pnpm tsx src/agents/dice-agent/index.ts
  */
 
-import { serve } from "@hono/node-server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
-  AgentCard,
-  AgentSkill,
-  AgentCapabilities,
-} from "@drew-foxall/a2a-js-sdk";
+  type AgentExecutor,
+  DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
+} from "@drew-foxall/a2a-js-sdk/server";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { A2AAdapter } from "../../shared/a2a-adapter.js";
-import { createDiceAgent } from "./agent.js";
 import { getModel } from "../../shared/utils.js";
+import { createDiceAgent } from "./agent.js";
 
 // ============================================================================
 // Configuration
@@ -39,14 +42,9 @@ const BASE_URL = `http://localhost:${PORT}`;
 const rollDiceSkill: AgentSkill = {
   id: "f56cab88-3fe9-47ec-ba6e-86a13c9f1f74",
   name: "Roll Dice",
-  description:
-    "Rolls an N-sided dice and returns the result. By default uses a 6-sided dice.",
+  description: "Rolls an N-sided dice and returns the result. By default uses a 6-sided dice.",
   tags: ["dice", "random", "game"],
-  examples: [
-    "Can you roll an 11-sided dice?",
-    "Roll a 20-sided die",
-    "Roll 2d6",
-  ],
+  examples: ["Can you roll an 11-sided dice?", "Roll a 20-sided die", "Roll 2d6"],
 };
 
 const checkPrimeSkill: AgentSkill = {
@@ -63,16 +61,16 @@ const checkPrimeSkill: AgentSkill = {
 
 const agentCard: AgentCard = {
   name: "Dice Agent",
-  description:
-    "An agent that can roll arbitrary dice and answer if numbers are prime",
+  description: "An agent that can roll arbitrary dice and answer if numbers are prime",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
+  protocolVersion: "1.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
-  capabilities: new AgentCapabilities({
+  capabilities: {
     streaming: true,
     statefulness: "stateless",
-  }),
+  },
   skills: [rollDiceSkill, checkPrimeSkill],
 };
 
@@ -87,20 +85,22 @@ const agent = createDiceAgent(model);
 // A2A Protocol Integration
 // ============================================================================
 
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
+const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  workingMessage: "Rolling dice...",
+  debug: false,
 });
+
+const taskStore: TaskStore = new InMemoryTaskStore();
+
+const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
 // ============================================================================
 // HTTP Server (Hono + A2A)
 // ============================================================================
 
-const app = new A2AHonoApp({
-  agentCard,
-  agentExecutor: adapter.createAgentExecutor(),
-});
+const app = new Hono();
+const appBuilder = new A2AHonoApp(requestHandler);
+appBuilder.setupRoutes(app);
 
 // ============================================================================
 // Start Server
@@ -140,4 +140,3 @@ serve({
   port: PORT,
   hostname: HOST,
 });
-

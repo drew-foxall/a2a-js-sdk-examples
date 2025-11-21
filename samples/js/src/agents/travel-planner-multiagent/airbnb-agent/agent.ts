@@ -5,9 +5,9 @@
  * Part of the Travel Planner Multi-Agent System.
  */
 
-import { ToolLoopAgent, type LanguageModel } from "ai";
-import { getAirbnbAgentPrompt } from "./prompt.js";
+import { type LanguageModel, ToolLoopAgent } from "ai";
 import type { getAirbnbMCPTools } from "./mcp-client.js";
+import { getAirbnbAgentPrompt } from "./prompt.js";
 
 /**
  * Create an Airbnb Agent with MCP Tools
@@ -31,4 +31,3 @@ export function createAirbnbAgent(
     tools: mcpTools, // Use real MCP tools instead of mock
   });
 }
-

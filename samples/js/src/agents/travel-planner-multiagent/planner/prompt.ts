@@ -71,4 +71,3 @@ You: [Delegate to BOTH agents] →
 
 Remember: You are an orchestrator. Delegate to specialists and present their results clearly!`;
 }
-
