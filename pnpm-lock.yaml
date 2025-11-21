@@ -18,6 +18,30 @@ importers:
         specifier: ^4.19.2
         version: 4.20.6
 
+  packages/a2a-ai-sdk-adapter:
+    devDependencies:
+      '@drew-foxall/a2a-js-sdk':
+        specifier: ^0.3.5
+        version: 0.3.5(express@5.1.0)
+      '@total-typescript/tsconfig':
+        specifier: 1.0.4
+        version: 1.0.4
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.1
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
+      ai:
+        specifier: 6.0.0-beta.99
+        version: 6.0.0-beta.99(zod@3.25.76)
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
+
   samples/js:
     dependencies:
       '@ai-sdk/anthropic':
@@ -41,6 +65,9 @@ importers:
       '@ai-sdk/openai':
         specifier: 3.0.0-beta.61
         version: 3.0.0-beta.61(zod@3.25.76)
+      '@drew-foxall/a2a-ai-sdk-adapter':
+        specifier: workspace:*
+        version: link:../../packages/a2a-ai-sdk-adapter
       '@drew-foxall/a2a-js-sdk':
         specifier: ^0.3.5
         version: 0.3.5(express@5.1.0)
@@ -505,6 +532,9 @@ packages:
 
   '@types/node@22.19.1':
     resolution: {integrity: sha512-LCCV0HdSZZZb34qifBsyWlUmok6W7ouER+oQIGBScS8EsZsQbrtFTUrDX4hOl+CS6p7cnNC4td+qrSVGSCTUfQ==}
+
+  '@types/uuid@10.0.0':
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@vercel/oidc@3.0.3':
     resolution: {integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==}
@@ -1379,6 +1409,8 @@ snapshots:
   '@types/node@22.19.1':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/uuid@10.0.0': {}
 
   '@vercel/oidc@3.0.3': {}
 

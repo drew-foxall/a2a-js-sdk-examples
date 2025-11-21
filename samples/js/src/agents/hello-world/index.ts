@@ -31,7 +31,7 @@ import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 // Our adapter that bridges AI SDK agents to A2A
-import { A2AAdapter } from "../../shared/a2a-adapter.js";
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import { getModel } from "../../shared/utils.js";
 import { createHelloWorldAgent } from "./agent.js";
 

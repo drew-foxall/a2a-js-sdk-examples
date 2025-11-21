@@ -1,0 +1,63 @@
+{
+	"name": "@drew-foxall/a2a-ai-sdk-adapter",
+	"version": "1.0.0",
+	"description": "Unified adapter bridging Vercel AI SDK ToolLoopAgent with A2A protocol",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": ["dist", "README.md", "LICENSE"],
+	"scripts": {
+		"build": "tsc",
+		"watch": "tsc --watch",
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "pnpm build"
+	},
+	"keywords": [
+		"a2a",
+		"agent",
+		"ai-sdk",
+		"adapter",
+		"vercel-ai-sdk",
+		"hono",
+		"typescript",
+		"agent-to-agent",
+		"multi-agent",
+		"llm"
+	],
+	"author": "Drew Foxall",
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/drew-foxall/a2a-js-sdk-examples.git",
+		"directory": "packages/a2a-ai-sdk-adapter"
+	},
+	"bugs": {
+		"url": "https://github.com/drew-foxall/a2a-js-sdk-examples/issues"
+	},
+	"homepage": "https://github.com/drew-foxall/a2a-js-sdk-examples/tree/main/packages/a2a-ai-sdk-adapter#readme",
+	"peerDependencies": {
+		"@drew-foxall/a2a-js-sdk": "^0.3.5",
+		"ai": "^6.0.0",
+		"uuid": "^11.0.0"
+	},
+	"devDependencies": {
+		"@drew-foxall/a2a-js-sdk": "^0.3.5",
+		"@total-typescript/tsconfig": "1.0.4",
+		"@types/node": "^22.0.0",
+		"@types/uuid": "^10.0.0",
+		"ai": "6.0.0-beta.99",
+		"typescript": "^5.8.0",
+		"uuid": "^11.1.0"
+	},
+	"packageManager": "pnpm@10.11.1",
+	"engines": {
+		"node": ">=18.0.0"
+	}
+}
+

@@ -39,7 +39,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 
 // Import unified automatic adapter
-import { A2AAdapter } from "../../shared/a2a-adapter.js";
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 // Import the agent definition (kept separate to avoid starting server when importing)
 import { contentEditorAgent } from "./agent.js";
 

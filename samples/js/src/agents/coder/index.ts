@@ -49,7 +49,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 
 // Import unified automatic adapter
-import { A2AAdapter, type ParsedArtifact, type ParsedArtifacts } from "../../shared/a2a-adapter.js";
+import { A2AAdapter, type ParsedArtifact, type ParsedArtifacts } from "@drew-foxall/a2a-ai-sdk-adapter";
 // Import the agent definition
 import { coderAgent } from "./agent.js";
 // Import code parsing utilities
