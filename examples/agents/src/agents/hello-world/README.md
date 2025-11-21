@@ -35,7 +35,7 @@ hello-world/
 ### 1. Install Dependencies
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm install
 ```
 
@@ -56,7 +56,7 @@ export AI_MODEL=gpt-4o-mini
 # From project root
 pnpm start:hello-world
 
-# Or from samples/js
+# Or from examples/agents
 pnpm tsx src/agents/hello-world/index.ts
 ```
 

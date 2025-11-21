@@ -29,7 +29,7 @@ This guide shows the **correct** way to integrate AI SDK agents with the A2A pro
 - ✅ Complete working example
 - ✅ Troubleshooting guide for common errors
 
-**Reference Implementation:** [`samples/js/src/agents/hello-world/index.ts`](./samples/js/src/agents/hello-world/index.ts) - fully annotated example following the correct pattern.
+**Reference Implementation:** [`examples/agents/src/agents/hello-world/index.ts`](./examples/agents/src/agents/hello-world/index.ts) - fully annotated example following the correct pattern.
 
 ## 🔍 Comparing with Python Examples
 
@@ -165,15 +165,15 @@ new A2AAdapter(agent, {
 
 | Example | Port | Original | Features |
 |---------|------|----------|----------|
-| [Hello World](./samples/js/src/agents/hello-world/) | 41244 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/helloworld) | Simplest agent, greeting responses, foundation pattern |
-| [Dice Agent](./samples/js/src/agents/dice-agent/) | 41245 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/dice_agent_rest) | Tool usage, roll dice, check primes, pure computational tools |
-| [GitHub Agent](./samples/js/src/agents/github-agent/) | 41246 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/github-agent) | GitHub API, Octokit integration, repo queries, commit history |
-| [Analytics Agent](./samples/js/src/agents/analytics-agent/) | 41247 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/analytics) | Chart generation, Chart.js + canvas, PNG artifacts, streaming |
-| [Currency Agent](./samples/js/src/agents/currency-agent/) | 41248 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/langgraph) | Multi-turn conversation, currency conversion, Frankfurter API, memory |
-| [**Travel Planner** 🆕](./samples/js/src/agents/travel-planner-multiagent/) | 41250-41252 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/airbnb_planner_multiagent) | **Multi-agent orchestration**, a2a-ai-provider, specialist delegation, 3 agents |
-| [Movie Agent](./samples/js/src/agents/movie-agent/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
-| [Coder Agent](./samples/js/src/agents/coder/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
-| [Content Editor](./samples/js/src/agents/content-editor/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |
+| [Hello World](./examples/agents/src/agents/hello-world/) | 41244 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/helloworld) | Simplest agent, greeting responses, foundation pattern |
+| [Dice Agent](./examples/agents/src/agents/dice-agent/) | 41245 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/dice_agent_rest) | Tool usage, roll dice, check primes, pure computational tools |
+| [GitHub Agent](./examples/agents/src/agents/github-agent/) | 41246 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/github-agent) | GitHub API, Octokit integration, repo queries, commit history |
+| [Analytics Agent](./examples/agents/src/agents/analytics-agent/) | 41247 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/analytics) | Chart generation, Chart.js + canvas, PNG artifacts, streaming |
+| [Currency Agent](./examples/agents/src/agents/currency-agent/) | 41248 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/langgraph) | Multi-turn conversation, currency conversion, Frankfurter API, memory |
+| [**Travel Planner** 🆕](./examples/agents/src/agents/travel-planner-multiagent/) | 41250-41252 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/samples/python/agents/airbnb_planner_multiagent) | **Multi-agent orchestration**, a2a-ai-provider, specialist delegation, 3 agents |
+| [Movie Agent](./examples/agents/src/agents/movie-agent/) | 41241 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/movie-agent) | TMDB API, conversation history, multi-turn, tool calling |
+| [Coder Agent](./examples/agents/src/agents/coder/) | 41242 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/coder) | Streaming, multi-file output, markdown parsing, artifacts |
+| [Content Editor](./examples/agents/src/agents/content-editor/) | 41243 | [Link](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/content-editor) | Proof-reading, grammar checking, style improvement |
 
 ### 🎭 Multi-Agent Orchestration
 
@@ -219,7 +219,7 @@ curl -X POST http://localhost:41252/plan \
   -d '{"query": "Plan a trip to Paris for 2 people"}'
 ```
 
-See [Multi-Agent README](./samples/js/src/agents/travel-planner-multiagent/) for details.
+See [Multi-Agent README](./examples/agents/src/agents/travel-planner-multiagent/) for details.
 
 ## 🚀 Quick Start
 
@@ -417,13 +417,13 @@ pnpm agents:content-editor
 
 **Quick Start:**
 ```bash
-cd samples/js
+cd examples/agents
 export TMDB_API_KEY=your_key
 export OPENAI_API_KEY=your_key
 pnpm agents:movie-agent
 ```
 
-[Full Documentation](./samples/js/src/agents/movie-agent/README.md)
+[Full Documentation](./examples/agents/src/agents/movie-agent/README.md)
 
 ### 💻 Coder Agent
 
@@ -436,13 +436,13 @@ pnpm agents:movie-agent
 
 **Quick Start:**
 ```bash
-cd samples/js
+cd examples/agents
 export ANTHROPIC_API_KEY=your_key
 export AI_PROVIDER=anthropic
 pnpm agents:coder
 ```
 
-[Full Documentation](./samples/js/src/agents/coder/README.md)
+[Full Documentation](./examples/agents/src/agents/coder/README.md)
 
 ### ✍️ Content Editor Agent
 
@@ -454,12 +454,12 @@ pnpm agents:coder
 
 **Quick Start:**
 ```bash
-cd samples/js
+cd examples/agents
 export OPENAI_API_KEY=your_key
 pnpm agents:content-editor
 ```
 
-[Full Documentation](./samples/js/src/agents/content-editor/README.md)
+[Full Documentation](./examples/agents/src/agents/content-editor/README.md)
 
 ## 🆚 Why AI SDK over Genkit?
 

@@ -77,7 +77,7 @@ BASE_URL = 'https://api.weather.gov'
 
 **Airbnb Agent:**
 ```typescript
-// samples/js/src/agents/travel-planner-multiagent/airbnb-agent/tools.ts
+// examples/agents/src/agents/travel-planner-multiagent/airbnb-agent/tools.ts
 const MOCK_LISTINGS: Listing[] = [
   {
     id: "listing-sf-1",
@@ -96,7 +96,7 @@ const MOCK_LISTINGS: Listing[] = [
 
 **Weather Agent:**
 ```typescript
-// samples/js/src/agents/travel-planner-multiagent/weather-agent/tools.ts
+// examples/agents/src/agents/travel-planner-multiagent/weather-agent/tools.ts
 async function getWeatherForecast(
   latitude: number,
   longitude: number

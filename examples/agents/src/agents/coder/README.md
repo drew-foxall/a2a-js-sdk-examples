@@ -1,6 +1,6 @@
 # Coder Agent (AI SDK + Hono)
 
-A high-fidelity port of the original [Genkit-based Coder Agent](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder) using **Vercel AI SDK** and **Hono**.
+A high-fidelity port of the original [Genkit-based Coder Agent](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/coder) using **Vercel AI SDK** and **Hono**.
 
 ## Features
 
@@ -281,7 +281,7 @@ Both achieve the same result - streaming code generation with multi-file support
 
 ## Resources
 
-- [Original Genkit Implementation](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/coder)
+- [Original Genkit Implementation](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/coder)
 - [Vercel AI SDK Streaming](https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#streaming)
 - [A2A Artifacts Specification](https://github.com/google-a2a/A2A)
 

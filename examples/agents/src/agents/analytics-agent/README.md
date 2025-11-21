@@ -54,7 +54,7 @@ This builds on previous examples by adding **image generation** and demonstrates
 ### 1. Install Dependencies
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm install  # Installs chart.js and canvas
 ```
 
@@ -80,7 +80,7 @@ export AI_MODEL=gpt-4o-mini
 # From project root
 pnpm agents:analytics-agent
 
-# Or from samples/js
+# Or from examples/agents
 pnpm tsx src/agents/analytics-agent/index.ts
 ```
 
@@ -355,7 +355,7 @@ Error: Canvas.node was compiled against a different Node.js version
 ```
 **Solution**: Rebuild canvas for your Node.js version:
 ```bash
-cd samples/js
+cd examples/agents
 pnpm rebuild canvas
 ```
 

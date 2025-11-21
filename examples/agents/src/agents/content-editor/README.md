@@ -1,6 +1,6 @@
 # Content Editor Agent (AI SDK + Hono)
 
-A high-fidelity port of the original [Genkit-based Content Editor Agent](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor) using **Vercel AI SDK** and **Hono**.
+A high-fidelity port of the original [Genkit-based Content Editor Agent](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/content-editor) using **Vercel AI SDK** and **Hono**.
 
 ## Features
 
@@ -318,7 +318,7 @@ For multi-agent systems, check out the [content_creation sample](https://github.
 
 ## Resources
 
-- [Original Genkit Implementation](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/content-editor)
+- [Original Genkit Implementation](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/content-editor)
 - [Vercel AI SDK Documentation](https://sdk.vercel.ai/docs)
 - [A2A Protocol Specification](https://github.com/google-a2a/A2A)
 

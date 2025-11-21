@@ -27,7 +27,7 @@ This directory contains example agents implementing the A2A protocol using AI SD
 
 ## Running an Agent
 
-From the `samples/js` directory:
+From the `examples/agents` directory:
 
 ```bash
 pnpm agents:movie-agent

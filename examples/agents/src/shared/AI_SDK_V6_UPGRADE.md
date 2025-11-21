@@ -20,7 +20,7 @@ The AI SDK v6 introduces the [`ToolLoopAgent` class](https://v6.ai-sdk.dev/docs/
 ### 1. Update package.json
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm add ai@beta
 ```
 

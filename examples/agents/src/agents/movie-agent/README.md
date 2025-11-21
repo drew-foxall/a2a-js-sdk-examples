@@ -1,6 +1,6 @@
 # Movie Info Agent (AI SDK + Hono)
 
-A high-fidelity port of the original [Genkit-based Movie Agent](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent) using **Vercel AI SDK** and **Hono**.
+A high-fidelity port of the original [Genkit-based Movie Agent](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/movie-agent) using **Vercel AI SDK** and **Hono**.
 
 ## Features
 
@@ -209,7 +209,7 @@ Once running, the agent exposes:
 
 ## Resources
 
-- [Original Genkit Implementation](https://github.com/a2aproject/a2a-samples/tree/main/samples/js/src/agents/movie-agent)
+- [Original Genkit Implementation](https://github.com/a2aproject/a2a-samples/tree/main/examples/agents/src/agents/movie-agent)
 - [TMDB API Documentation](https://developer.themoviedb.org/docs)
 - [Vercel AI SDK Documentation](https://sdk.vercel.ai/docs)
 - [A2A Protocol Specification](https://github.com/google-a2a/A2A)

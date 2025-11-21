@@ -1,4 +1,6 @@
 #!/bin/bash
+# ⚠️ DEPRECATED: This script will be removed in Phase 3
+# Use Turborepo + Vitest instead: pnpm test
 # Test script for Coder Agent (Phase 4 Migration - Streaming + Artifacts)
 
 echo "🧪 Testing Coder Agent (Phase 4 Migration - Streaming + Artifacts)"
@@ -65,9 +67,9 @@ echo ""
 echo "🎉 All tests passed!"
 echo ""
 echo "📁 Files:"
-echo "   - Agent: samples/js/src/agents/coder/agent.ts (80 lines)"
-echo "   - Server: samples/js/src/agents/coder/index.ts (195 lines)"
-echo "   - Streaming Adapter: samples/js/src/shared/a2a-streaming-adapter.ts (420 lines)"
+echo "   - Agent: examples/agents/src/agents/coder/agent.ts (80 lines)"
+echo "   - Server: examples/agents/src/agents/coder/index.ts (195 lines)"
+echo "   - Streaming Adapter: examples/agents/src/shared/a2a-streaming-adapter.ts (420 lines)"
 echo ""
 echo "✨ Advanced Features:"
 echo "   • Real-time streaming with chunk-by-chunk processing"

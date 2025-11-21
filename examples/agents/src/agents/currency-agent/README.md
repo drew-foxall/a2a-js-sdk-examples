@@ -55,7 +55,7 @@ This builds on previous examples by adding **conversational intelligence** and s
 ### 1. Install Dependencies
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm install
 ```
 
@@ -78,7 +78,7 @@ export AI_MODEL=gpt-4o-mini
 # From project root
 pnpm agents:currency-agent
 
-# Or from samples/js
+# Or from examples/agents
 pnpm tsx src/agents/currency-agent/index.ts
 ```
 

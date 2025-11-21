@@ -33,7 +33,7 @@ export AI_PROVIDER=openai  # or: anthropic, google
 ## Running Agents
 
 ```bash
-# From this directory (samples/js)
+# From this directory (examples/agents)
 pnpm agents:movie-agent       # Port 41241
 pnpm agents:coder             # Port 41242
 pnpm agents:content-editor    # Port 41243

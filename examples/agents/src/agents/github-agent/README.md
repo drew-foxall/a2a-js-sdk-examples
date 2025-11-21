@@ -54,7 +54,7 @@ This builds on previous examples by adding **external dependencies** and **real-
 ### 1. Install Dependencies
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm install  # Installs @octokit/rest
 ```
 
@@ -90,7 +90,7 @@ Without a GitHub token, you're limited to **60 requests per hour**. With a token
 # From project root
 pnpm agents:github-agent
 
-# Or from samples/js
+# Or from examples/agents
 pnpm tsx src/agents/github-agent/index.ts
 ```
 

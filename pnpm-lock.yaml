@@ -18,31 +18,7 @@ importers:
         specifier: ^4.19.2
         version: 4.20.6
 
-  packages/a2a-ai-sdk-adapter:
-    devDependencies:
-      '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.3.5
-        version: 0.3.5(express@5.1.0)
-      '@total-typescript/tsconfig':
-        specifier: 1.0.4
-        version: 1.0.4
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.1
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
-      ai:
-        specifier: 6.0.0-beta.99
-        version: 6.0.0-beta.99(zod@3.25.76)
-      typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
-
-  samples/js:
+  examples/agents:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: 3.0.0-beta.54
@@ -114,6 +90,30 @@ importers:
       typescript:
         specifier: ^5.8.0
         version: 5.9.3
+
+  packages/a2a-ai-sdk-adapter:
+    devDependencies:
+      '@drew-foxall/a2a-js-sdk':
+        specifier: ^0.3.5
+        version: 0.3.5(express@5.1.0)
+      '@total-typescript/tsconfig':
+        specifier: 1.0.4
+        version: 1.0.4
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.1
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
+      ai:
+        specifier: 6.0.0-beta.99
+        version: 6.0.0-beta.99(zod@3.25.76)
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
 
 packages:
 

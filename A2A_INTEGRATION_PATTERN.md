@@ -126,7 +126,7 @@ main().catch(console.error);
 
 ## Complete Example
 
-See [`samples/js/src/agents/movie-agent/index.ts`](./samples/js/src/agents/movie-agent/index.ts) for a working reference implementation.
+See [`examples/agents/src/agents/movie-agent/index.ts`](./examples/agents/src/agents/movie-agent/index.ts) for a working reference implementation.
 
 ```typescript
 import { Hono } from "hono";
@@ -255,5 +255,5 @@ serve({
 
 ## Reference Implementation
 
-The **canonical reference** is [`movie-agent/index.ts`](./samples/js/src/agents/movie-agent/index.ts) - all agents should follow this pattern.
+The **canonical reference** is [`movie-agent/index.ts`](./examples/agents/src/agents/movie-agent/index.ts) - all agents should follow this pattern.
 

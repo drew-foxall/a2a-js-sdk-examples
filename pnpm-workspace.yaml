@@ -1,4 +1,4 @@
 packages:
   - 'packages/*'
-  - 'samples/js'
+  - 'examples/agents'
 

@@ -127,11 +127,11 @@ If we want **exact Python naming**:
 
 ```bash
 # Rename operations (these would need to be done carefully)
-mv samples/js/src/agents/hello-world samples/js/src/agents/helloworld
-mv samples/js/src/agents/dice-agent samples/js/src/agents/dice_agent_rest
-mv samples/js/src/agents/analytics-agent samples/js/src/agents/analytics
-mv samples/js/src/agents/currency-agent samples/js/src/agents/langgraph
-mv samples/js/src/agents/travel-planner-multiagent samples/js/src/agents/airbnb_planner_multiagent
+mv examples/agents/src/agents/hello-world examples/agents/src/agents/helloworld
+mv examples/agents/src/agents/dice-agent examples/agents/src/agents/dice_agent_rest
+mv examples/agents/src/agents/analytics-agent examples/agents/src/agents/analytics
+mv examples/agents/src/agents/currency-agent examples/agents/src/agents/langgraph
+mv examples/agents/src/agents/travel-planner-multiagent examples/agents/src/agents/airbnb_planner_multiagent
 
 # Would also need to update:
 # - package.json scripts

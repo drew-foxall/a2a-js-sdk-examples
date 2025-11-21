@@ -52,7 +52,7 @@ This builds on the Hello World Agent by adding **tools** while keeping complexit
 ### 1. Install Dependencies
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm install
 ```
 
@@ -73,7 +73,7 @@ export AI_MODEL=gpt-4o-mini
 # From project root
 pnpm agents:dice-agent
 
-# Or from samples/js
+# Or from examples/agents
 pnpm tsx src/agents/dice-agent/index.ts
 ```
 

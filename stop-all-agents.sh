@@ -1,4 +1,6 @@
 #!/bin/bash
+# ⚠️ DEPRECATED: This script will be removed in Phase 3
+# Use Turborepo + Vitest instead: pnpm test
 
 echo "Stopping all agents..."
 

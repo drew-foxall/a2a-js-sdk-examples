@@ -92,7 +92,7 @@ This is the **most advanced example** in the repository because it demonstrates:
 
 ```bash
 # Ensure you have the dependencies installed
-cd samples/js
+cd examples/agents
 pnpm install
 ```
 

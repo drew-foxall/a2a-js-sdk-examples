@@ -333,7 +333,7 @@ These examples establish baseline patterns and progressively demonstrate core ca
 All converted single-agent examples will follow the established architecture:
 
 ```
-samples/js/src/agents/{agent-name}/
+examples/agents/src/agents/{agent-name}/
   ├── agent.ts          # Pure AI SDK ToolLoopAgent (protocol-agnostic)
   ├── index.ts          # A2A integration via A2AAdapter
   ├── tools.ts          # Tool implementations (if applicable)
@@ -410,7 +410,7 @@ const agent = new ToolLoopAgent({ model: getModel(), tools });
 Multi-agent examples demonstrate orchestration patterns:
 
 ```
-samples/js/src/agents/{orchestrator-name}/
+examples/agents/src/agents/{orchestrator-name}/
   ├── orchestrator.ts   # Host agent using a2a-ai-provider
   ├── index.ts          # A2A integration (orchestrator exposed via A2A)
   ├── specialist-1/     # First specialist agent (standard A2A agent)
@@ -529,7 +529,7 @@ To achieve full parity with Python's Airbnb agent, follow this upgrade path:
 ### Step 1: Install MCP Dependencies
 
 ```bash
-cd samples/js
+cd examples/agents
 pnpm add @ai-sdk/mcp @modelcontextprotocol/sdk
 ```
 
@@ -538,7 +538,7 @@ pnpm add @ai-sdk/mcp @modelcontextprotocol/sdk
 Replace `tools.ts` mock data approach with MCP integration:
 
 ```typescript
-// samples/js/src/agents/travel-planner-multiagent/airbnb-agent/agent.ts
+// examples/agents/src/agents/travel-planner-multiagent/airbnb-agent/agent.ts
 import { experimental_createMCPClient } from '@ai-sdk/mcp';
 import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
 import { ToolLoopAgent } from 'ai/agent';
@@ -574,7 +574,7 @@ export async function closeAirbnbAgent() {
 ### Step 3: Update Server to Manage MCP Lifecycle
 
 ```typescript
-// samples/js/src/agents/travel-planner-multiagent/airbnb-agent/index.ts
+// examples/agents/src/agents/travel-planner-multiagent/airbnb-agent/index.ts
 import { createAirbnbAgent, closeAirbnbAgent } from './agent.js';
 
 async function main() {
@@ -602,8 +602,8 @@ Delete or comment out `tools.ts` mock data:
 
 ```bash
 # Optionally keep for fallback
-mv samples/js/src/agents/travel-planner-multiagent/airbnb-agent/tools.ts \
-   samples/js/src/agents/travel-planner-multiagent/airbnb-agent/tools.mock.ts
+mv examples/agents/src/agents/travel-planner-multiagent/airbnb-agent/tools.ts \
+   examples/agents/src/agents/travel-planner-multiagent/airbnb-agent/tools.mock.ts
 ```
 
 ### Step 5: Test with Real Data

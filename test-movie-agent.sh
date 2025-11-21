@@ -1,4 +1,6 @@
 #!/bin/bash
+# ⚠️ DEPRECATED: This script will be removed in Phase 3
+# Use Turborepo + Vitest instead: pnpm test
 # Test script for Movie Agent (Phase 3 Migration)
 
 echo "🧪 Testing Movie Agent (Phase 3 Migration - Advanced Features)"
@@ -65,9 +67,9 @@ echo ""
 echo "🎉 All tests passed!"
 echo ""
 echo "📁 Files:"
-echo "   - Agent: samples/js/src/agents/movie-agent/agent.ts (139 lines)"
-echo "   - Server: samples/js/src/agents/movie-agent/index.ts (214 lines)"
-echo "   - Adapter: samples/js/src/shared/a2a-agent-adapter.ts"
+echo "   - Agent: examples/agents/src/agents/movie-agent/agent.ts (139 lines)"
+echo "   - Server: examples/agents/src/agents/movie-agent/index.ts (214 lines)"
+echo "   - Adapter: examples/agents/src/shared/a2a-agent-adapter.ts"
 echo ""
 echo "✨ Advanced Features:"
 echo "   • callOptionsSchema: Dynamic configuration per request"

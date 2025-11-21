@@ -1,24 +1,28 @@
 #!/bin/bash
 
+# ⚠️ DEPRECATED: This script will be removed in Phase 3
+# Use Turborepo instead: pnpm dev
+# This provides hot reload, parallel execution, and proper process management
+
 # Load environment variables
 export $(cat .env | grep -v '^#' | xargs)
 
 # Start Content Editor Agent (port 41243)
-cd samples/js
+cd examples/agents
 pnpm agents:content-editor > /tmp/content-editor.log 2>&1 &
 CONTENT_PID=$!
 echo "Started Content Editor Agent (PID: $CONTENT_PID) on port 41243"
 cd ../..
 
 # Start Coder Agent (port 41242)
-cd samples/js
+cd examples/agents
 pnpm agents:coder > /tmp/coder.log 2>&1 &
 CODER_PID=$!
 echo "Started Coder Agent (PID: $CODER_PID) on port 41242"
 cd ../..
 
 # Start Movie Agent (port 41241)
-cd samples/js
+cd examples/agents
 pnpm agents:movie-agent > /tmp/movie.log 2>&1 &
 MOVIE_PID=$!
 echo "Started Movie Agent (PID: $MOVIE_PID) on port 41241"

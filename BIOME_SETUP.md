@@ -73,9 +73,9 @@ This configuration applies to the entire workspace.
 
 ```bash
 # From root
-pnpm biome check samples/js/
+pnpm biome check examples/agents/
 
-# From samples/js
+# From examples/agents
 pnpm lint
 ```
 
@@ -83,12 +83,12 @@ pnpm lint
 
 ```bash
 # From root (safe fixes only)
-pnpm biome check --write samples/js/
+pnpm biome check --write examples/agents/
 
 # From root (include unsafe fixes)
-pnpm biome check --write --unsafe samples/js/
+pnpm biome check --write --unsafe examples/agents/
 
-# From samples/js
+# From examples/agents
 pnpm lint:fix
 ```
 
@@ -96,19 +96,19 @@ pnpm lint:fix
 
 ```bash
 # From root (check formatting)
-pnpm biome format samples/js/
+pnpm biome format examples/agents/
 
 # From root (apply formatting)
-pnpm biome format --write samples/js/
+pnpm biome format --write examples/agents/
 
-# From samples/js
+# From examples/agents
 pnpm format:write
 ```
 
 ### Type Check
 
 ```bash
-# From samples/js
+# From examples/agents
 pnpm typecheck
 ```
 
@@ -126,13 +126,13 @@ pnpm format:write  # Apply formatting
 pnpm check         # Alias for lint
 ```
 
-### Samples Level (`/samples/js/package.json`)
+### Samples Level (`/examples/agents/package.json`)
 
 ```bash
-pnpm lint          # Check samples/js code
-pnpm lint:fix      # Auto-fix samples/js issues
-pnpm format        # Check samples/js formatting
-pnpm format:write  # Apply samples/js formatting
+pnpm lint          # Check examples/agents code
+pnpm lint:fix      # Auto-fix examples/agents issues
+pnpm format        # Check examples/agents formatting
+pnpm format:write  # Apply examples/agents formatting
 pnpm typecheck     # Run TypeScript type checking
 ```
 
@@ -224,7 +224,7 @@ pnpm biome check --staged
 ```yaml
 - name: Lint and Format Check
   run: |
-    pnpm biome check samples/js/
+    pnpm biome check examples/agents/
 ```
 
 ---

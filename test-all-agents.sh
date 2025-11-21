@@ -1,4 +1,6 @@
 #!/bin/bash
+# ⚠️ DEPRECATED: This script will be removed in Phase 3
+# Use Turborepo + Vitest instead: pnpm test
 #
 # Comprehensive Test Suite for All Agents
 # Tests the unified A2AAdapter with all three agent patterns

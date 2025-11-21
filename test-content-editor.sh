@@ -1,4 +1,6 @@
 #!/bin/bash
+# ⚠️ DEPRECATED: This script will be removed in Phase 3
+# Use Turborepo + Vitest instead: pnpm test
 # Simple test script for Content Editor Agent
 
 echo "🧪 Testing Content Editor Agent (Phase 2 Migration)"
@@ -46,9 +48,9 @@ echo ""
 echo "🎉 All tests passed!"
 echo ""
 echo "📁 Files:"
-echo "   - Agent Definition: samples/js/src/agents/content-editor/agent.ts"
-echo "   - Server Setup: samples/js/src/agents/content-editor/index.ts"
-echo "   - Adapter: samples/js/src/shared/a2a-agent-adapter.ts"
+echo "   - Agent Definition: examples/agents/src/agents/content-editor/agent.ts"
+echo "   - Server Setup: examples/agents/src/agents/content-editor/index.ts"
+echo "   - Adapter: examples/agents/src/shared/a2a-agent-adapter.ts"
 echo ""
 echo "📊 Metrics:"
 echo "   - Lines of code: 317 → 163 (-49%)"

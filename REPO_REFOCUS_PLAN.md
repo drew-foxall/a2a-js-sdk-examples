@@ -15,7 +15,7 @@ This plan ensures the repository complements [a2a-samples](https://github.com/a2
 ### Repository Structure (Current)
 ```
 a2a-js-sdk-examples/
-├── samples/js/
+├── examples/agents/
 │   ├── src/
 │   │   ├── agents/        # 9 agent examples
 │   │   └── shared/
@@ -38,7 +38,7 @@ a2a-js-sdk-examples/
 - **Recommendation**: Python is NOT required for testing A2A agents
 
 #### ⚠️ Adapter Not Publishable
-- `a2a-adapter.ts` is currently in `samples/js/src/shared/`
+- `a2a-adapter.ts` is currently in `examples/agents/src/shared/`
 - Buried 4 levels deep in examples
 - No independent package.json
 - Cannot be published to NPM as-is
@@ -103,7 +103,7 @@ a2a-js-sdk-examples/
 │       ├── tsconfig.json
 │       └── README.md             # Package documentation
 ├── examples/
-│   └── agents/                   # 🔄 Renamed from samples/js
+│   └── agents/                   # 🔄 Renamed from examples/agents
 │       ├── hello-world/
 │       ├── dice-agent/
 │       ├── github-agent/
@@ -184,7 +184,7 @@ mkdir -p packages/a2a-ai-sdk-adapter/src
 ```
 
 #### 1.2 Extract Core Files
-Move from `samples/js/src/shared/`:
+Move from `examples/agents/src/shared/`:
 - `a2a-adapter.ts` → `packages/a2a-ai-sdk-adapter/src/adapter.ts`
 - Extract logger interfaces → `packages/a2a-ai-sdk-adapter/src/logger.ts`
 - Extract types → `packages/a2a-ai-sdk-adapter/src/types.ts`
@@ -255,7 +255,7 @@ npm publish --access public
 
 #### 2.1 Rename Directory
 ```bash
-git mv samples/js examples/agents
+git mv examples/agents examples/agents
 ```
 
 #### 2.2 Update Import Paths
