@@ -12,7 +12,7 @@ import { simulateReadableStream, ToolLoopAgent } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { A2AAdapter, ConsoleLogger, NoOpLogger } from "./adapter";
+import { A2AAdapter, ConsoleLogger, NoOpLogger } from "./adapter.js";
 
 describe("A2AAdapter", () => {
   describe("Configuration", () => {

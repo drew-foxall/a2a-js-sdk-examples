@@ -15,4 +15,4 @@ export {
   type ArtifactGenerationContext,
   ConsoleLogger,
   NoOpLogger,
-} from "./adapter";
+} from "./adapter.js";
