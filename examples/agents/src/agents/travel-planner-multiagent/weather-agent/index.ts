@@ -13,6 +13,7 @@
  *   pnpm tsx src/agents/travel-planner-multiagent/weather-agent/index.ts
  */
 
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
@@ -23,9 +24,8 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import { getModel } from "../../../shared/utils.js";
-import { createWeatherAgent } from "./agent.js";
+import { getModel } from "../../../shared/utils";
+import { createWeatherAgent } from "./agent";
 
 // ============================================================================
 // Configuration
@@ -73,6 +73,8 @@ const weatherAgentCard: AgentCard = {
   description: "Specialized weather forecast assistant using Open-Meteo API",
   url: `${BASE_URL}/.well-known/agent-card.json`,
   protocolVersion: "0.3.0",
+  preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
+  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   version: "1.0.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],

@@ -18,8 +18,8 @@
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import { getGitHubAgentPrompt } from "./prompt.js";
-import { getRecentCommits, getUserRepositories, searchRepositories } from "./tools.js";
+import { getGitHubAgentPrompt } from "./prompt";
+import { getRecentCommits, getUserRepositories, searchRepositories } from "./tools";
 
 /**
  * Tool Schemas

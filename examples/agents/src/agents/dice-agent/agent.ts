@@ -17,8 +17,8 @@
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import { getDiceAgentPrompt } from "./prompt.js";
-import { checkPrime, rollDice } from "./tools.js";
+import { getDiceAgentPrompt } from "./prompt";
+import { checkPrime, rollDice } from "./tools";
 
 /**
  * Tool Schemas

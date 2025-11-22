@@ -22,10 +22,10 @@ Start any agent from the examples:
 
 ```bash
 # From repository root
-pnpm agents:hello-world     # Port 41244
-pnpm agents:dice-agent      # Port 41245
-pnpm agents:coder           # Port 41250
-pnpm agents:movie-agent     # Port 41249
+pnpm agent:hello-world      # Port 41244
+pnpm agent:dice             # Port 41245
+pnpm agent:coder            # Port 41250
+pnpm agent:movie            # Port 41249
 # ... etc
 ```
 
@@ -57,7 +57,7 @@ In the inspector:
 **Purpose**: Simplest A2A agent - demonstrates basic protocol implementation
 
 ```bash
-pnpm agents:hello-world
+pnpm agent:hello-world
 ```
 
 **Test in Inspector**:
@@ -74,7 +74,7 @@ pnpm agents:hello-world
 **Purpose**: Demonstrates simple tool usage (random number generation)
 
 ```bash
-pnpm agents:dice-agent
+pnpm agent:dice
 ```
 
 **Test in Inspector**:
@@ -93,7 +93,7 @@ pnpm agents:dice-agent
 ```bash
 # Requires GITHUB_TOKEN
 export GITHUB_TOKEN=your_token_here
-pnpm agents:github-agent
+pnpm agent:github
 ```
 
 **Test in Inspector**:
@@ -110,7 +110,7 @@ pnpm agents:github-agent
 **Purpose**: Demonstrates artifact generation (PNG charts)
 
 ```bash
-pnpm agents:analytics-agent
+pnpm agent:analytics
 ```
 
 **Test in Inspector**:
@@ -128,7 +128,7 @@ pnpm agents:analytics-agent
 **Purpose**: Real-time API integration (Frankfurter API for exchange rates)
 
 ```bash
-pnpm agents:currency-agent
+pnpm agent:currency
 ```
 
 **Test in Inspector**:
@@ -145,7 +145,7 @@ pnpm agents:currency-agent
 **Purpose**: Code generation with artifact extraction
 
 ```bash
-pnpm agents:coder
+pnpm agent:coder
 ```
 
 **Test in Inspector**:
@@ -163,7 +163,7 @@ pnpm agents:coder
 **Purpose**: Multi-turn conversation with custom state management
 
 ```bash
-pnpm agents:movie-agent
+pnpm agent:movie
 ```
 
 **Test in Inspector**:
@@ -185,7 +185,7 @@ pnpm agents:movie-agent
 **Purpose**: Real-time weather data (Open-Meteo API)
 
 ```bash
-pnpm agents:weather-agent
+pnpm agent:weather
 ```
 
 **Test in Inspector**:
@@ -202,7 +202,7 @@ pnpm agents:weather-agent
 **Purpose**: MCP integration with real Airbnb data
 
 ```bash
-pnpm agents:airbnb-agent
+pnpm agent:airbnb
 ```
 
 **Test in Inspector**:
@@ -220,7 +220,7 @@ pnpm agents:airbnb-agent
 **Purpose**: Demonstrates multi-agent orchestration using `a2a-ai-provider`
 
 ```bash
-pnpm agents:travel-planner
+pnpm agent:planner
 ```
 
 **Test in Inspector**:
@@ -257,13 +257,13 @@ This starts all 10 agents simultaneously, each on their designated port. You can
 **Setup**:
 ```bash
 # Terminal 1: Start Weather Agent
-pnpm agents:weather-agent
+pnpm agent:weather
 
 # Terminal 2: Start Airbnb Agent  
-pnpm agents:airbnb-agent
+pnpm agent:airbnb
 
 # Terminal 3: Start Travel Planner (orchestrator)
-pnpm agents:travel-planner
+pnpm agent:planner
 ```
 
 **Test**:
@@ -279,7 +279,7 @@ pnpm agents:travel-planner
 
 **Setup**:
 ```bash
-pnpm agents:coder
+pnpm agent:coder
 ```
 
 **Test**:
@@ -296,7 +296,7 @@ pnpm agents:coder
 
 **Setup**:
 ```bash
-pnpm agents:analytics-agent
+pnpm agent:analytics
 ```
 
 **Test**:

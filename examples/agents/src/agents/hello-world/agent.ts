@@ -13,7 +13,7 @@
  */
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
-import { getHelloWorldPrompt } from "./prompt.js";
+import { getHelloWorldPrompt } from "./prompt";
 
 /**
  * Create a Hello World Agent

@@ -2,7 +2,34 @@
  * Weather Agent Tools
  *
  * Weather forecast using Open-Meteo API (free, no API key required).
+ * Now with Zod validation for runtime type safety.
  */
+
+import { z } from "zod";
+
+// Zod schemas for API response validation
+const GeocodeResultSchema = z.object({
+  name: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  country: z.string(),
+  admin1: z.string().optional(),
+});
+
+const GeocodeResponseSchema = z.object({
+  results: z.array(GeocodeResultSchema).optional(),
+});
+
+const WeatherDataSchema = z.object({
+  timezone: z.string(),
+  daily: z.object({
+    time: z.array(z.string()),
+    temperature_2m_max: z.array(z.number()),
+    temperature_2m_min: z.array(z.number()),
+    precipitation_sum: z.array(z.number()),
+    weather_code: z.array(z.number()),
+  }),
+});
 
 /**
  * Geocoding result for location lookup
@@ -49,12 +76,22 @@ export async function geocodeLocation(location: string): Promise<GeocodeResult |
       return null;
     }
 
-    const data = await response.json();
-    if (!data.results || data.results.length === 0) {
+    const rawData: unknown = await response.json();
+    const parseResult = GeocodeResponseSchema.safeParse(rawData);
+
+    if (
+      !parseResult.success ||
+      !parseResult.data.results ||
+      parseResult.data.results.length === 0
+    ) {
       return null;
     }
 
-    const result = data.results[0];
+    const result = parseResult.data.results[0];
+    if (!result) {
+      return null;
+    }
+
     return {
       name: result.name,
       latitude: result.latitude,
@@ -101,7 +138,14 @@ export async function getWeatherForecast(
       return { error: `Weather API error: ${response.status}` };
     }
 
-    const data = await response.json();
+    const rawData: unknown = await response.json();
+    const parseResult = WeatherDataSchema.safeParse(rawData);
+
+    if (!parseResult.success) {
+      return { error: `Invalid weather API response: ${parseResult.error.message}` };
+    }
+
+    const data = parseResult.data;
 
     return {
       location: `${geocode.name}, ${geocode.admin1 || geocode.country}`,

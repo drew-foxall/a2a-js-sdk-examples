@@ -16,7 +16,7 @@
  */
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
-import { getAnalyticsAgentPrompt } from "./prompt.js";
+import { getAnalyticsAgentPrompt } from "./prompt";
 
 /**
  * Create an Analytics Agent

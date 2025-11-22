@@ -7,13 +7,12 @@
  */
 
 export {
-	A2AAdapter,
-	type A2AAdapterConfig,
-	type A2ALogger,
-	type ParsedArtifact,
-	type ParsedArtifacts,
-	type ArtifactGenerationContext,
-	ConsoleLogger,
-	NoOpLogger,
-} from "./adapter.js";
-
+  A2AAdapter,
+  type A2AAdapterConfig,
+  type A2ALogger,
+  type ParsedArtifact,
+  type ParsedArtifacts,
+  type ArtifactGenerationContext,
+  ConsoleLogger,
+  NoOpLogger,
+} from "./adapter";

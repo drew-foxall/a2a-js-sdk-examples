@@ -1,17 +1,9 @@
 {
-	"extends": "@total-typescript/tsconfig/bundler/no-dom",
-	"compilerOptions": {
-		"outDir": "dist",
-		"rootDir": "src",
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"composite": false,
-		"incremental": true,
-		"skipLibCheck": true,
-		"noEmit": false
-	},
+  "extends": "@total-typescript/tsconfig/tsc/no-dom/library",
 	"include": ["src/**/*.ts"],
-	"exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "compilerOptions": {
+    "outDir": "dist"
+	},
+	"exclude": ["node_modules", "dist"]
 }
 

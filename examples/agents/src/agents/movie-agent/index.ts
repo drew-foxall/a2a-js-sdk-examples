@@ -38,6 +38,8 @@
  * - samples/js/src/shared/a2a-adapter.ts (Implementation)
  */
 
+// Import unified automatic adapter
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, TaskState } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
@@ -47,13 +49,9 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
-import type { GenerateTextResult } from "ai";
 import { Hono } from "hono";
-
-// Import unified automatic adapter
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 // Import the agent definition
-import { movieAgent } from "./agent.js";
+import { movieAgent } from "./agent";
 
 // Environment validation
 if (!process.env.TMDB_API_KEY) {
@@ -96,21 +94,18 @@ function parseMovieAgentTaskState(text: string): TaskState {
  * Since we parse the state from the last line, we should remove it
  * from the response text sent to the user.
  */
-function transformMovieAgentResponse<TTools extends Record<string, unknown>>(
-  result: GenerateTextResult<TTools, never>
-): GenerateTextResult<TTools, never> {
-  if (!result?.text) return result;
+function transformMovieAgentResponse(result: { text: string }): string {
+  if (!result?.text) return result.text;
 
   const lines = result.text.trim().split("\n");
   const finalLine = lines.at(-1)?.trim().toUpperCase();
 
   // If the last line is a state marker, remove it
   if (finalLine === "COMPLETED" || finalLine === "AWAITING_USER_INPUT") {
-    const cleanedText = lines.slice(0, -1).join("\n").trim();
-    return { ...result, text: cleanedText };
+    return lines.slice(0, -1).join("\n").trim();
   }
 
-  return result;
+  return result.text;
 }
 
 /**
@@ -146,6 +141,8 @@ const movieAgentCard: AgentCard = {
   },
   version: "2.0.0", // Bumped to 2.0.0 for migration
   protocolVersion: "0.3.0",
+  preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
+  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   capabilities: {
     streaming: true,
     pushNotifications: false,

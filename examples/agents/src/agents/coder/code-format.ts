@@ -30,6 +30,7 @@ export function extractCodeBlocks(source: string): CodeMessageData {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (!line) continue;
     const trimmedLine = line.trim();
 
     if (trimmedLine.startsWith("```")) {
@@ -54,8 +55,9 @@ export function extractCodeBlocks(source: string): CodeMessageData {
         // Ending a code block
         inCodeBlock = false;
         // Mark the current file as done
-        if (files.length > 0) {
-          files[files.length - 1].done = true;
+        const lastFile = files[files.length - 1];
+        if (lastFile) {
+          lastFile.done = true;
         }
       }
       continue;
@@ -63,12 +65,14 @@ export function extractCodeBlocks(source: string): CodeMessageData {
 
     if (inCodeBlock) {
       // Add to the current file's content
-      if (files.length > 0) {
-        files[files.length - 1].content += `${line}\n`;
+      const lastFile = files[files.length - 1];
+      if (lastFile) {
+        lastFile.content += `${line}\n`;
       }
     } else {
       // If we're past all code blocks and have content, this is postamble
-      if (files.length > 0 && files[files.length - 1].done) {
+      const lastFile = files[files.length - 1];
+      if (lastFile?.done) {
         postamble += `${line}\n`;
       } else {
         // Otherwise this is preamble for the next file

@@ -1,0 +1,12 @@
+{
+  // Base configuration from @total-typescript/tsconfig
+  // See: https://github.com/total-typescript/tsconfig
+  "extends": "@total-typescript/tsconfig/tsc/no-dom/library",
+  "compilerOptions": {
+    // Output directory (for when tsc is used for type checking with --noEmit false)
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
+

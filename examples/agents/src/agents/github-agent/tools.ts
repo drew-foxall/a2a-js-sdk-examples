@@ -97,18 +97,19 @@ export async function getUserRepositories(
 
       for (const repo of data) {
         if (repos.length >= limit) break;
+        if (!repo.updated_at) continue;
         const updatedAt = new Date(repo.updated_at);
         if (updatedAt >= cutoffDate) {
           repos.push({
             name: repo.name,
             fullName: repo.full_name,
-            description: repo.description,
+            description: repo.description ?? null,
             url: repo.html_url,
             updatedAt: repo.updated_at,
-            pushedAt: repo.pushed_at,
-            language: repo.language,
-            stars: repo.stargazers_count,
-            forks: repo.forks_count,
+            pushedAt: repo.pushed_at ?? null,
+            language: repo.language ?? null,
+            stars: repo.stargazers_count ?? 0,
+            forks: repo.forks_count ?? 0,
           });
         }
       }
@@ -122,18 +123,19 @@ export async function getUserRepositories(
 
       for (const repo of data) {
         if (repos.length >= limit) break;
+        if (!repo.updated_at) continue;
         const updatedAt = new Date(repo.updated_at);
         if (updatedAt >= cutoffDate) {
           repos.push({
             name: repo.name,
             fullName: repo.full_name,
-            description: repo.description,
+            description: repo.description ?? null,
             url: repo.html_url,
             updatedAt: repo.updated_at,
-            pushedAt: repo.pushed_at || null,
-            language: repo.language,
-            stars: repo.stargazers_count,
-            forks: repo.forks_count,
+            pushedAt: repo.pushed_at ?? null,
+            language: repo.language ?? null,
+            stars: repo.stargazers_count ?? 0,
+            forks: repo.forks_count ?? 0,
           });
         }
       }
@@ -200,9 +202,9 @@ export async function getRecentCommits(
 
     const commits: GitHubCommit[] = data.map((commit) => ({
       sha: commit.sha.substring(0, 8),
-      message: commit.commit.message.split("\n")[0], // First line only
-      author: commit.commit.author?.name || "Unknown",
-      date: commit.commit.author?.date || new Date().toISOString(),
+      message: commit.commit.message.split("\n")[0] ?? "No message", // First line only
+      author: commit.commit.author?.name ?? "Unknown",
+      date: commit.commit.author?.date ?? new Date().toISOString(),
       url: commit.html_url,
     }));
 

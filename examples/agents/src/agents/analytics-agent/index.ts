@@ -13,6 +13,7 @@
  *   pnpm tsx src/agents/analytics-agent/index.ts
  */
 
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill, Artifact } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
@@ -23,10 +24,9 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import { getModel } from "../../shared/utils.js";
-import { createAnalyticsAgent } from "./agent.js";
-import { generateChartFromPrompt } from "./tools.js";
+import { getModel } from "../../shared/utils";
+import { createAnalyticsAgent } from "./agent";
+import { generateChartFromPrompt } from "./tools";
 
 // ============================================================================
 // Configuration
@@ -59,6 +59,8 @@ const agentCard: AgentCard = {
   url: `${BASE_URL}/.well-known/agent-card.json`,
   version: "1.0.0",
   protocolVersion: "0.3.0",
+  preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
+  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   defaultInputModes: ["text"],
   defaultOutputModes: ["text", "image/png"],
   capabilities: {

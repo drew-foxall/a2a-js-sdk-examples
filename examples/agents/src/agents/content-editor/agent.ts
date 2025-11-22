@@ -6,8 +6,8 @@
  */
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
-import { getModel } from "../../shared/utils.js";
-import { CONTENT_EDITOR_PROMPT } from "./prompt.js";
+import { getModel } from "../../shared/utils";
+import { CONTENT_EDITOR_PROMPT } from "./prompt";
 
 /**
  * Create Content Editor Agent with custom model

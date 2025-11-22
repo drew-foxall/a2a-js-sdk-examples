@@ -7,8 +7,8 @@
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import { getWeatherAgentPrompt } from "./prompt.js";
-import { getWeatherDescription, getWeatherForecast, isWeatherError } from "./tools.js";
+import { getWeatherAgentPrompt } from "./prompt";
+import { getWeatherDescription, getWeatherForecast, isWeatherError } from "./tools";
 
 /**
  * Weather forecast tool parameter schema
@@ -53,7 +53,7 @@ export function createWeatherAgent(model: LanguageModel) {
             temperatureHigh: `${forecast.temperatureMax[index]}°F`,
             temperatureLow: `${forecast.temperatureMin[index]}°F`,
             precipitation: `${forecast.precipitation[index]} inches`,
-            conditions: getWeatherDescription(forecast.weatherCode[index]),
+            conditions: getWeatherDescription(forecast.weatherCode[index] ?? 0),
           }));
 
           return {

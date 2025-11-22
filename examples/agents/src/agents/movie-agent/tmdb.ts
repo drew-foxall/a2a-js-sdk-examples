@@ -1,10 +1,31 @@
 /**
  * TMDB API utility functions
  * Matches original implementation from a2a-samples
+ * Now with Zod validation for runtime type safety
  */
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
+import { z } from "zod";
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+
+/**
+ * Get TMDB API key from environment
+ * Read lazily to support testing and runtime configuration
+ */
+function getTmdbApiKey(): string {
+	const key = process.env.TMDB_API_KEY;
+	if (!key) {
+		throw new Error("TMDB_API_KEY environment variable is not set");
+	}
+	return key;
+}
+
+// Zod schemas for runtime validation
+const TMDBSearchResponseSchema = z
+  .object({
+    results: z.array(z.unknown()),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * TMDB API Response Types
@@ -19,15 +40,12 @@ export type TMDBResponse = Record<string, unknown>;
  * @returns Promise that resolves to the API response data
  */
 export async function callTmdbApi(endpoint: string, query: string) {
-  // Validate API key
-  if (!TMDB_API_KEY) {
-    throw new Error("TMDB_API_KEY environment variable is not set");
-  }
+	const apiKey = getTmdbApiKey();
 
-  try {
-    // Make request to TMDB API
-    const url = new URL(`${TMDB_BASE_URL}/search/${endpoint}`);
-    url.searchParams.append("api_key", TMDB_API_KEY);
+	try {
+		// Make request to TMDB API
+		const url = new URL(`${TMDB_BASE_URL}/search/${endpoint}`);
+		url.searchParams.append("api_key", apiKey);
     url.searchParams.append("query", query);
     url.searchParams.append("include_adult", "false");
     url.searchParams.append("language", "en-US");
@@ -52,7 +70,14 @@ export async function callTmdbApi(endpoint: string, query: string) {
 export async function searchMovies(query: string) {
   console.log("[tmdb:searchMovies]", JSON.stringify(query));
   try {
-    const data = await callTmdbApi("movie", query);
+    const rawData = await callTmdbApi("movie", query);
+    const parseResult = TMDBSearchResponseSchema.safeParse(rawData);
+
+    if (!parseResult.success) {
+      throw new Error(`Invalid TMDB API response: ${parseResult.error.message}`);
+    }
+
+    const data = parseResult.data;
 
     // Modify image paths to be full URLs
     const results = data.results.map((movie: any) => {
@@ -81,7 +106,14 @@ export async function searchMovies(query: string) {
 export async function searchPeople(query: string) {
   console.log("[tmdb:searchPeople]", JSON.stringify(query));
   try {
-    const data = await callTmdbApi("person", query);
+    const rawData = await callTmdbApi("person", query);
+    const parseResult = TMDBSearchResponseSchema.safeParse(rawData);
+
+    if (!parseResult.success) {
+      throw new Error(`Invalid TMDB API response: ${parseResult.error.message}`);
+    }
+
+    const data = parseResult.data;
 
     // Modify image paths to be full URLs
     const results = data.results.map((person: any) => {

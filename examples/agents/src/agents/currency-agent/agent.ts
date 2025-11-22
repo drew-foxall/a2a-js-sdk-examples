@@ -18,8 +18,8 @@
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import { getCurrencyAgentPrompt } from "./prompt.js";
-import { getExchangeRate, isExchangeRateError } from "./tools.js";
+import { getCurrencyAgentPrompt } from "./prompt";
+import { getExchangeRate, isExchangeRateError } from "./tools";
 
 /**
  * Exchange rate tool parameter schema

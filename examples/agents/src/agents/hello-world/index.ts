@@ -17,6 +17,12 @@
  *   pnpm tsx src/agents/hello-world/index.ts
  */
 
+// Load environment variables (agent-specific .env takes precedence over root .env)
+import { loadEnv } from "../../shared/load-env";
+loadEnv(import.meta.url);
+
+// Our adapter that bridges AI SDK agents to A2A
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 // Core A2A types (from main package)
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 // Server components (from /server subpath) ✅
@@ -30,10 +36,8 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-// Our adapter that bridges AI SDK agents to A2A
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import { getModel } from "../../shared/utils.js";
-import { createHelloWorldAgent } from "./agent.js";
+import { getModel } from "../../shared/utils";
+import { createHelloWorldAgent } from "./agent";
 
 // ============================================================================
 // Configuration
@@ -58,11 +62,13 @@ const helloWorldSkill: AgentSkill = {
 const agentCard: AgentCard = {
   name: "Hello World Agent",
   description: "The simplest possible A2A agent - responds with friendly greetings",
-  url: `${BASE_URL}/.well-known/agent-card.json`,
+  url: BASE_URL, // ✅ FIXED: Base URL where agent accepts requests, not agent card URL!
   protocolVersion: "0.3.0", // ✅ Required field
   version: "1.0.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
+  preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
+  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   capabilities: {
     // ✅ Plain object (NOT new AgentCapabilities())
     streaming: true,
@@ -70,7 +76,7 @@ const agentCard: AgentCard = {
     stateTransitionHistory: true,
   },
   skills: [helloWorldSkill],
-};
+} as AgentCard;
 
 // ============================================================================
 // Agent Initialization

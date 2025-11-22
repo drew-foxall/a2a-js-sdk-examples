@@ -4,10 +4,10 @@
  * This module provides common utilities for building A2A agents with AI SDK.
  */
 
-export { createCoderAgent } from "../agents/coder/agent.js";
+export { createCoderAgent } from "../agents/coder/agent";
 // Export agent factory functions for convenience
-export { createContentEditorAgent } from "../agents/content-editor/agent.js";
-export { createMovieAgent } from "../agents/movie-agent/agent.js";
+export { createContentEditorAgent } from "../agents/content-editor/agent";
+export { createMovieAgent } from "../agents/movie-agent/agent";
 // Export Unified Automatic A2A Adapter
 // Export Logger interfaces and implementations
 export {
@@ -20,6 +20,6 @@ export {
   NoOpLogger,
   type ParsedArtifact,
   type ParsedArtifacts,
-} from "./a2a-adapter.js";
+} from "./a2a-adapter";
 // Export AI model utility
-export { extractText, getModel, getModelInfo } from "./utils.js";
+export { extractText, getModel, getModelInfo } from "./utils";

@@ -15,9 +15,9 @@
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import { getModel } from "../../shared/utils.js";
-import { getMovieAgentPrompt } from "./prompt.js";
-import { searchMovies, searchPeople } from "./tmdb.js";
+import { getModel } from "../../shared/utils";
+import { getMovieAgentPrompt } from "./prompt";
+import { searchMovies, searchPeople } from "./tmdb";
 
 /**
  * TMDB Tool Schemas

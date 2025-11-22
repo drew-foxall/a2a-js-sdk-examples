@@ -15,8 +15,8 @@
  */
 
 import { type LanguageModel, streamText, ToolLoopAgent } from "ai";
-import { getModel } from "../../shared/utils.js";
-import { CODER_SYSTEM_PROMPT } from "./code-format.js";
+import { getModel } from "../../shared/utils";
+import { CODER_SYSTEM_PROMPT } from "./code-format";
 
 /**
  * Create Coder Agent with custom model

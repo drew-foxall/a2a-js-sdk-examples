@@ -5,19 +5,23 @@
  * These tools demonstrate:
  * - External API integration
  * - Error handling
- * - Data validation
+ * - Data validation with Zod
  * - Real-time exchange rates
  */
 
+import { z } from "zod";
+
 /**
- * Exchange Rate API Response
+ * Zod schema for Frankfurter API response
  */
-export interface ExchangeRateResponse {
-  amount: number;
-  base: string;
-  date: string;
-  rates: Record<string, number>;
-}
+const ExchangeRateResponseSchema = z.object({
+  amount: z.number(),
+  base: z.string(),
+  date: z.string(),
+  rates: z.record(z.string(), z.number()),
+});
+
+export type ExchangeRateResponse = z.infer<typeof ExchangeRateResponseSchema>;
 
 /**
  * Exchange Rate Error Response
@@ -67,14 +71,17 @@ export async function getExchangeRate(
       };
     }
 
-    const data = await response.json();
+    const rawData: unknown = await response.json();
 
-    // Validate response format
-    if (!data.rates || typeof data.rates !== "object") {
-      return { error: "Invalid API response format" };
+    // Validate response format with Zod
+    const parseResult = ExchangeRateResponseSchema.safeParse(rawData);
+    if (!parseResult.success) {
+      return {
+        error: `Invalid API response format: ${parseResult.error.issues.map((i) => i.message).join(", ")}`,
+      };
     }
 
-    return data as ExchangeRateResponse;
+    return parseResult.data;
   } catch (error) {
     if (error instanceof Error) {
       return { error: `API request failed: ${error.message}` };

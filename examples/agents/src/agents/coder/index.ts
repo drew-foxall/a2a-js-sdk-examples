@@ -37,6 +37,12 @@
  * - samples/js/src/shared/a2a-adapter.ts (Implementation)
  */
 
+// Import unified automatic adapter
+import {
+  A2AAdapter,
+  type ParsedArtifact,
+  type ParsedArtifacts,
+} from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
@@ -47,13 +53,10 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-
-// Import unified automatic adapter
-import { A2AAdapter, type ParsedArtifact, type ParsedArtifacts } from "@drew-foxall/a2a-ai-sdk-adapter";
 // Import the agent definition
-import { coderAgent } from "./agent.js";
+import { coderAgent } from "./agent";
 // Import code parsing utilities
-import { extractCodeBlocks } from "./code-format.js";
+import { extractCodeBlocks } from "./code-format";
 
 // ============================================================================
 // 1. AI Agent is defined in agent.ts (Pure, Protocol-Agnostic)
@@ -155,6 +158,8 @@ const coderAgentCard: AgentCard = {
   },
   version: "2.0.0", // Bumped to 2.0.0 for migration
   protocolVersion: "0.3.0",
+  preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
+  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   capabilities: {
     streaming: true,
     pushNotifications: false,

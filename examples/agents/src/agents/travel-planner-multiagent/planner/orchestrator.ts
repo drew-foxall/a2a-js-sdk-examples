@@ -85,7 +85,7 @@ export class TravelPlannerOrchestrator {
     }
 
     if (responses.length === 1) {
-      return responses[0];
+      return responses[0] ?? "";
     }
 
     // Multiple agents - combine results

@@ -59,19 +59,49 @@ pnpm install
 # Build all packages
 pnpm build
 
-# Start a demo agent
-pnpm agents:hello-world
+# Start a demo agent (use Ctrl+C to stop)
+pnpm agent:hello-world
+# Opens on http://localhost:41244
 
-# Or start all agents in parallel
-pnpm dev
+# Available agents:
+# pnpm agent:movie          # Movie search agent
+# pnpm agent:coder          # Code generation
+# pnpm agent:dice           # Dice rolling
+# pnpm agent:github         # GitHub integration
+# pnpm agent:analytics      # Chart generation
+# pnpm agent:currency       # Currency conversion
+# pnpm agent:weather        # Weather forecasts
+# pnpm agent:airbnb         # Airbnb search
+# pnpm agent:planner        # Travel planning (multi-agent)
 ```
 
-**Test with [A2A Inspector](https://inspector.a2a.plus)**:
-- Open https://inspector.a2a.plus
-- Enter: `http://localhost:41244`
-- Start chatting!
+**Test with A2A Inspector**:
 
-📖 **[Full Testing Guide](examples/TESTING_WITH_A2A_INSPECTOR.md)**
+**Recommended - Local Inspector:**
+```bash
+# Terminal 1: Start inspector
+pnpm inspector
+
+# Terminal 2: Start agent
+pnpm agent:hello-world
+
+# Browser: http://127.0.0.1:5001
+# Connect: http://localhost:41244
+```
+
+**Quick Commands:**
+```bash
+pnpm inspector          # Start local inspector
+pnpm inspector:stop     # Stop inspector
+pnpm inspector:logs     # View logs
+pnpm start-testing      # Interactive mode
+```
+
+📖 **Testing Guides**:
+- **[Inspector Setup](INSPECTOR_SETUP.md)** - Hosted vs Local A2A Inspector
+- **[Test Workflow](TEST_WORKFLOW.md)** - Step-by-step: Start agents + use A2A Inspector
+- **[Quick Start (3 min)](QUICKSTART_A2A_INSPECTOR.md)** - Get testing immediately
+- **[Full Testing Guide](examples/TESTING_WITH_A2A_INSPECTOR.md)** - Comprehensive scenarios
 
 ---
 
@@ -132,25 +162,38 @@ All examples demonstrate different adapter capabilities:
 | **[Airbnb Agent](examples/agents/src/agents/travel-planner-multiagent/airbnb-agent)** | 41253 | MCP integration | Stream | Real Airbnb data |
 | **[Travel Planner](examples/agents/src/agents/travel-planner-multiagent/planner)** | 41254 | Multi-agent orchestration | Stream | Agent networks |
 
-### Run Individual Agents
+### Running Agents
+
+Each agent runs on its own port. Start them individually:
 
 ```bash
-# Hello World - Simplest example
-pnpm agents:hello-world
+# Hello World - Simplest example (port 41244)
+pnpm agent:hello-world
 
-# Coder - Stream mode with real-time artifacts
-pnpm agents:coder
+# Coder - Stream mode with real-time artifacts (port 41242)
+pnpm agent:coder
 
-# Travel Planner - Multi-agent orchestration
-pnpm agents:travel-planner
+# Travel Planner - Multi-agent orchestration (port 41252)
+pnpm agent:planner
+
+# All available commands:
+# pnpm agent:movie           # Movie search (41241)
+# pnpm agent:coder           # Code generation (41242)
+# pnpm agent:content-editor  # Content editing (41243)
+# pnpm agent:hello-world     # Simple example (41244)
+# pnpm agent:dice            # Dice rolling (41245)
+# pnpm agent:github          # GitHub API (41246)
+# pnpm agent:analytics       # Chart generation (41247)
+# pnpm agent:currency        # Currency conversion (41248)
+# pnpm agent:weather         # Weather forecasts (41250)
+# pnpm agent:airbnb          # Airbnb search (41251)
+# pnpm agent:planner         # Travel planning (41252)
 ```
 
-### Run All Agents
-
-```bash
-# Start all 11 agents in parallel using Turborepo
-pnpm dev
-```
+**Process Management**:
+- Start: `pnpm agent:<name>`
+- Stop: `Ctrl+C` in the terminal
+- Multiple agents: Open separate terminals for each agent
 
 **Testing**: See [examples/TESTING_WITH_A2A_INSPECTOR.md](examples/TESTING_WITH_A2A_INSPECTOR.md) for comprehensive testing instructions.
 
@@ -207,23 +250,42 @@ serve({ fetch: app.fetch, port: 41244 });
 ### Unit Tests (Vitest)
 
 ```bash
-# Run all tests
+# Run all tests (adapter + all agents)
 pnpm test
 
 # Run tests in watch mode
 pnpm test:watch
 
+# Run with coverage
+pnpm test:coverage
+
 # Run tests for adapter only
 pnpm turbo run test --filter @drew-foxall/a2a-ai-sdk-adapter
+
+# Run tests for specific agent
+pnpm test src/agents/hello-world/agent.test.ts
+
+# Run all tests for an agent (agent + tools)
+pnpm test src/agents/analytics-agent/
 ```
 
-**Test Coverage**: 12 unit tests covering configuration, loggers, modes, and type safety
+**Test Coverage**:
+- **Adapter**: 12 unit tests (configuration, loggers, modes, type safety)
+- **Agents**: 331 tests across 19 test files covering 11 agents
+  - Each agent has `agent.test.ts` (ToolLoopAgent behavior)
+  - Agents with utilities have `tools.test.ts` (pure functions)
+  - All tests follow [AGENT_TEST_PRINCIPLES.md](examples/agents/AGENT_TEST_PRINCIPLES.md)
+- **Total**: 100+ tests
+
+📖 **Documentation:**
+- **[Agent Test Principles](examples/agents/AGENT_TEST_PRINCIPLES.md)** - Testing standards and patterns
+- **[Full Testing Guide](examples/agents/TESTING.md)** - Comprehensive testing documentation
 
 ### Integration Tests (A2A Inspector)
 
 1. Start an agent:
    ```bash
-   pnpm agents:hello-world
+   pnpm agent:hello-world
    ```
 
 2. Open [https://inspector.a2a.plus](https://inspector.a2a.plus)

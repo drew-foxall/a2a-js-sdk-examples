@@ -6,8 +6,8 @@
  */
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
-import type { getAirbnbMCPTools } from "./mcp-client.js";
-import { getAirbnbAgentPrompt } from "./prompt.js";
+import type { getAirbnbMCPTools } from "./mcp-client";
+import { getAirbnbAgentPrompt } from "./prompt";
 
 /**
  * Create an Airbnb Agent with MCP Tools

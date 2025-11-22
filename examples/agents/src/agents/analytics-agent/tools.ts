@@ -64,7 +64,7 @@ export function parseChartData(prompt: string): ChartData {
   for (const pair of pairs) {
     // Match patterns like "Jan:1000", "Jan,$1000", "Jan,1000"
     const match = pair.match(/([A-Za-z]+)[:,$]\$?([0-9,.]+)/);
-    if (match) {
+    if (match?.[1] && match[2]) {
       labels.push(match[1]);
       // Remove commas and dollar signs from number
       const numStr = match[2].replace(/[,$]/g, "");
@@ -79,8 +79,10 @@ export function parseChartData(prompt: string): ChartData {
     const startIdx = lines[0]?.toLowerCase().includes("category") ? 1 : 0;
 
     for (let i = startIdx; i < lines.length; i++) {
-      const parts = lines[i].split(",").map((p) => p.trim());
-      if (parts.length >= 2) {
+      const line = lines[i];
+      if (!line) continue;
+      const parts = line.split(",").map((p) => p.trim());
+      if (parts.length >= 2 && parts[0] && parts[1]) {
         labels.push(parts[0]);
         values.push(parseFloat(parts[1].replace(/[$,]/g, "")));
       }
@@ -185,7 +187,7 @@ export async function generateChartFromPrompt(prompt: string): Promise<ChartResu
   // Extract title from prompt
   let title = "Bar Chart";
   const titleMatch = prompt.match(/chart\s+(?:of|for)\s+([A-Za-z\s]+?)[:,$]/i);
-  if (titleMatch) {
+  if (titleMatch?.[1]) {
     title = titleMatch[1].trim();
   }
 

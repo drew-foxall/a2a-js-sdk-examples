@@ -19,8 +19,8 @@
 
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { getModel } from "../../../shared/utils.js";
-import { TravelPlannerOrchestrator } from "./orchestrator.js";
+import { getModel } from "../../../shared/utils";
+import { TravelPlannerOrchestrator } from "./orchestrator";
 
 // ============================================================================
 // Configuration

@@ -33,7 +33,7 @@ import {
   DefaultRequestHandler,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { A2AAdapter } from "../../shared/a2a-adapter.js";
+import { A2AAdapter } from "../../shared/a2a-adapter";
 ```
 
 **Key Points:**
@@ -139,9 +139,9 @@ import {
   DefaultRequestHandler,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { A2AAdapter } from "../../shared/a2a-adapter.js";
-import { createYourAgent } from "./agent.js";
-import { getModel } from "../../shared/utils.js";
+import { A2AAdapter } from "../../shared/a2a-adapter";
+import { createYourAgent } from "./agent";
+import { getModel } from "../../shared/utils";
 
 const PORT = 41240;
 const HOST = "0.0.0.0";
