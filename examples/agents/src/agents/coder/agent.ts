@@ -104,31 +104,10 @@ export async function* streamCoderGeneration(
   agent: ToolLoopAgent<LanguageModel, Record<string, never>, never>,
   messages: Array<{ role: "user" | "assistant"; content: string }>
 ): AsyncGenerator<string> {
-  // Try ToolLoopAgent.stream() if available (AI SDK v6 may have this)
-  if ("stream" in agent && typeof agent.stream === "function") {
-    try {
-      const result = await (agent as any).stream({ messages });
-
-      // Check if result has textStream
-      if (result && "textStream" in result) {
-        for await (const chunk of result.textStream) {
-          yield chunk;
-        }
-        return;
-      }
-    } catch (error) {
-      console.warn(
-        "[streamCoderGeneration] ToolLoopAgent.stream() failed, falling back to streamText()",
-        error
-      );
-    }
-  }
-
-  // Fallback: Use streamText() directly
-  // This is the proven approach from the current implementation
+  // Use streamText() with the agent's model and system prompt
   const { textStream } = streamText({
-    model: getModel(),
-    system: CODER_SYSTEM_PROMPT,
+    model: agent.model,
+    system: agent.system,
     messages,
   });
 

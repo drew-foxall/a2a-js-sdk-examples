@@ -107,7 +107,6 @@ export async function generateBarChart(
   const width = 800;
   const height = 600;
   const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext("2d");
 
   // Chart configuration
   const config: ChartConfiguration = {
@@ -147,8 +146,8 @@ export async function generateBarChart(
     },
   };
 
-  // Render chart
-  new Chart(ctx as any, config);
+  // Render chart - Chart.js accepts node-canvas Canvas directly
+  new Chart(canvas, config);
 
   // Convert to PNG buffer
   const buffer = canvas.toBuffer("image/png");

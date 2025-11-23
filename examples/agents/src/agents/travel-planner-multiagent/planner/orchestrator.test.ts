@@ -1,3 +1,4 @@
+import type { GenerateTextResult } from "ai";
 import { generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -77,7 +78,7 @@ describe("Travel Planner Orchestrator", () => {
       text: "The weather in Paris will be sunny.",
       usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
       finishReason: "stop",
-    } as any);
+    } satisfies GenerateTextResult<Record<string, never>>);
 
     const orchestrator = new TravelPlannerOrchestrator(mockConfig);
     const response = await orchestrator.processRequest("What's the weather in Paris?");
@@ -90,7 +91,7 @@ describe("Travel Planner Orchestrator", () => {
       text: "Found great accommodations in Paris.",
       usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
       finishReason: "stop",
-    } as any);
+    } satisfies GenerateTextResult<Record<string, never>>);
 
     const orchestrator = new TravelPlannerOrchestrator(mockConfig);
     const response = await orchestrator.processRequest("Find accommodations in Paris for 2 people");
@@ -105,12 +106,12 @@ describe("Travel Planner Orchestrator", () => {
         text: "The weather will be nice.",
         usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
         finishReason: "stop",
-      } as any)
+      } satisfies GenerateTextResult<Record<string, never>>)
       .mockResolvedValueOnce({
         text: "Found great accommodations.",
         usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
         finishReason: "stop",
-      } as any);
+      } satisfies GenerateTextResult<Record<string, never>>);
 
     const orchestrator = new TravelPlannerOrchestrator(mockConfig);
     const response = await orchestrator.processRequest("Plan a trip to Paris");

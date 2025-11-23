@@ -204,9 +204,10 @@ export function createAgentTestSuite(
     testBasicAgentFunctionality(agentName, config.getAdapter, config.getAgentCard);
 
     if (config.expectedTools) {
+      const expectedTools = config.expectedTools; // Capture in closure to avoid non-null assertion
       it("should have expected tools", () => {
         const adapter = config.getAdapter();
-        validateTools(adapter, config.expectedTools!);
+        validateTools(adapter, expectedTools);
       });
     }
 

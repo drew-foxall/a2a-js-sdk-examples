@@ -20,12 +20,43 @@ function getTmdbApiKey(): string {
   return key;
 }
 
-// Zod schemas for runtime validation
-const TMDBSearchResponseSchema = z
+/**
+ * Zod schemas for TMDB API responses
+ * These provide runtime validation AND TypeScript types
+ */
+const TMDBMovieSchema = z
   .object({
-    results: z.array(z.unknown()),
+    poster_path: z.string().nullable().optional(),
+    backdrop_path: z.string().nullable().optional(),
+    // Allow additional fields that TMDB returns
   })
-  .passthrough(); // Allow additional fields
+  .passthrough();
+
+const TMDBWorkSchema = z
+  .object({
+    poster_path: z.string().nullable().optional(),
+    backdrop_path: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+const TMDBPersonSchema = z
+  .object({
+    profile_path: z.string().nullable().optional(),
+    known_for: z.array(TMDBWorkSchema).optional(),
+  })
+  .passthrough();
+
+const TMDBMovieSearchResponseSchema = z
+  .object({
+    results: z.array(TMDBMovieSchema),
+  })
+  .passthrough();
+
+const TMDBPersonSearchResponseSchema = z
+  .object({
+    results: z.array(TMDBPersonSchema),
+  })
+  .passthrough();
 
 /**
  * TMDB API Response Types
@@ -71,7 +102,7 @@ export async function searchMovies(query: string) {
   console.log("[tmdb:searchMovies]", JSON.stringify(query));
   try {
     const rawData = await callTmdbApi("movie", query);
-    const parseResult = TMDBSearchResponseSchema.safeParse(rawData);
+    const parseResult = TMDBMovieSearchResponseSchema.safeParse(rawData);
 
     if (!parseResult.success) {
       throw new Error(`Invalid TMDB API response: ${parseResult.error.message}`);
@@ -80,7 +111,8 @@ export async function searchMovies(query: string) {
     const data = parseResult.data;
 
     // Modify image paths to be full URLs
-    const results = data.results.map((movie: any) => {
+    // Zod validation ensures these are TMDBMovie types
+    const results = data.results.map((movie) => {
       if (movie.poster_path) {
         movie.poster_path = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
       }
@@ -107,7 +139,7 @@ export async function searchPeople(query: string) {
   console.log("[tmdb:searchPeople]", JSON.stringify(query));
   try {
     const rawData = await callTmdbApi("person", query);
-    const parseResult = TMDBSearchResponseSchema.safeParse(rawData);
+    const parseResult = TMDBPersonSearchResponseSchema.safeParse(rawData);
 
     if (!parseResult.success) {
       throw new Error(`Invalid TMDB API response: ${parseResult.error.message}`);
@@ -116,14 +148,15 @@ export async function searchPeople(query: string) {
     const data = parseResult.data;
 
     // Modify image paths to be full URLs
-    const results = data.results.map((person: any) => {
+    // Zod validation ensures these are TMDBPerson types
+    const results = data.results.map((person) => {
       if (person.profile_path) {
         person.profile_path = `https://image.tmdb.org/t/p/w500${person.profile_path}`;
       }
 
       // Also modify poster paths in known_for works
-      if (person.known_for && Array.isArray(person.known_for)) {
-        person.known_for = person.known_for.map((work: any) => {
+      if (person.known_for) {
+        person.known_for = person.known_for.map((work) => {
           if (work.poster_path) {
             work.poster_path = `https://image.tmdb.org/t/p/w500${work.poster_path}`;
           }
