@@ -427,7 +427,7 @@ describe("My Agent", () => {
 
 ## 📚 Examples
 
-See the [examples directory](../../examples/agents) for 10 production-ready agents:
+See the [examples directory](../../examples/agents) for 10 working agent examples:
 
 1. **[Hello World](../../examples/agents/src/agents/hello-world)** - Simplest example
 2. **[Dice Agent](../../examples/agents/src/agents/dice-agent)** - Simple tool usage

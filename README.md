@@ -7,7 +7,7 @@
 
 **Dual-Purpose Repository:**
 1. **[@drew-foxall/a2a-ai-sdk-adapter](packages/a2a-ai-sdk-adapter)** - NPM package for bridging Vercel AI SDK agents with the A2A protocol
-2. **[Agent Examples](examples/agents)** - 10 production-ready A2A agents demonstrating the adapter in action
+2. **[Agent Examples](examples/agents)** - 10 working A2A agent examples demonstrating the adapter in action
 
 > Built with **Vercel AI SDK v6**, **Hono**, **TypeScript**, and [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)
 

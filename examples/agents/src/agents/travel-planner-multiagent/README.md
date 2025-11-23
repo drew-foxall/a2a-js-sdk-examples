@@ -9,7 +9,7 @@ A comprehensive demonstration of **multi-agent orchestration** using the A2A pro
 > - **Weather Agent**: ✅ Uses **real API** (Open-Meteo) with global coverage
 > - **Airbnb Agent**: ✅ Uses **real MCP** (@openbnb/mcp-server-airbnb) with live data
 > 
-> **✨ PRODUCTION-READY**: Both agents now use real APIs! See [Python vs JavaScript Comparison](../../../../PYTHON_VS_JS_MULTIAGENT_COMPARISON.md) for architecture details.
+> **✨ FULLY FUNCTIONAL**: Both agents use real APIs for demonstration purposes! See [Python vs JavaScript Comparison](../../../../PYTHON_VS_JS_MULTIAGENT_COMPARISON.md) for architecture details.
 
 ## Overview
 

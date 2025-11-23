@@ -304,8 +304,8 @@ Your setup works correctly if:
 After verifying agents work with A2A Inspector:
 
 1. **Automated Testing**: Run `pnpm test` for unit tests
-2. **Build Custom Agent**: Use examples as templates
-3. **Deploy**: Agents are production-ready
+2. **Build Custom Agent**: Use examples as templates and reference implementations
+3. **Deploy**: Examples demonstrate deployment patterns
 4. **Multi-Agent**: Test the Travel Planner orchestrator
 
 ---

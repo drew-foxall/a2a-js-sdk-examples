@@ -133,7 +133,7 @@ async function main() {
    - Filter by guest capacity
    - Detailed listings with prices and amenities
    - Direct booking links
-   - ✨ PRODUCTION-READY with real data!
+   - ✨ Fully functional with real MCP integration!
 
 📝 Try it standalone:
    curl -X POST ${BASE_URL}/message/send \\
