@@ -19,6 +19,7 @@
 
 // Load environment variables (agent-specific .env takes precedence over root .env)
 import { loadEnv } from "../../shared/load-env";
+
 loadEnv(import.meta.url);
 
 // Our adapter that bridges AI SDK agents to A2A

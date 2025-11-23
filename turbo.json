@@ -1,48 +1,46 @@
 {
-	"$schema": "https://turbo.build/schema.json",
-	"tasks": {
-		"build": {
-			"dependsOn": ["^build"],
-			"outputs": ["dist/**", ".next/**", "build/**"],
-			"inputs": ["src/**", "package.json", "tsconfig.json"]
-		},
-		"dev": {
-			"cache": false,
-			"persistent": true,
-			"dependsOn": ["^build"]
-		},
-		"test": {
-			"dependsOn": ["^build"],
-			"outputs": ["coverage/**"],
-			"inputs": ["src/**", "**/*.test.ts", "**/*.spec.ts"]
-		},
-		"test:watch": {
-			"cache": false,
-			"persistent": true
-		},
-		"lint": {
-			"dependsOn": ["^build"],
-			"inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
-		},
-		"lint:fix": {
-			"cache": false,
-			"inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
-		},
-		"typecheck": {
-			"dependsOn": ["^build"],
-			"outputs": [],
-			"inputs": ["src/**", "**/*.ts", "**/*.tsx", "tsconfig.json"]
-		},
-		"format": {
-			"outputs": [],
-			"inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
-		},
-		"format:write": {
-			"cache": false,
-			"outputs": [],
-			"inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
-		}
-	}
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "build/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**", "**/*.test.ts", "**/*.spec.ts"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+    },
+    "lint:fix": {
+      "cache": false,
+      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "tsconfig.json"]
+    },
+    "format": {
+      "outputs": [],
+      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+    },
+    "format:write": {
+      "cache": false,
+      "outputs": [],
+      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+    }
+  }
 }
-
-

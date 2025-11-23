@@ -269,6 +269,4 @@ describe("A2AAdapter", () => {
       expect(adapter).toBeDefined();
     });
   });
-
 });
-

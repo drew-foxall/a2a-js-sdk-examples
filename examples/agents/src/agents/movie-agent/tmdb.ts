@@ -13,11 +13,11 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
  * Read lazily to support testing and runtime configuration
  */
 function getTmdbApiKey(): string {
-	const key = process.env.TMDB_API_KEY;
-	if (!key) {
-		throw new Error("TMDB_API_KEY environment variable is not set");
-	}
-	return key;
+  const key = process.env.TMDB_API_KEY;
+  if (!key) {
+    throw new Error("TMDB_API_KEY environment variable is not set");
+  }
+  return key;
 }
 
 // Zod schemas for runtime validation
@@ -40,12 +40,12 @@ export type TMDBResponse = Record<string, unknown>;
  * @returns Promise that resolves to the API response data
  */
 export async function callTmdbApi(endpoint: string, query: string) {
-	const apiKey = getTmdbApiKey();
+  const apiKey = getTmdbApiKey();
 
-	try {
-		// Make request to TMDB API
-		const url = new URL(`${TMDB_BASE_URL}/search/${endpoint}`);
-		url.searchParams.append("api_key", apiKey);
+  try {
+    // Make request to TMDB API
+    const url = new URL(`${TMDB_BASE_URL}/search/${endpoint}`);
+    url.searchParams.append("api_key", apiKey);
     url.searchParams.append("query", query);
     url.searchParams.append("include_adult", "false");
     url.searchParams.append("language", "en-US");

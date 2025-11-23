@@ -261,7 +261,7 @@ export interface A2AAdapterConfig {
    * mode: 'stream'   // Real-time streaming
    * mode: 'generate' // Awaited response
    */
-  mode: 'stream' | 'generate';
+  mode: "stream" | "generate";
 
   /**
    * Parse artifacts from accumulated text during streaming (STREAM MODE ONLY)
@@ -460,7 +460,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
     };
 
     // Validate mode-specific config
-    if (config.mode === 'generate' && config.parseArtifacts) {
+    if (config.mode === "generate" && config.parseArtifacts) {
       this.logger = config?.logger || new ConsoleLogger();
       this.logger.warn(
         "parseArtifacts is ignored in 'generate' mode. Use 'stream' mode for incremental artifact parsing."
@@ -534,7 +534,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
 
     // Step 5: EXECUTE BASED ON EXPLICIT MODE
     try {
-      if (this.config.mode === 'stream') {
+      if (this.config.mode === "stream") {
         this.logger.debug("Executing in STREAM mode", { taskId });
         await this.executeStreaming(taskId, contextId, messages, eventBus);
       } else {
