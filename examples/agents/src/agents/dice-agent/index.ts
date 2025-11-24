@@ -62,11 +62,10 @@ const checkPrimeSkill: AgentSkill = {
 const agentCard: AgentCard = {
   name: "Dice Agent",
   description: "An agent that can roll arbitrary dice and answer if numbers are prime",
-  url: `${BASE_URL}/.well-known/agent-card.json`,
+  url: BASE_URL,
   version: "1.0.0",
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
-  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
   capabilities: {

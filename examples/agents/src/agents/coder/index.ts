@@ -145,13 +145,17 @@ const agentExecutor: AgentExecutor = new A2AAdapter(coderAgent, {
 });
 
 // ============================================================================
-// 3. Define Agent Card (A2A Metadata)
+// 3. Configuration & Agent Card
 // ============================================================================
+
+// Configuration
+const PORT = Number(process.env.PORT) || 41250;
+const BASE_URL = `http://localhost:${PORT}`;
 
 const coderAgentCard: AgentCard = {
   name: "Coder Agent (AI SDK v6)",
   description: "A code-writing agent that emits full code files as artifacts.",
-  url: "http://localhost:41242/",
+  url: BASE_URL,
   provider: {
     organization: "A2A Samples (AI SDK v6 + Streaming Adapter)",
     url: "https://github.com/drew-foxall/a2a-js-sdk-examples",
@@ -159,7 +163,6 @@ const coderAgentCard: AgentCard = {
   version: "2.0.0", // Bumped to 2.0.0 for migration
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
-  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   capabilities: {
     streaming: true,
     pushNotifications: false,
@@ -199,8 +202,7 @@ async function main() {
   const appBuilder = new A2AHonoApp(requestHandler);
   appBuilder.setupRoutes(app);
 
-  const PORT = Number(process.env.PORT) || 41242;
-  console.log(`[CoderAgent] ✅ AI SDK v6 + Unified A2AAdapter started on http://localhost:${PORT}`);
+  console.log(`[CoderAgent] ✅ AI SDK v6 + Unified A2AAdapter started on ${BASE_URL}`);
   console.log(`[CoderAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`);
   console.log(
     "[CoderAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Streaming Mode)"

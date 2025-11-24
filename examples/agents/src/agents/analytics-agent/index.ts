@@ -56,7 +56,7 @@ const agentCard: AgentCard = {
   name: "Analytics Agent",
   description:
     "Generate bar charts from structured CSV-like data input. Returns charts as PNG images.",
-  url: `${BASE_URL}/.well-known/agent-card.json`,
+  url: BASE_URL,
   version: "1.0.0",
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport

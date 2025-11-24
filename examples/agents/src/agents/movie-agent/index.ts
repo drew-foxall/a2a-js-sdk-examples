@@ -131,10 +131,14 @@ const agentExecutor: AgentExecutor = new A2AAdapter(movieAgent, {
 // 3. Define Agent Card (A2A Metadata)
 // ============================================================================
 
+// Configuration
+const PORT = Number(process.env.PORT) || 41249;
+const BASE_URL = `http://localhost:${PORT}`;
+
 const movieAgentCard: AgentCard = {
   name: "Movie Agent (AI SDK v6)",
   description: "An agent that can answer questions about movies and actors using TMDB.",
-  url: "http://localhost:41241/",
+  url: BASE_URL,
   provider: {
     organization: "A2A Samples (AI SDK v6 + Adapter)",
     url: "https://github.com/drew-foxall/a2a-js-sdk-examples",
@@ -142,7 +146,6 @@ const movieAgentCard: AgentCard = {
   version: "2.0.0", // Bumped to 2.0.0 for migration
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
-  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   capabilities: {
     streaming: true,
     pushNotifications: false,
@@ -184,8 +187,7 @@ async function main() {
   const appBuilder = new A2AHonoApp(requestHandler);
   appBuilder.setupRoutes(app);
 
-  const PORT = Number(process.env.PORT) || 41241;
-  console.log(`[MovieAgent] ✅ AI SDK v6 + Unified A2AAdapter started on http://localhost:${PORT}`);
+  console.log(`[MovieAgent] ✅ AI SDK v6 + Unified A2AAdapter started on ${BASE_URL}`);
   console.log(`[MovieAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`);
   console.log("[MovieAgent] 📦 Architecture: ToolLoopAgent + Automatic A2AAdapter (Simple Mode)");
   console.log("[MovieAgent] ✨ Features: callOptionsSchema, prepareCall, custom state parsing");

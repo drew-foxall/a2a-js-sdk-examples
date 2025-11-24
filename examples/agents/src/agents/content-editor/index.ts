@@ -58,13 +58,17 @@ const agentExecutor: AgentExecutor = new A2AAdapter(contentEditorAgent, {
 });
 
 // ============================================================================
-// 3. Define Agent Card (A2A Metadata)
+// 3. Configuration & Agent Card
 // ============================================================================
+
+// Configuration
+const PORT = Number(process.env.PORT) || 41251;
+const BASE_URL = `http://localhost:${PORT}`;
 
 const contentEditorAgentCard: AgentCard = {
   name: "Content Editor Agent (AI SDK v6)",
   description: "An agent that can proof-read and polish your content, improving clarity and style.",
-  url: "http://localhost:41243/",
+  url: BASE_URL,
   provider: {
     organization: "A2A Samples (AI SDK v6 + Adapter)",
     url: "https://github.com/drew-foxall/a2a-js-sdk-examples",
@@ -72,7 +76,6 @@ const contentEditorAgentCard: AgentCard = {
   version: "2.0.0", // Bumped to 2.0.0 for migration
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
-  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   capabilities: {
     streaming: true,
     pushNotifications: false,
@@ -116,9 +119,8 @@ async function main() {
   const appBuilder = new A2AHonoApp(requestHandler);
   appBuilder.setupRoutes(app);
 
-  const PORT = Number(process.env.PORT) || 41243;
   console.log(
-    `[ContentEditorAgent] ✅ AI SDK v6 + Unified A2AAdapter started on http://localhost:${PORT}`
+    `[ContentEditorAgent] ✅ AI SDK v6 + Unified A2AAdapter started on ${BASE_URL}`
   );
   console.log(
     `[ContentEditorAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`

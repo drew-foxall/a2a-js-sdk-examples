@@ -3,10 +3,12 @@
  *
  * This orchestrator coordinates multiple specialist agents using a2a-ai-provider.
  * It demonstrates how an AI SDK agent can consume A2A agents as "models".
+ * 
+ * Supports both streaming and non-streaming modes for flexible integration.
  */
 
 import { a2a } from "a2a-ai-provider";
-import { generateText, type LanguageModel } from "ai";
+import { generateText, streamText, type LanguageModel } from "ai";
 
 /**
  * Specialist agent configuration
@@ -182,6 +184,81 @@ Examples:
       this.config.logger.error("Airbnb Agent error:", error);
       return `Error searching accommodations: ${error instanceof Error ? error.message : "Unknown error"}`;
     }
+  }
+
+  /**
+   * Process a travel planning request with streaming
+   *
+   * This method streams responses in real-time:
+   * 1. Streams analysis progress
+   * 2. Streams weather results as they arrive
+   * 3. Streams accommodation results as they arrive
+   *
+   * This provides immediate feedback to users instead of waiting for all agents.
+   *
+   * @param userQuery - The user's travel planning request
+   * @yields Text chunks as they're generated
+   */
+  async *processRequestStreaming(userQuery: string): AsyncGenerator<string> {
+    this.config.logger.log(`🎭 Orchestrator: Processing request (streaming): "${userQuery}"`);
+
+    // Step 1: Analyze the request (stream analysis progress)
+    yield "🎭 Analyzing your travel request...\n\n";
+
+    const analysis = await this.analyzeRequest(userQuery);
+    this.config.logger.log(`📊 Analysis: ${JSON.stringify(analysis, null, 2)}`);
+
+    // Early exit if no agents needed
+    if (!analysis.needsWeather && !analysis.needsAccommodation) {
+      yield "I'm not sure how to help with that request. I can help with weather forecasts and accommodation searches.";
+      return;
+    }
+
+    // Step 2: Delegate to Weather Agent (streaming)
+    if (analysis.needsWeather) {
+      yield "## Weather Forecast\n\n";
+      yield "🌤️  Checking weather forecast...\n\n";
+
+      try {
+        const { textStream } = streamText({
+          model: a2a(this.config.weatherAgent.agentCardUrl),
+          prompt: userQuery,
+        });
+
+        for await (const chunk of textStream) {
+          yield chunk;
+        }
+
+        yield "\n\n";
+      } catch (error) {
+        this.config.logger.error("Weather Agent error:", error);
+        yield `\n❌ Error getting weather forecast: ${error instanceof Error ? error.message : "Unknown error"}\n\n`;
+      }
+    }
+
+    // Step 3: Delegate to Airbnb Agent (streaming)
+    if (analysis.needsAccommodation) {
+      yield "## Accommodations\n\n";
+      yield "🏠 Searching for accommodations...\n\n";
+
+      try {
+        const { textStream } = streamText({
+          model: a2a(this.config.airbnbAgent.agentCardUrl),
+          prompt: userQuery,
+        });
+
+        for await (const chunk of textStream) {
+          yield chunk;
+        }
+
+        yield "\n\n";
+      } catch (error) {
+        this.config.logger.error("Airbnb Agent error:", error);
+        yield `\n❌ Error searching accommodations: ${error instanceof Error ? error.message : "Unknown error"}\n\n`;
+      }
+    }
+
+    this.config.logger.log("✅ Streaming complete");
   }
 
   /**

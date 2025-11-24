@@ -61,3 +61,4 @@ export function loadEnv(agentModuleUrl: string): void {
     console.warn("⚠️  No .env file found (checked root and agent directory)");
   }
 }
+

@@ -24,15 +24,19 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { loadEnv } from "../../../shared/load-env";
 import { getModel } from "../../../shared/utils";
 import { createAirbnbAgent } from "./agent";
 import { getAirbnbMCPTools, setupMCPShutdownHandlers } from "./mcp-client";
+
+// Load environment variables
+loadEnv(import.meta.url);
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const PORT = 41251;
+const PORT = 41253;
 const HOST = "0.0.0.0";
 const BASE_URL = `http://localhost:${PORT}`;
 
@@ -63,10 +67,9 @@ const accommodationSearchSkill: AgentSkill = {
 const airbnbAgentCard: AgentCard = {
   name: "Airbnb Agent",
   description: "Specialized assistant for Airbnb accommodation search",
-  url: `${BASE_URL}/.well-known/agent-card.json`,
+  url: BASE_URL,
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
-  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   version: "1.0.0",
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
