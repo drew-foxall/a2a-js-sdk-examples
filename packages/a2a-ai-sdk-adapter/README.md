@@ -33,7 +33,7 @@ yarn add @drew-foxall/a2a-ai-sdk-adapter
 import { ToolLoopAgent } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/hono";
+import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 
 // 1. Create your AI SDK agent
@@ -236,35 +236,28 @@ const executor = new A2AAdapter(agent, {
 
 ```typescript
 import { A2ALogger } from "@drew-foxall/a2a-ai-sdk-adapter";
-import winston from "winston";
 
-class WinstonLogger implements A2ALogger {
-  private logger = winston.createLogger({
-    level: "info",
-    format: winston.format.json(),
-    transports: [new winston.transports.Console()],
-  });
-
+class CustomLogger implements A2ALogger {
   debug(message: string, meta?: Record<string, unknown>): void {
-    this.logger.debug(message, meta);
+    // Your implementation
   }
 
   info(message: string, meta?: Record<string, unknown>): void {
-    this.logger.info(message, meta);
+    // Your implementation
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
-    this.logger.warn(message, meta);
+    // Your implementation
   }
 
   error(message: string, meta?: Record<string, unknown>): void {
-    this.logger.error(message, meta);
+    // Your implementation
   }
 }
 
 const executor = new A2AAdapter(agent, {
   mode: "stream",
-  logger: new WinstonLogger(),
+  logger: new CustomLogger(),
 });
 ```
 
@@ -427,50 +420,49 @@ describe("My Agent", () => {
 
 ## 📚 Examples
 
-See the [examples directory](../../examples/agents) for 10 working agent examples:
+For complete working examples of agents built with this adapter, see the [a2a-js-sdk-examples repository](https://github.com/drew-foxall/a2a-js-sdk-examples).
 
-1. **[Hello World](../../examples/agents/src/agents/hello-world)** - Simplest example
-2. **[Dice Agent](../../examples/agents/src/agents/dice-agent)** - Simple tool usage
-3. **[GitHub Agent](../../examples/agents/src/agents/github-agent)** - External API integration
-4. **[Analytics Agent](../../examples/agents/src/agents/analytics-agent)** - PNG chart generation
-5. **[Currency Agent](../../examples/agents/src/agents/currency-agent)** - Real-time data
-6. **[Movie Agent](../../examples/agents/src/agents/movie-agent)** - Multi-turn conversations
-7. **[Coder](../../examples/agents/src/agents/coder)** - Streaming code generation
-8. **[Content Editor](../../examples/agents/src/agents/content-editor)** - Text processing
-9. **[Travel Planner](../../examples/agents/src/agents/travel-planner-multiagent)** - Multi-agent orchestration
-10. **[Weather & Airbnb Agents](../../examples/agents/src/agents/travel-planner-multiagent)** - MCP integration
+Examples include:
+- **Hello World** - Simplest possible agent
+- **Dice Agent** - Tool usage example
+- **GitHub Agent** - External API integration
+- **Analytics Agent** - PNG chart generation with artifacts
+- **Currency Agent** - Real-time data fetching
+- **Movie Agent** - Multi-turn conversations
+- **Coder** - Streaming code generation
+- **Content Editor** - Text processing
+- **Travel Planner** - Multi-agent orchestration
+- **Weather & Airbnb Agents** - MCP integration
 
 ---
 
-## 🔗 Related Documentation
+## 🔗 Resources
 
-- **[Repository Root README](../../README.md)** - Full project overview
-- **[Testing with A2A Inspector](../../examples/TESTING_WITH_A2A_INSPECTOR.md)** - Interactive testing guide
-- **[Repository Refocus Plan](../../REPO_REFOCUS_PLAN.md)** - Architecture decisions
+- **[GitHub Repository](https://github.com/drew-foxall/a2a-js-sdk-examples)** - Source code and examples
 - **[AI SDK Documentation](https://ai-sdk.dev/)** - Vercel AI SDK docs
-- **[A2A Protocol](https://a2a.plus/)** - Agent2Agent protocol specification
+- **[A2A Protocol](https://a2a-protocol.org/)** - Agent2Agent protocol specification
+- **[@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)** - A2A JavaScript SDK with Hono support
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! Please see the [main repository](https://github.com/drew-foxall/a2a-js-sdk-examples) for contribution guidelines.
+Contributions welcome! Please see the [GitHub repository](https://github.com/drew-foxall/a2a-js-sdk-examples) for contribution guidelines.
 
 ---
 
 ## 📄 License
 
-Apache 2.0 - See [LICENSE](../../LICENSE) for details
+Apache 2.0 - See [LICENSE](LICENSE) for details
 
 ---
 
 ## 🙏 Acknowledgments
 
 - **[Vercel AI SDK](https://ai-sdk.dev/)** - Foundation for agent logic
-- **[A2A Project](https://a2a.plus/)** - Agent2Agent protocol
-- **[@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)** - A2A JavaScript SDK with Hono support
+- **[A2A Project](https://a2a-protocol.org/)** - Agent2Agent protocol
+- **[@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)** - A2A JavaScript SDK
 
 ---
 
 **Built with ❤️ by Drew Foxall**
-
