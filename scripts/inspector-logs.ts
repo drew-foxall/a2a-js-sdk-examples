@@ -1,54 +1,82 @@
 #!/usr/bin/env tsx
 
 /**
- * View A2A Inspector Logs
+ * View logs from the A2A Inspector Docker container
  *
- * Displays the last 20 lines of both backend and frontend logs.
+ * This script displays the container logs in real-time.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 
-const BACKEND_LOG = "/tmp/a2a-inspector-backend.log";
-const FRONTEND_LOG = "/tmp/a2a-inspector-frontend.log";
+const CONTAINER_NAME = "a2a-inspector";
 
-function tailFile(filepath: string, lines = 20): string[] {
-  if (!existsSync(filepath)) {
-    return [];
-  }
+/**
+ * Check if container exists (running or stopped)
+ */
+function checkContainerExists(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const docker = spawn("docker", ["ps", "-a", "-q", "-f", `name=${CONTAINER_NAME}`], {
+      stdio: "pipe",
+    });
 
-  const content = readFileSync(filepath, "utf-8");
-  const allLines = content.split("\n");
-  return allLines.slice(-lines);
+    let output = "";
+    docker.stdout.on("data", (data) => {
+      output += data.toString();
+    });
+
+    docker.on("exit", (code) => {
+      resolve(code === 0 && output.trim().length > 0);
+    });
+  });
 }
 
-function main() {
-  console.log("📋 A2A Inspector Logs\n");
+/**
+ * Show container logs
+ */
+function showLogs(follow: boolean = false): void {
+  console.log(`📋 A2A Inspector Logs ${follow ? "(live)" : ""}\n`);
 
-  // Backend logs
-  console.log("=== Backend (last 20 lines) ===");
-  const backendLines = tailFile(BACKEND_LOG);
-  if (backendLines.length === 0) {
-    console.log("(no logs found)");
-  } else {
-    console.log(backendLines.join("\n"));
+  const args = ["logs"];
+  if (follow) {
+    args.push("-f"); // Follow log output
   }
+  args.push("--tail", "100"); // Last 100 lines
+  args.push(CONTAINER_NAME);
 
-  console.log("\n");
+  const docker = spawn("docker", args, {
+    stdio: "inherit",
+  });
 
-  // Frontend logs
-  console.log("=== Frontend (last 20 lines) ===");
-  const frontendLines = tailFile(FRONTEND_LOG);
-  if (frontendLines.length === 0) {
-    console.log("(no logs found)");
-  } else {
-    console.log(frontendLines.join("\n"));
-  }
+  docker.on("error", (err) => {
+    console.error(`\n❌ Error: ${err.message}\n`);
+    process.exit(1);
+  });
 
-  console.log("\n");
-  console.log("Full logs:");
-  console.log(`  Backend:  tail -f ${BACKEND_LOG}`);
-  console.log(`  Frontend: tail -f ${FRONTEND_LOG}`);
+  docker.on("exit", (code) => {
+    if (code !== 0 && code !== null) {
+      console.error(`\n❌ Docker logs failed with code ${code}\n`);
+      process.exit(1);
+    }
+  });
 }
 
-main();
+/**
+ * Main function
+ */
+async function main() {
+  if (!(await checkContainerExists())) {
+    console.log("ℹ️  Inspector container not found\n");
+    console.log("Start it with: pnpm inspector\n");
+    return;
+  }
 
+  // Check for --follow flag
+  const follow = process.argv.includes("--follow") || process.argv.includes("-f");
+
+  showLogs(follow);
+}
+
+main().catch((error) => {
+  console.error(`\n❌ Error: ${error.message}\n`);
+  process.exit(1);
+});

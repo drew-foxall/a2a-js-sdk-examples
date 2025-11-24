@@ -39,7 +39,7 @@
     "inspector": "tsx scripts/start-inspector.ts",
     "inspector:stop": "tsx scripts/stop-inspector.ts",
     "inspector:logs": "tsx scripts/inspector-logs.ts",
-    "inspector:help": "echo '🔍 A2A Inspector Commands:\n  pnpm inspector        - Start local inspector\n  pnpm inspector:stop   - Stop inspector\n  pnpm inspector:logs   - View logs\n  \nMore info: cat INSPECTOR_SETUP.md'"
+    "inspector:help": "echo '🔍 A2A Inspector Commands (Docker):\n  pnpm inspector        - Start inspector container\n  pnpm inspector:stop   - Stop inspector container\n  pnpm inspector:logs   - View container logs\n  \nMore info: cat INSPECTOR_SETUP.md'"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.6",

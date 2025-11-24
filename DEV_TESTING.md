@@ -1,6 +1,6 @@
 # Development Testing with A2A Inspector
 
-This document explains the improved testing workflow that uses proper process orchestration and cleanup.
+This document explains the improved testing workflow using **Docker** for the inspector and proper process orchestration.
 
 ## Quick Start
 
@@ -12,7 +12,29 @@ pnpm start-testing
 pnpm dev:test
 ```
 
+## Prerequisites
+
+- **Docker** (for running the inspector)
+  - macOS: https://docs.docker.com/desktop/install/mac-install/
+  - Linux: https://docs.docker.com/engine/install/
+  - Windows: https://docs.docker.com/desktop/install/windows-install/
+
 ## Features
+
+### ✅ **Docker-Based Inspector**
+
+The inspector runs in a Docker container:
+- No Python/Node.js dependencies required
+- Self-contained and reproducible
+- Works identically on all machines
+- Easy cleanup (no files outside project)
+
+### ✅ **Auto-Open Browser**
+
+The script automatically opens your browser to the inspector:
+- Opens `http://127.0.0.1:5001`
+- Displays the agent URL to copy/paste
+- Works on macOS, Linux, and Windows
 
 ### ✅ **Proper Dependency Management**
 

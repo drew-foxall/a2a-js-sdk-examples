@@ -1,223 +1,204 @@
 #!/usr/bin/env tsx
 
 /**
- * Start Local A2A Inspector
+ * Start the A2A Inspector using Docker
  *
- * This script starts the local A2A inspector in the background.
- * It handles:
- * - Backend server (Python/uv)
- * - Frontend build (one-time, no watch mode)
- * - Process management
- * - Logging
+ * This script:
+ * 1. Checks if Docker is available
+ * 2. Builds/pulls the a2a-inspector image if needed
+ * 3. Runs the inspector in a Docker container
+ * 4. Maps container port 8080 to host port 5001
+ *
+ * Benefits over local clone:
+ * - No Python/Node.js dependencies
+ * - Self-contained and reproducible
+ * - Works consistently across all machines
+ * - No need for external directory setup
  */
 
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { writeFileSync } from "node:fs";
 
-const INSPECTOR_DIR = join(homedir(), "Development", "a2a-inspector");
-const BACKEND_LOG = "/tmp/a2a-inspector-backend.log";
-const FRONTEND_LOG = "/tmp/a2a-inspector-frontend.log";
-const PORT = 5001;
+const CONTAINER_NAME = "a2a-inspector";
+const IMAGE_NAME = "a2a-inspector";
+const HOST_PORT = 5001;
+const CONTAINER_PORT = 8080;
+const INSPECTOR_REPO = "https://github.com/a2aproject/a2a-inspector.git";
 
-interface SpawnResult {
-  success: boolean;
-  pid?: number;
-  error?: string;
-}
-
-async function checkPort(port: number): Promise<boolean> {
+/**
+ * Check if Docker is available
+ */
+function checkDocker(): Promise<boolean> {
   return new Promise((resolve) => {
-    const net = require("node:net");
-    const server = net.createServer();
-
-    server.once("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "EADDRINUSE") {
-        resolve(true); // Port is in use
-      } else {
-        resolve(false);
-      }
-    });
-
-    server.once("listening", () => {
-      server.close();
-      resolve(false); // Port is free
-    });
-
-    server.listen(port);
+    const docker = spawn("docker", ["--version"], { stdio: "pipe" });
+    docker.on("error", () => resolve(false));
+    docker.on("exit", (code) => resolve(code === 0));
   });
 }
 
-async function killPort(port: number): Promise<void> {
+/**
+ * Check if the inspector image exists
+ */
+function checkImage(): Promise<boolean> {
   return new Promise((resolve) => {
-    const killer = spawn("lsof", ["-ti", `:${port}`]);
-    let pids = "";
-
-    killer.stdout.on("data", (data) => {
-      pids += data.toString();
+    const docker = spawn("docker", ["image", "inspect", IMAGE_NAME], {
+      stdio: "pipe",
     });
-
-    killer.on("close", () => {
-      if (pids.trim()) {
-        const pidList = pids.trim().split("\n");
-        for (const pid of pidList) {
-          try {
-            process.kill(Number.parseInt(pid, 10), "SIGKILL");
-          } catch {
-            // Process might already be dead
-          }
-        }
-      }
-      setTimeout(resolve, 500); // Give time for cleanup
-    });
-
-    killer.on("error", () => resolve()); // lsof not found or error
+    docker.on("exit", (code) => resolve(code === 0));
   });
 }
 
-async function buildFrontend(): Promise<SpawnResult> {
+/**
+ * Check if the container is already running
+ */
+function checkContainerRunning(): Promise<boolean> {
   return new Promise((resolve) => {
-    console.log("Building frontend...");
-
-    const build = spawn("npm", ["run", "build"], {
-      cwd: join(INSPECTOR_DIR, "frontend"),
-      stdio: ["ignore", "pipe", "pipe"],
-      detached: false,
+    const docker = spawn("docker", ["ps", "-q", "-f", `name=${CONTAINER_NAME}`], {
+      stdio: "pipe",
     });
 
-    const logStream = require("node:fs").createWriteStream(FRONTEND_LOG);
-    build.stdout.pipe(logStream);
-    build.stderr.pipe(logStream);
+    let output = "";
+    docker.stdout.on("data", (data) => {
+      output += data.toString();
+    });
 
-    build.on("close", (code) => {
-      logStream.end();
+    docker.on("exit", (code) => {
+      resolve(code === 0 && output.trim().length > 0);
+    });
+  });
+}
+
+/**
+ * Build the inspector image from GitHub
+ */
+function buildImage(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    console.log("📦 Building inspector image from GitHub...");
+    console.log(`   Repo: ${INSPECTOR_REPO}`);
+    console.log("   This may take a few minutes on first run...\n");
+
+    const docker = spawn("docker", ["build", "-t", IMAGE_NAME, INSPECTOR_REPO], {
+      stdio: "inherit",
+    });
+
+    docker.on("error", (err) => {
+      reject(new Error(`Failed to build image: ${err.message}`));
+    });
+
+    docker.on("exit", (code) => {
       if (code === 0) {
-        resolve({ success: true });
+        console.log("\n✅ Inspector image built successfully!\n");
+        resolve();
       } else {
-        resolve({
-          success: false,
-          error: `Frontend build failed with code ${code}. Check ${FRONTEND_LOG}`,
-        });
+        reject(new Error(`Docker build failed with code ${code}`));
       }
-    });
-
-    build.on("error", (err) => {
-      logStream.end();
-      resolve({ success: false, error: err.message });
     });
   });
 }
 
-async function startBackend(): Promise<SpawnResult> {
+/**
+ * Stop and remove existing container
+ */
+function stopExistingContainer(): Promise<void> {
   return new Promise((resolve) => {
-    console.log("Starting backend server...");
-
-    const backend = spawn("uv", ["run", "app.py"], {
-      cwd: join(INSPECTOR_DIR, "backend"),
-      stdio: ["ignore", "pipe", "pipe"],
-      detached: true, // Run in background
+    const docker = spawn("docker", ["rm", "-f", CONTAINER_NAME], {
+      stdio: "pipe",
     });
-
-    if (!backend.pid) {
-      resolve({ success: false, error: "Failed to spawn backend process" });
-      return;
-    }
-
-    const logStream = require("node:fs").createWriteStream(BACKEND_LOG);
-    backend.stdout.pipe(logStream);
-    backend.stderr.pipe(logStream);
-
-    // Unref so this process can exit
-    backend.unref();
-
-    // Give backend time to start
-    setTimeout(() => {
-      resolve({ success: true, pid: backend.pid });
-    }, 2000);
+    docker.on("exit", () => resolve());
   });
 }
 
-async function main() {
-  console.log("🔍 Starting local A2A Inspector...\n");
+/**
+ * Start the inspector container
+ */
+function startContainer(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    console.log("🚀 Starting inspector container...");
+    console.log(`   Container: ${CONTAINER_NAME}`);
+    console.log(`   Port: ${HOST_PORT} (host) → ${CONTAINER_PORT} (container)\n`);
 
-  // Check if inspector directory exists
-  if (!existsSync(INSPECTOR_DIR)) {
-    console.error(`❌ Inspector not found at: ${INSPECTOR_DIR}`);
-    console.error("\nPlease clone it first:");
-    console.error("  cd ~/Development");
-    console.error("  git clone https://github.com/a2aproject/a2a-inspector.git");
-    console.error("  cd a2a-inspector");
-    console.error("  uv sync");
-    console.error("  cd frontend && npm install");
-    process.exit(1);
-  }
+    const docker = spawn(
+      "docker",
+      ["run", "-d", "--name", CONTAINER_NAME, "-p", `${HOST_PORT}:${CONTAINER_PORT}`, IMAGE_NAME],
+      { stdio: "pipe" }
+    );
 
-  // Check if port is already in use
-  const portInUse = await checkPort(PORT);
-  if (portInUse) {
-    console.log(`⚠️  Port ${PORT} is already in use`);
+    let containerId = "";
+    docker.stdout.on("data", (data) => {
+      containerId += data.toString();
+    });
 
-    // Check if running in non-interactive mode (piped input)
-    const isInteractive = process.stdin.isTTY;
+    docker.on("error", (err) => {
+      reject(new Error(`Failed to start container: ${err.message}`));
+    });
 
-    if (!isInteractive) {
-      console.log("Non-interactive mode: stopping existing inspector...");
-      await killPort(PORT);
-    } else {
-      const readline = require("node:readline");
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
+    docker.on("exit", (code) => {
+      if (code === 0) {
+        console.log(`✅ Inspector started: ${containerId.trim().substring(0, 12)}\n`);
 
-      const answer = await new Promise<string>((resolve) => {
-        rl.question("Kill existing process? (y/n): ", resolve);
-      });
-      rl.close();
+        // Save container ID for cleanup
+        try {
+          writeFileSync("/tmp/a2a-inspector-container-id", containerId.trim());
+        } catch (_err) {
+          // Non-critical
+        }
 
-      if (answer.toLowerCase() === "y") {
-        console.log("Stopping existing inspector...");
-        await killPort(PORT);
+        resolve();
       } else {
-        console.log("Exiting...");
-        process.exit(0);
+        reject(new Error(`Docker run failed with code ${code}`));
       }
-    }
-  }
-
-  // Build frontend
-  const frontendResult = await buildFrontend();
-  if (!frontendResult.success) {
-    console.error(`❌ ${frontendResult.error}`);
-    process.exit(1);
-  }
-
-  // Start backend
-  const backendResult = await startBackend();
-  if (!backendResult.success) {
-    console.error(`❌ ${backendResult.error}`);
-    process.exit(1);
-  }
-
-  console.log("\n✅ A2A Inspector is running!\n");
-  console.log(`📍 URL: http://127.0.0.1:${PORT}`);
-  console.log(`🔧 Backend PID: ${backendResult.pid}`);
-  console.log("📁 Logs:");
-  console.log(`   Backend:  tail -f ${BACKEND_LOG}`);
-  console.log(`   Frontend: cat ${FRONTEND_LOG}`);
-  console.log("\nTo stop:");
-  console.log("  pnpm inspector:stop");
-  console.log("  # or");
-  console.log(`  kill ${backendResult.pid}`);
-  console.log("\n⚠️  Note: Frontend is built once (not watching for changes).");
-  console.log(
-    "   For inspector development with live reload, use manual mode (see INSPECTOR_SETUP.md)"
-  );
-  console.log();
+    });
+  });
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
+/**
+ * Main function
+ */
+async function main() {
+  console.log("🔍 A2A Inspector (Docker)\n");
+
+  // Check Docker
+  if (!(await checkDocker())) {
+    console.error("❌ Docker is not available!");
+    console.error("\nPlease install Docker:");
+    console.error("  macOS: https://docs.docker.com/desktop/install/mac-install/");
+    console.error("  Linux: https://docs.docker.com/engine/install/");
+    console.error("  Windows: https://docs.docker.com/desktop/install/windows-install/");
+    process.exit(1);
+  }
+
+  // Check if already running
+  if (await checkContainerRunning()) {
+    console.log("✅ Inspector is already running!");
+    console.log(`   URL: http://127.0.0.1:${HOST_PORT}\n`);
+    console.log("💡 To restart, first stop it with: pnpm inspector:stop\n");
+    return;
+  }
+
+  // Check/build image
+  if (!(await checkImage())) {
+    console.log("📥 Inspector image not found locally");
+    await buildImage();
+  } else {
+    console.log("✅ Inspector image found\n");
+  }
+
+  // Clean up any stopped containers with same name
+  await stopExistingContainer();
+
+  // Start container
+  await startContainer();
+
+  console.log("📋 Inspector Ready:");
+  console.log(`   URL: http://127.0.0.1:${HOST_PORT}`);
+  console.log(`   Container: ${CONTAINER_NAME}\n`);
+  console.log("💡 Commands:");
+  console.log("   Stop:  pnpm inspector:stop");
+  console.log("   Logs:  pnpm inspector:logs");
+  console.log("   Help:  pnpm inspector:help\n");
+}
+
+main().catch((error) => {
+  console.error(`\n❌ Error: ${error.message}\n`);
   process.exit(1);
 });

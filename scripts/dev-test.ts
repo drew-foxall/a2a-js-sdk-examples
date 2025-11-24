@@ -8,9 +8,6 @@
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import * as readline from "node:readline";
 
 interface Agent {
@@ -47,9 +44,12 @@ async function question(rl: readline.Interface, prompt: string): Promise<string>
   });
 }
 
-function checkInspectorDir(): boolean {
-  const inspectorDir = join(homedir(), "Development", "a2a-inspector");
-  return existsSync(inspectorDir);
+async function checkDocker(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const docker = spawn("docker", ["--version"], { stdio: "pipe" });
+    docker.on("error", () => resolve(false));
+    docker.on("exit", (code) => resolve(code === 0));
+  });
 }
 
 async function checkPort(port: number): Promise<boolean> {
@@ -163,6 +163,31 @@ function startAgents(agentNames: string[]): void {
     }
   }
   console.log("\n💡 Press Ctrl+C to stop all services\n");
+
+  // Open the browser to the inspector
+  const firstAgent = AGENTS.find((a) => a.name === agentNames[0]);
+  if (firstAgent) {
+    const agentCardUrl = `http://localhost:${firstAgent.port}/.well-known/agent-card.json`;
+    const inspectorUrl = `http://127.0.0.1:${INSPECTOR_PORT}`;
+
+    console.log("🌐 Opening inspector in browser...\n");
+    console.log("📋 Copy this agent URL to connect:");
+    console.log(`   ${agentCardUrl}\n`);
+
+    // Wait a moment for agents to fully start, then open browser
+    setTimeout(() => {
+      const openCmd =
+        process.platform === "darwin"
+          ? "open"
+          : process.platform === "win32"
+            ? "start"
+            : "xdg-open";
+      spawn(openCmd, [inspectorUrl], {
+        detached: true,
+        stdio: "ignore",
+      }).unref();
+    }, 2000); // 2 second delay to ensure agent is ready
+  }
 }
 
 function cleanup(): void {
@@ -211,16 +236,13 @@ process.on("exit", cleanup);
 async function main() {
   console.log("🚀 A2A Agent Testing Orchestrator\n");
 
-  // Check if inspector is set up
-  if (!checkInspectorDir()) {
-    console.log("❌ Local inspector not found!\n");
-    console.log("Please set it up first:");
-    console.log("  cd ~/Development");
-    console.log("  git clone https://github.com/a2aproject/a2a-inspector.git");
-    console.log("  cd a2a-inspector");
-    console.log("  uv sync");
-    console.log("  cd frontend && npm install\n");
-    console.log("See INSPECTOR_SETUP.md for details");
+  // Check if Docker is available
+  if (!(await checkDocker())) {
+    console.error("❌ Docker is not available!");
+    console.error("\nPlease install Docker:");
+    console.error("  macOS: https://docs.docker.com/desktop/install/mac-install/");
+    console.error("  Linux: https://docs.docker.com/engine/install/");
+    console.error("  Windows: https://docs.docker.com/desktop/install/windows-install/");
     process.exit(1);
   }
 
