@@ -1,6 +1,6 @@
 {
   "name": "a2a-js-sdk-examples",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI SDK + Hono examples for @drew-foxall/a2a-js-sdk",
   "author": "Drew Foxall",
   "license": "Apache-2.0",
