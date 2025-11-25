@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# Cancel in-progress runs when a new workflow with the same group name starts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+        env:
+          # Prevent tests from requiring actual API keys
+          CI: true
+
+  adapter-package:
+    name: Verify Adapter Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build adapter package
+        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter build
+
+      - name: Type check adapter
+        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter typecheck
+
+      - name: Lint adapter
+        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter lint
+
+      - name: Test adapter
+        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter test
+
+      - name: Pack adapter
+        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter pack
+        
+      - name: Verify package contents
+        run: |
+          cd packages/a2a-ai-sdk-adapter
+          tar -tzf drew-foxall-a2a-ai-sdk-adapter-*.tgz
+          
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-package
+          path: packages/a2a-ai-sdk-adapter/*.tgz
+          retention-days: 7
+

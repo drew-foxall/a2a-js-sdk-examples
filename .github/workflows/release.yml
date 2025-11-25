@@ -1,0 +1,115 @@
+name: Release to NPM
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - '@drew-foxall/a2a-ai-sdk-adapter@*.*.*'
+
+jobs:
+  release:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # Required for npm provenance
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          
+          # Extract version number (handles both v1.0.0 and @scope/package@1.0.0 formats)
+          if [[ $TAG_NAME =~ @([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+          elif [[ $TAG_NAME =~ v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+          else
+            VERSION="$TAG_NAME"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Verify package version matches tag
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./packages/a2a-ai-sdk-adapter/package.json').version")
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Tag version: $TAG_VERSION"
+          
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ Version mismatch!"
+            echo "Package version ($PACKAGE_VERSION) does not match tag version ($TAG_VERSION)"
+            exit 1
+          fi
+          
+          echo "✅ Version match confirmed"
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+        env:
+          CI: true
+
+      - name: Build adapter package
+        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter build
+
+      - name: Publish to NPM
+        run: |
+          cd packages/a2a-ai-sdk-adapter
+          npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## 📦 @drew-foxall/a2a-ai-sdk-adapter v${{ steps.version.outputs.version }}
+            
+            Published to npm: https://www.npmjs.com/package/@drew-foxall/a2a-ai-sdk-adapter/v/${{ steps.version.outputs.version }}
+            
+            ### Installation
+            ```bash
+            npm install @drew-foxall/a2a-ai-sdk-adapter@${{ steps.version.outputs.version }}
+            ```
+            
+            See the [CHANGELOG](./CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+

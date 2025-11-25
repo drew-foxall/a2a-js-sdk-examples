@@ -465,4 +465,4 @@ Apache 2.0 - See [LICENSE](LICENSE) for details
 
 ---
 
-**Built with ❤️ by Drew Foxall**
+**Built with 🤖 by Drew Foxall**
