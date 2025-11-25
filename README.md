@@ -302,8 +302,8 @@ pnpm test src/agents/analytics-agent/
 
 ### Prerequisites
 
-- **Node.js**: ≥ 18.0.0
-- **pnpm**: 10.11.1 (installed automatically via `packageManager` field)
+- **Node.js**: ≥ 24.0.0 (Active LTS - Krypton)
+- **pnpm**: ≥ 10.0.0 (v10.23.0, installed automatically via `packageManager` field)
 - **OpenAI API Key**: For running examples
 
 ### Setup

@@ -230,7 +230,7 @@ Add these badges to your README:
 
 **Solution**:
 - Check environment variables (CI doesn't have your `.env`)
-- Verify Node.js version matches (workflow uses Node 20)
+- Verify Node.js version matches (workflow uses Node LTS - currently v24.x Krypton)
 - Ensure pnpm lockfile is committed
 - Check for timing-dependent tests
 

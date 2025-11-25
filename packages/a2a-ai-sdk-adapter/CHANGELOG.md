@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: Minimum Node.js version increased to >=24.0.0 (Active LTS - Krypton)
+- Updated pnpm version to 10.23.0
+- GitHub Actions workflows now use `lts/*` for automatic LTS tracking
+
+### Removed
+- Support for Node.js 20.x, 22.x, and earlier versions
+
 ## [1.0.2] - 2025-11-25
 
 ### Added
