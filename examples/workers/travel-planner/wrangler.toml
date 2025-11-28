@@ -1,0 +1,63 @@
+# Travel Planner - Cloudflare Worker Configuration
+#
+# This is an ORCHESTRATOR agent that coordinates specialist agents.
+# It demonstrates multi-agent orchestration on Cloudflare Workers.
+#
+# SECURITY: Uses Service Bindings to call specialist agents privately.
+# Specialist workers are NOT publicly accessible.
+#
+# DEPLOYMENT ORDER:
+# 1. Deploy Weather Agent first: cd workers/weather-agent && wrangler deploy
+# 2. Deploy this worker: wrangler deploy
+# 3. Service Binding automatically connects them (no URL needed!)
+#
+# LOCAL DEVELOPMENT:
+# Service Bindings don't work locally, so we fall back to HTTP URLs.
+# 1. Terminal 1: cd workers/weather-agent && wrangler dev --port 8788
+# 2. Terminal 2: cd workers/travel-planner && wrangler dev --port 8787
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+# Logs:   wrangler tail
+
+name = "a2a-travel-planner"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Enable Node.js compatibility for AI SDK dependencies
+compatibility_flags = ["nodejs_compat"]
+
+# ============================================================================
+# Service Bindings - Private Worker-to-Worker Communication
+# ============================================================================
+# These bindings allow this worker to call other workers DIRECTLY,
+# without going through the public internet. The bound workers don't
+# need public URLs - they're only accessible via this binding.
+
+[[services]]
+binding = "WEATHER_AGENT"
+service = "a2a-weather-agent"
+
+[[services]]
+binding = "AIRBNB_AGENT"
+service = "a2a-airbnb-agent"
+
+# ============================================================================
+# Environment Variables
+# ============================================================================
+
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+
+# Local development fallback URLs (Service Bindings don't work with wrangler dev)
+# These are only used when Service Bindings are not available
+WEATHER_AGENT_URL_FALLBACK = "http://localhost:8788/.well-known/agent-card.json"
+AIRBNB_AGENT_URL_FALLBACK = "http://localhost:8789/.well-known/agent-card.json"
+
+# Secrets are set via CLI:
+#   wrangler secret put OPENAI_API_KEY
+#
+# For local development, create a .dev.vars file:
+#   OPENAI_API_KEY=sk-proj-xxxxx
+

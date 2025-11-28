@@ -1,0 +1,34 @@
+# Hello World Agent - Cloudflare Worker Configuration
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+# Logs:   wrangler tail
+
+name = "a2a-hello-world-agent"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Enable Node.js compatibility for AI SDK dependencies
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables (non-sensitive)
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+
+# Secrets are set via CLI:
+#   wrangler secret put OPENAI_API_KEY
+#
+# For local development, create a .dev.vars file:
+#   OPENAI_API_KEY=sk-proj-xxxxx
+
+# Optional: Custom domain binding
+# [routes]
+# routes = [
+#   { pattern = "hello-world.yourdomain.com", custom_domain = true }
+# ]
+
+# Optional: Increase CPU time for complex requests (paid plans)
+# [limits]
+# cpu_ms = 30000
+

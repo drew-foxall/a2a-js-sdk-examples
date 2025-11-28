@@ -5,9 +5,10 @@
 [![AI SDK](https://img.shields.io/badge/AI%20SDK-v6-purple)](https://ai-sdk.dev/)
 [![pnpm](https://img.shields.io/badge/pnpm-10.11-orange)](https://pnpm.io/)
 
-**Dual-Purpose Repository:**
+**Multi-Purpose Repository:**
 1. **[@drew-foxall/a2a-ai-sdk-adapter](packages/a2a-ai-sdk-adapter)** - NPM package for bridging Vercel AI SDK agents with the A2A protocol
 2. **[Agent Examples](examples/agents)** - 10 working A2A agent examples demonstrating the adapter in action
+3. **[Cloudflare Workers](examples/workers)** - Production-ready workers with multi-agent orchestration via Service Bindings
 
 > Built with **Vercel AI SDK v6**, **Hono**, **TypeScript**, and [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)
 
@@ -98,7 +99,7 @@ pnpm start-testing      # Interactive mode
 ```
 
 📖 **Testing Guides**:
-- **[Inspector Setup](INSPECTOR_SETUP.md)** - Hosted vs Local A2A Inspector
+- **[Inspector Setup](INSPECTOR_SETUP.md)** - Local A2A Inspector (Docker)
 - **[Test Workflow](TEST_WORKFLOW.md)** - Step-by-step: Start agents + use A2A Inspector
 - **[Quick Start (3 min)](QUICKSTART_A2A_INSPECTOR.md)** - Get testing immediately
 - **[Full Testing Guide](examples/TESTING_WITH_A2A_INSPECTOR.md)** - Comprehensive scenarios
@@ -119,7 +120,7 @@ a2a-js-sdk-examples/
 │       └── README.md             # API documentation
 │
 ├── examples/
-│   ├── agents/                   # 🤖 10 Working Agents
+│   ├── agents/                   # 🤖 10 Working Agents (Node.js/Hono)
 │   │   ├── src/agents/
 │   │   │   ├── hello-world/     # Simplest example
 │   │   │   ├── dice-agent/      # Tool usage
@@ -129,11 +130,24 @@ a2a-js-sdk-examples/
 │   │   │   ├── movie-agent/     # Multi-turn conversations
 │   │   │   ├── coder/           # Code generation
 │   │   │   ├── content-editor/  # Text processing
-│   │   │   ├── weather-agent/   # Weather data
-│   │   │   ├── airbnb-agent/    # MCP integration
 │   │   │   └── travel-planner-multiagent/
-│   │   │       └── planner/     # Multi-agent orchestration
+│   │   │       ├── weather-agent/   # Weather specialist
+│   │   │       ├── airbnb-agent/    # MCP integration
+│   │   │       └── planner/         # Multi-agent orchestrator
 │   │   └── package.json
+│   │
+│   ├── workers/                  # ☁️ Cloudflare Workers
+│   │   ├── shared/              # Shared utilities
+│   │   │   ├── types.ts         # Environment types
+│   │   │   └── utils.ts         # Model providers
+│   │   ├── hello-world/         # Simple agent worker
+│   │   ├── dice-agent/          # Tool-using worker
+│   │   ├── currency-agent/      # External API worker
+│   │   ├── weather-agent/       # Specialist (Service Binding)
+│   │   ├── airbnb-agent/        # MCP-powered specialist
+│   │   ├── airbnb-mcp-server/   # MCP server worker
+│   │   ├── travel-planner/      # Orchestrator worker
+│   │   └── README.md            # Workers documentation
 │   │
 │   └── TESTING_WITH_A2A_INSPECTOR.md  # Testing guide
 │
@@ -162,7 +176,7 @@ All examples demonstrate different adapter capabilities:
 | **[Airbnb Agent](examples/agents/src/agents/travel-planner-multiagent/airbnb-agent)** | 41253 | MCP integration | Stream | Real Airbnb data |
 | **[Travel Planner](examples/agents/src/agents/travel-planner-multiagent/planner)** | 41254 | Multi-agent orchestration | Stream | Agent networks |
 
-### Running Agents
+### Running Agents Locally
 
 Each agent runs on its own port. Start them individually:
 
@@ -196,6 +210,158 @@ pnpm agent:planner
 - Multiple agents: Open separate terminals for each agent
 
 **Testing**: See [examples/TESTING_WITH_A2A_INSPECTOR.md](examples/TESTING_WITH_A2A_INSPECTOR.md) for comprehensive testing instructions.
+
+---
+
+## ☁️ Cloudflare Workers Deployment
+
+Deploy A2A agents to Cloudflare Workers for production-ready, globally distributed agents.
+
+### Quick Deploy
+
+```bash
+# 1. Set your OpenAI API key as a secret
+pnpm --filter a2a-hello-world-worker exec wrangler secret put OPENAI_API_KEY
+
+# 2. Deploy a single worker
+pnpm worker:deploy:hello-world
+
+# 3. Deploy all workers
+pnpm workers:deploy:all
+```
+
+### Available Worker Commands
+
+```bash
+# Local Development (with wrangler dev)
+pnpm worker:hello-world      # Hello World agent
+pnpm worker:dice             # Dice Agent
+pnpm worker:currency         # Currency Agent
+pnpm worker:weather          # Weather Agent (specialist)
+pnpm worker:airbnb-agent     # Airbnb Agent (specialist)
+pnpm worker:planner          # Travel Planner (orchestrator)
+pnpm worker:airbnb-mcp-server # Airbnb MCP Server
+
+# Deploy to Cloudflare
+pnpm worker:deploy:hello-world
+pnpm worker:deploy:dice
+pnpm worker:deploy:currency
+pnpm worker:deploy:weather
+pnpm worker:deploy:airbnb-agent
+pnpm worker:deploy:planner
+pnpm worker:deploy:airbnb-mcp-server
+pnpm workers:deploy:all      # Deploy everything
+```
+
+### Worker Architecture
+
+```
+examples/workers/
+├── shared/                  # Shared utilities for all workers
+│   ├── types.ts            # Environment type definitions
+│   └── utils.ts            # Model provider setup
+├── hello-world/            # Simple A2A agent
+├── dice-agent/             # Tool-using agent
+├── currency-agent/         # External API integration
+├── weather-agent/          # Specialist (Service Binding target)
+├── airbnb-agent/           # MCP-powered specialist
+├── airbnb-mcp-server/      # MCP server as a Worker
+└── travel-planner/         # Multi-agent orchestrator
+```
+
+### Multi-Agent System with Service Bindings
+
+The Travel Planner demonstrates a multi-agent architecture using Cloudflare Service Bindings for secure, private worker-to-worker communication:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     PUBLIC INTERNET                          │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+              ┌───────────────────────┐
+              │   Travel Planner      │  ◄── Public A2A endpoint
+              │   (Orchestrator)      │
+              └───────────┬───────────┘
+                          │
+            ┌─────────────┴─────────────┐
+            │    Service Bindings       │  ◄── Private, no public access
+            │    (Internal Only)        │
+            ▼                           ▼
+┌───────────────────┐       ┌───────────────────┐
+│  Weather Agent    │       │  Airbnb Agent     │
+│  (Specialist)     │       │  (Specialist)     │
+└───────────────────┘       └─────────┬─────────┘
+                                      │
+                                      ▼
+                            ┌───────────────────┐
+                            │ Airbnb MCP Server │
+                            │ (Internal Only)   │
+                            └───────────────────┘
+```
+
+**Key Features:**
+- **Service Bindings**: Private worker-to-worker calls (no public URLs)
+- **INTERNAL_ONLY flag**: Specialist workers reject public requests
+- **Zero network latency**: Service Bindings bypass the public internet
+
+### Setting Secrets
+
+Each worker needs an `OPENAI_API_KEY` secret:
+
+```bash
+# Set secret for each worker
+pnpm --filter a2a-hello-world-worker exec wrangler secret put OPENAI_API_KEY
+pnpm --filter a2a-dice-agent-worker exec wrangler secret put OPENAI_API_KEY
+pnpm --filter a2a-currency-agent-worker exec wrangler secret put OPENAI_API_KEY
+pnpm --filter a2a-weather-agent-worker exec wrangler secret put OPENAI_API_KEY
+pnpm --filter a2a-airbnb-agent-worker exec wrangler secret put OPENAI_API_KEY
+pnpm --filter a2a-travel-planner-worker exec wrangler secret put OPENAI_API_KEY
+
+# Verify secrets are set
+pnpm --filter a2a-hello-world-worker exec wrangler secret list
+```
+
+### Local Development with Workers
+
+For local development, create a `.dev.vars` file in each worker directory:
+
+```bash
+# examples/workers/hello-world/.dev.vars
+OPENAI_API_KEY=sk-your-key-here
+```
+
+Then run with `wrangler dev`:
+
+```bash
+cd examples/workers/hello-world
+pnpm dev  # Starts on http://localhost:8787
+```
+
+### Important: Zod Schema Limitation
+
+**Zod schemas don't work correctly in Cloudflare Workers** due to bundling issues. The workers use explicit JSON Schema objects instead:
+
+```typescript
+// ❌ Doesn't work in Workers (Zod schema gets stripped)
+const schema = z.object({ location: z.string() });
+
+// ✅ Works in Workers (explicit JSON Schema)
+const schemaSymbol = Symbol.for("vercel.ai.schema");
+const schema = {
+  [schemaSymbol]: true,
+  jsonSchema: {
+    type: "object",
+    properties: { location: { type: "string" } },
+    required: ["location"],
+  },
+  validate: async (value) => ({ success: true, value }),
+};
+```
+
+See `examples/workers/weather-agent/src/index.ts` for a complete example.
+
+📖 **Full Documentation**: [examples/workers/README.md](examples/workers/README.md)
 
 ---
 
@@ -288,7 +454,7 @@ pnpm test src/agents/analytics-agent/
    pnpm agent:hello-world
    ```
 
-2. Open [https://inspector.a2a.plus](https://inspector.a2a.plus)
+2. Start local inspector: `pnpm inspector` (runs in Docker)
 
 3. Enter: `http://localhost:41244`
 

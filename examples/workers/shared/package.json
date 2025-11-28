@@ -1,0 +1,12 @@
+{
+  "name": "a2a-workers-shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ai-sdk/anthropic": "3.0.0-beta.54",
+    "@ai-sdk/google": "3.0.0-beta.48",
+    "@ai-sdk/openai": "3.0.0-beta.61"
+  }
+}
+

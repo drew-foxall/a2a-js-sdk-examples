@@ -14,6 +14,10 @@ build/
 .env.local
 .env.*.local
 
+# Cloudflare Workers secrets (NEVER commit these!)
+.dev.vars
+workers/**/.dev.vars
+
 # IDE
 .vscode/
 .idea/

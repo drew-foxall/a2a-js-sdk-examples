@@ -1,0 +1,30 @@
+# Airbnb Agent - A2A Worker
+#
+# This agent uses the Airbnb MCP Server to search for accommodations.
+# It's a specialist agent for the Travel Planner orchestrator.
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+
+name = "a2a-airbnb-agent"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# This is a specialist agent - not publicly accessible
+# Only the Travel Planner orchestrator should call it via Service Binding
+routes = []
+
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+# Mark as internal-only (checked by the agent)
+INTERNAL_ONLY = "true"
+# URL of the Airbnb MCP Server (deployed Worker)
+AIRBNB_MCP_URL = "https://airbnb-mcp-server.aisdk-a2a.workers.dev"
+
+# Service binding to the MCP server for faster calls
+[[services]]
+binding = "AIRBNB_MCP"
+service = "airbnb-mcp-server"
+

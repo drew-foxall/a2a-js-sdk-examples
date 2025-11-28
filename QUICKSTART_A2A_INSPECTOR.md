@@ -33,11 +33,21 @@ You should see:
 
 ---
 
-## Step 2: Open A2A Inspector
+## Step 2: Start Local A2A Inspector
 
-1. Go to: **https://inspector.a2a.plus**
+In a **new terminal**:
+
+```bash
+pnpm inspector
+```
+
+This starts the inspector in Docker at **http://127.0.0.1:5001**
+
+1. Open: **http://127.0.0.1:5001**
 2. Enter agent URL: `http://localhost:41244`
 3. Click **"Connect"**
+
+> **Note**: There is no hosted inspector. You must run it locally via Docker.
 
 ---
 

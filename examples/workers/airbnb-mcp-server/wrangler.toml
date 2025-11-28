@@ -1,0 +1,17 @@
+# Airbnb MCP Server - Cloudflare Worker
+#
+# This Worker exposes Airbnb search functionality via the MCP protocol.
+# It can be consumed by MCP clients using HTTP/SSE transport.
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+
+name = "airbnb-mcp-server"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Set to "true" to ignore robots.txt (not recommended for production)
+IGNORE_ROBOTS_TXT = "true"
+
