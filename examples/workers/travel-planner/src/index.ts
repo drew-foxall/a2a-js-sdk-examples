@@ -136,8 +136,6 @@ async function callSpecialistAgent(
 ): Promise<string> {
   // If Service Binding is available (production), use it directly
   if (binding) {
-    console.log("📡 Using Service Binding for private worker-to-worker call");
-
     // Service Binding exposes a fetch() that calls the worker directly
     // We need to make an A2A protocol request to the root (/) JSON-RPC endpoint
     const response = await binding.fetch("https://internal/", {
@@ -162,19 +160,14 @@ async function callSpecialistAgent(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Service Binding call failed: ${response.status}`, errorText);
       throw new Error(`Service Binding call failed: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json() as { result?: { status?: { message?: { parts?: Array<{ kind?: string; text?: string }> } } } };
-    
-    // Debug: log the full response structure
-    console.log("📨 Service Binding response:", JSON.stringify(result, null, 2).substring(0, 500));
 
     // Extract text from A2A response
     const parts = result?.result?.status?.message?.parts;
     if (!parts || parts.length === 0) {
-      console.log("⚠️ No parts in response");
       return "No response from specialist agent";
     }
     
@@ -183,13 +176,11 @@ async function callSpecialistAgent(
       ?.map((p) => p.text)
       ?.join("\n");
 
-    console.log(`📝 Extracted text: ${text?.substring(0, 200)}...`);
     return text || "No response from specialist agent";
   }
 
   // Fallback to HTTP for local development
   if (fallbackUrl) {
-    console.log("🌐 Using HTTP fallback for local development");
 
     const result = await generateText({
       model: a2a(fallbackUrl),
@@ -251,8 +242,6 @@ function createPlannerAgentWithBindings(
           "Get a 7-day weather forecast for a location. Uses a privately-bound specialist agent.",
         inputSchema: weatherForecastSchema,
         execute: async (params: WeatherForecastParams) => {
-          console.log(`🌤️ Calling Weather Agent (private): ${params.location}`);
-
           try {
             const result = await callSpecialistAgent(
               env.WEATHER_AGENT,
@@ -262,7 +251,6 @@ function createPlannerAgentWithBindings(
 
             return result;
           } catch (error) {
-            console.error("Weather Agent error:", error);
             return `Error getting weather forecast: ${error instanceof Error ? error.message : "Unknown error"}`;
           }
         },
@@ -272,7 +260,6 @@ function createPlannerAgentWithBindings(
           "Search for Airbnb accommodations at a location. Uses a privately-bound specialist agent with MCP integration.",
         inputSchema: accommodationSearchSchema,
         execute: async (params: AccommodationSearchParams) => {
-          console.log(`🏠 Calling Airbnb Agent (private): ${params.location}`);
 
           try {
             // Build the search prompt
@@ -298,7 +285,6 @@ function createPlannerAgentWithBindings(
 
             return result;
           } catch (error) {
-            console.error("Airbnb Agent error:", error);
             return `Error searching accommodations: ${error instanceof Error ? error.message : "Unknown error"}`;
           }
         },

@@ -196,7 +196,6 @@ function buildSearchUrl(params: AirbnbSearchParams): string {
 
 async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
   const url = buildSearchUrl(params);
-  console.log(`Searching Airbnb: ${url}`);
 
   try {
     const response = await fetchWithUserAgent(url);
@@ -350,7 +349,6 @@ async function getListingDetails(
   if (params.adults) searchParams.set("adults", String(params.adults));
 
   const url = `${BASE_URL}/rooms/${params.id}?${searchParams.toString()}`;
-  console.log(`Fetching listing details: ${url}`);
 
   try {
     const response = await fetchWithUserAgent(url);

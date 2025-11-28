@@ -142,19 +142,14 @@ function createWorkerWeatherAgent(model: LanguageModel) {
         description: "Get weather forecast for a location using Open-Meteo API (free, no API key). ALWAYS use this tool when asked about weather.",
         inputSchema: weatherForecastSchema,
         execute: async (params: WeatherForecastParams) => {
-          console.log(`🌤️ Weather tool called for: ${params.location}`);
-          
           try {
-            // Try the real API first
             const forecast = await getWeatherForecast(params.location, params.days || 7);
 
             if (isWeatherError(forecast)) {
               // If rate limited (429), return mock data for demo purposes
               if (forecast.error.includes("429")) {
-                console.log(`⚠️ Rate limited - returning mock data for demo`);
                 return getMockWeatherData(params.location, params.days || 7);
               }
-              console.log(`❌ Weather API error: ${forecast.error}`);
               return { error: forecast.error };
             }
 
@@ -166,19 +161,14 @@ function createWorkerWeatherAgent(model: LanguageModel) {
               conditions: getWeatherDescription(forecast.weatherCode[index] ?? 0),
             }));
 
-            const result = {
+            return {
               success: true,
               location: forecast.location,
               timezone: forecast.timezone,
               forecasts: dailyForecasts,
             };
-            
-            console.log(`✅ Weather tool returning real data for ${forecast.location}`);
-            return result;
-          } catch (error) {
-            console.error(`💥 Weather tool exception:`, error);
+          } catch {
             // Return mock data on any error for demo reliability
-            console.log(`⚠️ Error occurred - returning mock data for demo`);
             return getMockWeatherData(params.location, params.days || 7);
           }
         },
@@ -250,31 +240,26 @@ function isInternalRequest(request: Request): boolean {
 
   // Service Binding calls use a synthetic URL - we use "internal" as the host
   if (url.hostname === "internal") {
-    console.log("✅ Detected internal hostname");
     return true;
   }
 
   // Check for localhost (local development)
   if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
-    console.log("✅ Detected localhost");
     return true;
   }
 
   // Check for X-Worker-Internal header (set by orchestrator)
   const internalHeader = request.headers.get("X-Worker-Internal");
   if (internalHeader === "true") {
-    console.log("✅ Detected X-Worker-Internal header");
     return true;
   }
 
   // Service Bindings may not have CF-Connecting-IP header
   const cfConnectingIp = request.headers.get("CF-Connecting-IP");
   if (!cfConnectingIp) {
-    console.log("✅ No CF-Connecting-IP header - likely Service Binding");
     return true;
   }
 
-  console.log(`❌ External request from ${cfConnectingIp}, hostname: ${url.hostname}`);
   return false;
 }
 
@@ -294,7 +279,6 @@ app.use("*", async (c, next) => {
 
   // If INTERNAL_ONLY is set and request is from public internet, reject it
   if (internalOnly && !isInternal) {
-    console.log("🚫 Rejected public request - this worker is internal only");
     return c.json(
       {
         error: "Forbidden",
@@ -303,13 +287,6 @@ app.use("*", async (c, next) => {
       },
       403
     );
-  }
-
-  // Log the request source
-  if (isInternal) {
-    console.log("✅ Internal request via Service Binding");
-  } else {
-    console.log("🌐 Public request (allowed for testing)");
   }
 
   return next();
