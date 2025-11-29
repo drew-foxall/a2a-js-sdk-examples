@@ -10,21 +10,19 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { generateText, tool } from "ai";
-import type { LanguageModelV1 } from "ai";
-import {
-  A2AAdapter,
-  type AgentExecutor,
-} from "@drew-foxall/a2a-ai-sdk-adapter";
+import { ToolLoopAgent, jsonSchema, type LanguageModel } from "ai";
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import {
   DefaultRequestHandler,
   InMemoryTaskStore,
   type TaskStore,
-  type AgentCard,
+  type AgentExecutor,
 } from "@drew-foxall/a2a-js-sdk/server";
+import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { z } from "zod";
-import { getModel, type Env as BaseEnv } from "a2a-workers-shared";
+import { getModel } from "../../shared/utils.js";
+import type { Env as BaseEnv } from "../../shared/types.js";
+import { z, toJSONSchema } from "zod";
 
 // ============================================================================
 // Types
@@ -51,6 +49,9 @@ function createAgentCard(baseUrl: string): AgentCard {
       "Specialist agent for searching Airbnb accommodations. Finds vacation rentals based on location, dates, and guest requirements.",
     url: baseUrl,
     version: "1.0.0",
+    protocolVersion: "0.3.0",
+    defaultInputModes: ["text"],
+    defaultOutputModes: ["text"],
     capabilities: {
       streaming: true,
       pushNotifications: false,
@@ -155,34 +156,47 @@ async function callMCPTool(
 }
 
 // ============================================================================
-// Agent Creation
+// Agent Creation - Zod 4 with AI SDK jsonSchema helper for Cloudflare Workers
 // ============================================================================
+
+// Define Zod schemas
+const airbnbSearchZodSchema = z.object({
+  location: z.string().describe("Location to search (city, state, country)"),
+  checkin: z.string().optional().describe("Check-in date in YYYY-MM-DD format"),
+  checkout: z.string().optional().describe("Check-out date in YYYY-MM-DD format"),
+  adults: z.number().optional().describe("Number of adults (default: 1)"),
+  children: z.number().optional().describe("Number of children"),
+  infants: z.number().optional().describe("Number of infants"),
+  pets: z.number().optional().describe("Number of pets"),
+  minPrice: z.number().optional().describe("Minimum price per night"),
+  maxPrice: z.number().optional().describe("Maximum price per night"),
+});
+
+const listingDetailsZodSchema = z.object({
+  id: z.string().describe("The Airbnb listing ID"),
+  checkin: z.string().optional().describe("Check-in date in YYYY-MM-DD format"),
+  checkout: z.string().optional().describe("Check-out date in YYYY-MM-DD format"),
+  adults: z.number().optional().describe("Number of adults"),
+});
+
+type AirbnbSearchParams = z.infer<typeof airbnbSearchZodSchema>;
+type ListingDetailsParams = z.infer<typeof listingDetailsZodSchema>;
+
+// Convert Zod 4 schemas to AI SDK compatible schemas using jsonSchema helper
+const airbnbSearchSchema = jsonSchema<AirbnbSearchParams>(
+  toJSONSchema(airbnbSearchZodSchema)
+);
+const listingDetailsSchema = jsonSchema<ListingDetailsParams>(
+  toJSONSchema(listingDetailsZodSchema)
+);
 
 function createAirbnbTools(env: Env) {
   return {
-    searchAirbnb: tool({
+    searchAirbnb: {
       description:
         "Search for Airbnb listings. Returns accommodations matching the criteria with prices and direct links.",
-      parameters: z.object({
-        location: z
-          .string()
-          .describe("Location to search (city, state, country)"),
-        checkin: z
-          .string()
-          .optional()
-          .describe("Check-in date in YYYY-MM-DD format"),
-        checkout: z
-          .string()
-          .optional()
-          .describe("Check-out date in YYYY-MM-DD format"),
-        adults: z.number().optional().describe("Number of adults (default: 1)"),
-        children: z.number().optional().describe("Number of children"),
-        infants: z.number().optional().describe("Number of infants"),
-        pets: z.number().optional().describe("Number of pets"),
-        minPrice: z.number().optional().describe("Minimum price per night"),
-        maxPrice: z.number().optional().describe("Maximum price per night"),
-      }),
-      execute: async (args) => {
+      inputSchema: airbnbSearchSchema,
+      execute: async (args: AirbnbSearchParams) => {
         try {
           const result = await callMCPTool(env, "airbnb_search", args);
           return result;
@@ -190,24 +204,13 @@ function createAirbnbTools(env: Env) {
           return `Error searching Airbnb: ${error instanceof Error ? error.message : "Unknown error"}`;
         }
       },
-    }),
+    },
 
-    getListingDetails: tool({
+    getListingDetails: {
       description:
         "Get detailed information about a specific Airbnb listing including amenities, reviews, and pricing.",
-      parameters: z.object({
-        id: z.string().describe("The Airbnb listing ID"),
-        checkin: z
-          .string()
-          .optional()
-          .describe("Check-in date in YYYY-MM-DD format"),
-        checkout: z
-          .string()
-          .optional()
-          .describe("Check-out date in YYYY-MM-DD format"),
-        adults: z.number().optional().describe("Number of adults"),
-      }),
-      execute: async (args) => {
+      inputSchema: listingDetailsSchema,
+      execute: async (args: ListingDetailsParams) => {
         try {
           const result = await callMCPTool(env, "airbnb_listing_details", args);
           return result;
@@ -215,7 +218,7 @@ function createAirbnbTools(env: Env) {
           return `Error getting listing details: ${error instanceof Error ? error.message : "Unknown error"}`;
         }
       },
-    }),
+    },
   };
 }
 
@@ -236,22 +239,14 @@ When providing listing details:
 
 Be helpful, concise, and focus on finding accommodations that match the user's needs.`;
 
-function createAirbnbAgent(model: LanguageModelV1, env: Env) {
+function createAirbnbAgent(model: LanguageModel, env: Env) {
   const tools = createAirbnbTools(env);
 
-  return {
-    invoke: async (input: string) => {
-      const result = await generateText({
-        model,
-        system: SYSTEM_PROMPT,
-        prompt: input,
-        tools,
-        maxSteps: 5,
-      });
-
-      return result.text;
-    },
-  };
+  return new ToolLoopAgent({
+    model,
+    instructions: SYSTEM_PROMPT,
+    tools,
+  });
 }
 
 // ============================================================================
@@ -274,52 +269,64 @@ app.get("/health", (c) => {
 
 // A2A routes
 app.all("/*", async (c, next) => {
-  // Check if this is an internal-only agent being accessed externally
-  if (c.env.INTERNAL_ONLY === "true") {
-    const internalHeader = c.req.header("X-Worker-Internal");
-    if (!internalHeader) {
-      return c.json(
-        {
-          error: "Forbidden",
-          message:
-            "This agent is only accessible via internal service bindings",
-        },
-        403
-      );
+  try {
+    // Check if this is an internal-only agent being accessed externally
+    if (c.env.INTERNAL_ONLY === "true") {
+      const internalHeader = c.req.header("X-Worker-Internal");
+      if (!internalHeader) {
+        return c.json(
+          {
+            error: "Forbidden",
+            message:
+              "This agent is only accessible via internal service bindings",
+          },
+          403
+        );
+      }
     }
+
+    const url = new URL(c.req.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const agentCard = createAgentCard(baseUrl);
+
+    const model = getModel(c.env);
+    const agent = createAirbnbAgent(model, c.env);
+
+    const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+      mode: "stream",
+      workingMessage: "Searching for Airbnb accommodations...",
+      includeHistory: true,
+    });
+
+    const taskStore: TaskStore = new InMemoryTaskStore();
+    const requestHandler = new DefaultRequestHandler(
+      agentCard,
+      taskStore,
+      agentExecutor
+    );
+
+    const a2aRouter = new Hono();
+    const appBuilder = new A2AHonoApp(requestHandler);
+    appBuilder.setupRoutes(a2aRouter);
+
+    const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);
+
+    if (a2aResponse.status !== 404) {
+      return a2aResponse;
+    }
+
+    return next();
+  } catch (error) {
+    console.error("Airbnb Agent Error:", error);
+    return c.json(
+      {
+        error: "Internal Server Error",
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      500
+    );
   }
-
-  const url = new URL(c.req.url);
-  const baseUrl = `${url.protocol}//${url.host}`;
-  const agentCard = createAgentCard(baseUrl);
-
-  const model = getModel(c.env);
-  const agent = createAirbnbAgent(model, c.env);
-
-  const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-    mode: "stream",
-    workingMessage: "Searching for Airbnb accommodations...",
-    includeHistory: true,
-  });
-
-  const taskStore: TaskStore = new InMemoryTaskStore();
-  const requestHandler = new DefaultRequestHandler(
-    agentCard,
-    taskStore,
-    agentExecutor
-  );
-
-  const a2aRouter = new Hono();
-  const appBuilder = new A2AHonoApp(requestHandler);
-  appBuilder.setupRoutes(a2aRouter);
-
-  const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);
-
-  if (a2aResponse.status !== 404) {
-    return a2aResponse;
-  }
-
-  return next();
 });
 
 // 404 handler

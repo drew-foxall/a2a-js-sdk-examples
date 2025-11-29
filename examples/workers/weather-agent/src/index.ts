@@ -34,57 +34,29 @@ import {
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { ToolLoopAgent, type LanguageModel } from "ai";
+import { ToolLoopAgent, jsonSchema, type LanguageModel } from "ai";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { z, toJSONSchema } from "zod";
 import type { Env } from "../../shared/types.js";
 import { getModel, getModelInfo } from "../../shared/utils.js";
 
 // ============================================================================
-// Worker-Compatible Weather Agent
+// Worker-Compatible Weather Agent - Using Zod 4 with AI SDK jsonSchema helper
 // ============================================================================
 
-/**
- * Create a schema object that works in Cloudflare Workers
- * 
- * The AI SDK's Zod schema conversion doesn't work properly in Workers
- * because the bundler strips the ~standard interface. We create
- * explicit JSON Schema objects instead.
- */
-const schemaSymbol = Symbol.for("vercel.ai.schema");
+// Define Zod schema
+const weatherForecastZodSchema = z.object({
+  location: z.string().describe("Location to get weather for (city, state, country)"),
+  days: z.number().min(1).max(7).optional().describe("Number of days to forecast (1-7, default 7)"),
+});
 
-interface WeatherForecastParams {
-  location: string;
-  days?: number;
-}
+type WeatherForecastParams = z.infer<typeof weatherForecastZodSchema>;
 
-const weatherForecastSchema = {
-  [schemaSymbol]: true,
-  jsonSchema: {
-    type: "object",
-    properties: {
-      location: {
-        type: "string",
-        description: "Location to get weather for (city, state, country)",
-      },
-      days: {
-        type: "number",
-        minimum: 1,
-        maximum: 7,
-        description: "Number of days to forecast (1-7, default 7)",
-      },
-    },
-    required: ["location"],
-    additionalProperties: false,
-  },
-  validate: async (value: unknown) => {
-    const v = value as WeatherForecastParams;
-    if (typeof v?.location === "string") {
-      return { success: true as const, value: v };
-    }
-    return { success: false as const, error: new Error("Invalid location parameter") };
-  },
-};
+// Convert Zod 4 schema to AI SDK compatible schema using jsonSchema helper
+const weatherForecastSchema = jsonSchema<WeatherForecastParams>(
+  toJSONSchema(weatherForecastZodSchema)
+);
 
 /**
  * Generate mock weather data for demo/testing when API is rate limited
@@ -136,7 +108,6 @@ function createWorkerWeatherAgent(model: LanguageModel) {
   return new ToolLoopAgent({
     model,
     instructions: getWeatherAgentPrompt(),
-    maxSteps: 5,
     tools: {
       get_weather_forecast: {
         description: "Get weather forecast for a location using Open-Meteo API (free, no API key). ALWAYS use this tool when asked about weather.",
