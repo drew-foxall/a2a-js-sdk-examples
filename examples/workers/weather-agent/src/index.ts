@@ -22,9 +22,6 @@
  *   wrangler dev --port 8788
  */
 
-// Import weather tools from agents package (reuse the actual implementation)
-import { getWeatherForecast, isWeatherError, getWeatherDescription, getWeatherAgentPrompt } from "a2a-agents";
-
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
@@ -34,10 +31,17 @@ import {
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { ToolLoopAgent, jsonSchema, type LanguageModel } from "ai";
+// Import weather tools from agents package (reuse the actual implementation)
+import {
+  getWeatherAgentPrompt,
+  getWeatherDescription,
+  getWeatherForecast,
+  isWeatherError,
+} from "a2a-agents";
+import { jsonSchema, type LanguageModel, ToolLoopAgent } from "ai";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { z, toJSONSchema } from "zod";
+import { toJSONSchema, z } from "zod";
 import type { Env } from "../../shared/types.js";
 import { getModel, getModelInfo } from "../../shared/utils.js";
 
@@ -64,21 +68,21 @@ const weatherForecastSchema = jsonSchema<WeatherForecastParams>(
 function getMockWeatherData(location: string, days: number) {
   const today = new Date();
   const forecasts = [];
-  
+
   // Generate realistic-looking mock data
   const conditions = ["Clear sky", "Partly cloudy", "Mainly clear", "Overcast", "Slight rain"];
   const baseTemp = 45 + Math.floor(Math.random() * 20); // Base temp between 45-65°F
-  
+
   for (let i = 0; i < Math.min(days, 7); i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
     const dateStr = date.toISOString().split("T")[0];
-    
+
     // Add some variation to temps
     const variation = Math.floor(Math.random() * 10) - 5;
     const high = baseTemp + 10 + variation;
     const low = baseTemp - 5 + variation;
-    
+
     forecasts.push({
       date: dateStr,
       temperatureHigh: `${high}°F`,
@@ -87,20 +91,21 @@ function getMockWeatherData(location: string, days: number) {
       conditions: conditions[Math.floor(Math.random() * conditions.length)],
     });
   }
-  
+
   return {
     success: true,
     location: location,
     timezone: "UTC",
     forecasts,
     _mock: true, // Flag to indicate this is mock data
-    _note: "Mock data returned due to API rate limiting. Real API would provide accurate forecasts.",
+    _note:
+      "Mock data returned due to API rate limiting. Real API would provide accurate forecasts.",
   };
 }
 
 /**
  * Create a Weather Agent that works in Cloudflare Workers
- * 
+ *
  * This is a worker-compatible version that uses explicit JSON schemas
  * instead of Zod (which doesn't bundle correctly for Workers).
  */
@@ -110,7 +115,8 @@ function createWorkerWeatherAgent(model: LanguageModel) {
     instructions: getWeatherAgentPrompt(),
     tools: {
       get_weather_forecast: {
-        description: "Get weather forecast for a location using Open-Meteo API (free, no API key). ALWAYS use this tool when asked about weather.",
+        description:
+          "Get weather forecast for a location using Open-Meteo API (free, no API key). ALWAYS use this tool when asked about weather.",
         inputSchema: weatherForecastSchema,
         execute: async (params: WeatherForecastParams) => {
           try {
@@ -253,7 +259,8 @@ app.use("*", async (c, next) => {
     return c.json(
       {
         error: "Forbidden",
-        message: "This agent is not publicly accessible. It can only be called via Service Binding.",
+        message:
+          "This agent is not publicly accessible. It can only be called via Service Binding.",
         hint: "Use the Travel Planner orchestrator to access weather forecasts.",
       },
       403
@@ -296,7 +303,8 @@ app.get("/health", (c) => {
 app.all("/*", async (c, next) => {
   const url = new URL(c.req.url);
   // For Service Binding calls, use a placeholder base URL
-  const baseUrl = url.hostname === "internal" ? "https://weather-agent.internal" : `${url.protocol}//${url.host}`;
+  const baseUrl =
+    url.hostname === "internal" ? "https://weather-agent.internal" : `${url.protocol}//${url.host}`;
   const agentCard = createAgentCard(baseUrl);
 
   // Create agent using worker-compatible factory (with explicit JSON schemas)

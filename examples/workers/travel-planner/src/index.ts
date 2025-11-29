@@ -46,7 +46,7 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { a2a } from "a2a-ai-provider";
-import { ToolLoopAgent, generateText, type LanguageModel } from "ai";
+import { generateText, type LanguageModel, ToolLoopAgent } from "ai";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
@@ -163,14 +163,16 @@ async function callSpecialistAgent(
       throw new Error(`Service Binding call failed: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json() as { result?: { status?: { message?: { parts?: Array<{ kind?: string; text?: string }> } } } };
+    const result = (await response.json()) as {
+      result?: { status?: { message?: { parts?: Array<{ kind?: string; text?: string }> } } };
+    };
 
     // Extract text from A2A response
     const parts = result?.result?.status?.message?.parts;
     if (!parts || parts.length === 0) {
       return "No response from specialist agent";
     }
-    
+
     const text = parts
       ?.filter((p) => p.kind === "text")
       ?.map((p) => p.text)
@@ -181,7 +183,6 @@ async function callSpecialistAgent(
 
   // Fallback to HTTP for local development
   if (fallbackUrl) {
-
     const result = await generateText({
       model: a2a(fallbackUrl),
       prompt,
@@ -260,7 +261,6 @@ function createPlannerAgentWithBindings(
           "Search for Airbnb accommodations at a location. Uses a privately-bound specialist agent with MCP integration.",
         inputSchema: accommodationSearchSchema,
         execute: async (params: AccommodationSearchParams) => {
-
           try {
             // Build the search prompt
             let prompt = `Search for Airbnb listings in ${params.location}`;

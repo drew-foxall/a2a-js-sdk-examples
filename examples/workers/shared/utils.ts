@@ -35,7 +35,9 @@ export function getModel(env: Env) {
   switch (provider.toLowerCase()) {
     case "openai": {
       if (!env.OPENAI_API_KEY) {
-        throw new Error("OPENAI_API_KEY is required. Set it using: wrangler secret put OPENAI_API_KEY");
+        throw new Error(
+          "OPENAI_API_KEY is required. Set it using: wrangler secret put OPENAI_API_KEY"
+        );
       }
       // Use createOpenAI to explicitly pass the API key (required for Workers)
       // IMPORTANT: Use .chat() instead of default to avoid OpenAI Responses API
@@ -105,4 +107,3 @@ export function createMessageId(): string {
 export function createTaskId(): string {
   return `task-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
-

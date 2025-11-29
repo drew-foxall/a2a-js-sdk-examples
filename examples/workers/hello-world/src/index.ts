@@ -15,9 +15,6 @@
  *   wrangler dev
  */
 
-// Import agent factory from the shared agents package (NO CODE DUPLICATION!)
-import { createHelloWorldAgent } from "a2a-agents";
-
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
@@ -27,6 +24,8 @@ import {
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+// Import agent factory from the shared agents package (NO CODE DUPLICATION!)
+import { createHelloWorldAgent } from "a2a-agents";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { HonoEnv } from "../../shared/types.js";
@@ -118,7 +117,7 @@ app.all("/*", async (c, next) => {
 
   // Try the A2A router first
   const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);
-  
+
   // If A2A router handled it (not 404), return that response
   if (a2aResponse.status !== 404) {
     return a2aResponse;

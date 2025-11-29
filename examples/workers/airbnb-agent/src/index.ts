@@ -8,21 +8,21 @@
  * works in the Cloudflare Workers environment (unlike stdio transport).
  */
 
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { ToolLoopAgent, jsonSchema, type LanguageModel } from "ai";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
+  type AgentExecutor,
   DefaultRequestHandler,
   InMemoryTaskStore,
   type TaskStore,
-  type AgentExecutor,
 } from "@drew-foxall/a2a-js-sdk/server";
-import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { getModel } from "../../shared/utils.js";
+import { jsonSchema, type LanguageModel, ToolLoopAgent } from "ai";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { toJSONSchema, z } from "zod";
 import type { Env as BaseEnv } from "../../shared/types.js";
-import { z, toJSONSchema } from "zod";
+import { getModel } from "../../shared/utils.js";
 
 // ============================================================================
 // Types
@@ -183,9 +183,7 @@ type AirbnbSearchParams = z.infer<typeof airbnbSearchZodSchema>;
 type ListingDetailsParams = z.infer<typeof listingDetailsZodSchema>;
 
 // Convert Zod 4 schemas to AI SDK compatible schemas using jsonSchema helper
-const airbnbSearchSchema = jsonSchema<AirbnbSearchParams>(
-  toJSONSchema(airbnbSearchZodSchema)
-);
+const airbnbSearchSchema = jsonSchema<AirbnbSearchParams>(toJSONSchema(airbnbSearchZodSchema));
 const listingDetailsSchema = jsonSchema<ListingDetailsParams>(
   toJSONSchema(listingDetailsZodSchema)
 );
@@ -277,8 +275,7 @@ app.all("/*", async (c, next) => {
         return c.json(
           {
             error: "Forbidden",
-            message:
-              "This agent is only accessible via internal service bindings",
+            message: "This agent is only accessible via internal service bindings",
           },
           403
         );
@@ -299,11 +296,7 @@ app.all("/*", async (c, next) => {
     });
 
     const taskStore: TaskStore = new InMemoryTaskStore();
-    const requestHandler = new DefaultRequestHandler(
-      agentCard,
-      taskStore,
-      agentExecutor
-    );
+    const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
     const a2aRouter = new Hono();
     const appBuilder = new A2AHonoApp(requestHandler);
@@ -346,4 +339,3 @@ app.notFound((c) => {
 });
 
 export default app;
-

@@ -64,7 +64,7 @@ interface MCPResponse {
 // Constants
 // ============================================================================
 
-const USER_AGENT =
+const _USER_AGENT =
   "ModelContextProtocol/1.0 (Autonomous; +https://github.com/modelcontextprotocol/servers)";
 const BASE_URL = "https://www.airbnb.com";
 
@@ -152,19 +152,19 @@ const TOOLS = [
 
 async function fetchWithUserAgent(url: string): Promise<Response> {
   // Use a more realistic browser User-Agent
-  const browserUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-  
+  const browserUA =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
   const response = await fetch(url, {
     headers: {
       "User-Agent": browserUA,
       "Accept-Language": "en-US,en;q=0.9",
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Cache-Control": "no-cache",
     },
     redirect: "follow", // Follow redirects
   });
-  
+
   return response;
 }
 
@@ -214,17 +214,17 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
 
     // Try to find the embedded JSON data (matching original MCP server approach)
     const scriptElement = $("#data-deferred-state-0").first();
-    
+
     if (scriptElement.length > 0) {
       try {
         const scriptContent = scriptElement.text();
         if (scriptContent) {
           const data = JSON.parse(scriptContent);
-          
+
           // Original MCP uses: niobeClientData[0][1].data.presentation.staysSearch.results
           const clientData = data?.niobeClientData?.[0]?.[1];
           const results = clientData?.data?.presentation?.staysSearch?.results;
-          
+
           if (results?.searchResults) {
             for (const result of results.searchResults) {
               // Extract listing ID from base64 encoded string
@@ -238,7 +238,7 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
                   // Keep original if decode fails
                 }
               }
-              
+
               listings.push({
                 id: listingId,
                 url: `${BASE_URL}/rooms/${listingId}`,
@@ -251,7 +251,7 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
                 content: result?.structuredContent,
               });
             }
-            
+
             paginationInfo = results.paginationInfo;
           }
         }
@@ -259,7 +259,7 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
         console.error("Error parsing data-deferred-state-0:", e);
       }
     }
-    
+
     // Fallback: try alternative data structures
     if (listings.length === 0) {
       $('script[id^="data-deferred-state"]').each((_, el) => {
@@ -269,9 +269,10 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
 
           // Try multiple possible paths for the data
           const searchResults =
-            data?.niobeMinimalClientData?.[0]?.[1]?.data?.presentation?.explore
-              ?.sections?.sectionIndependentData?.staysSearch?.searchResults ||
-            data?.niobeClientData?.[0]?.[1]?.data?.presentation?.staysSearch?.results?.searchResults ||
+            data?.niobeMinimalClientData?.[0]?.[1]?.data?.presentation?.explore?.sections
+              ?.sectionIndependentData?.staysSearch?.searchResults ||
+            data?.niobeClientData?.[0]?.[1]?.data?.presentation?.staysSearch?.results
+              ?.searchResults ||
             [];
 
           for (const result of searchResults) {
@@ -285,10 +286,15 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
                 personCapacity: listing.personCapacity,
                 avgRating: listing.avgRating,
                 reviewsCount: listing.reviewsCount,
-                price: result.pricingQuote?.structuredStayDisplayPrice?.primaryLine
-                  ?.accessibilityLabel || result?.structuredDisplayPrice?.primaryLine?.accessibilityLabel,
+                price:
+                  result.pricingQuote?.structuredStayDisplayPrice?.primaryLine
+                    ?.accessibilityLabel ||
+                  result?.structuredDisplayPrice?.primaryLine?.accessibilityLabel,
                 url: `${BASE_URL}/rooms/${listing.id}`,
-                images: listing.contextualPictures?.slice(0, 3).map((p: { picture: string }) => p.picture) || [],
+                images:
+                  listing.contextualPictures
+                    ?.slice(0, 3)
+                    .map((p: { picture: string }) => p.picture) || [],
                 coordinate: listing.coordinate,
               });
             }
@@ -340,9 +346,7 @@ async function searchAirbnb(params: AirbnbSearchParams): Promise<unknown> {
   }
 }
 
-async function getListingDetails(
-  params: AirbnbListingDetailsParams
-): Promise<unknown> {
+async function getListingDetails(params: AirbnbListingDetailsParams): Promise<unknown> {
   const searchParams = new URLSearchParams();
   if (params.checkin) searchParams.set("check_in", params.checkin);
   if (params.checkout) searchParams.set("check_out", params.checkout);
@@ -370,8 +374,7 @@ async function getListingDetails(
 
         // Navigate to find listing details
         const pdpData =
-          data?.niobeMinimalClientData?.[0]?.[1]?.data?.presentation
-            ?.stayProductDetailPage;
+          data?.niobeMinimalClientData?.[0]?.[1]?.data?.presentation?.stayProductDetailPage;
 
         if (pdpData) {
           const listing = pdpData.sections?.metadata?.loggingContext?.eventDataLogging;
@@ -429,7 +432,7 @@ async function getListingDetails(
 // ============================================================================
 
 function handleMCPRequest(request: MCPRequest): MCPResponse {
-  const { id, method, params } = request;
+  const { id, method, params: _params } = request;
 
   try {
     switch (method) {
@@ -498,9 +501,7 @@ async function handleToolCall(
         break;
 
       case "airbnb_listing_details":
-        result = await getListingDetails(
-          args as unknown as AirbnbListingDetailsParams
-        );
+        result = await getListingDetails(args as unknown as AirbnbListingDetailsParams);
         break;
 
       default:
@@ -543,7 +544,7 @@ async function handleToolCall(
 // ============================================================================
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, _env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // CORS headers
@@ -576,8 +577,7 @@ export default {
       return Response.json(
         {
           name: "Airbnb MCP Server",
-          description:
-            "Model Context Protocol server for Airbnb search and listing details",
+          description: "Model Context Protocol server for Airbnb search and listing details",
           version: "1.0.0",
           endpoints: {
             mcp: "/mcp (POST - JSON-RPC)",
@@ -598,18 +598,14 @@ export default {
         // Handle tools/call specially (async)
         if (body.method === "tools/call") {
           const params = body.params as { name: string; arguments: Record<string, unknown> };
-          const response = await handleToolCall(
-            body.id,
-            params.name,
-            params.arguments || {}
-          );
+          const response = await handleToolCall(body.id, params.name, params.arguments || {});
           return Response.json(response, { headers: corsHeaders });
         }
 
         // Handle other MCP methods
         const response = handleMCPRequest(body);
         return Response.json(response, { headers: corsHeaders });
-      } catch (error) {
+      } catch (_error) {
         return Response.json(
           {
             jsonrpc: "2.0",
@@ -640,4 +636,3 @@ export default {
     return new Response("Not Found", { status: 404, headers: corsHeaders });
   },
 };
-

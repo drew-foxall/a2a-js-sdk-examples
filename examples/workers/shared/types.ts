@@ -42,4 +42,3 @@ export interface Env {
  * Hono app type with environment bindings
  */
 export type HonoEnv = { Bindings: Env };
-
