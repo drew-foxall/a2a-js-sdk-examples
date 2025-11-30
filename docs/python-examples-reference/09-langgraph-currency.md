@@ -190,8 +190,9 @@ export function createCurrencyAgent(model: LanguageModel) {
 - [x] Basic currency conversion
 - [x] Streaming responses
 - [x] Worker deployment
-- [ ] Multi-turn with input-required state
-- [ ] Conversation memory across turns
+- [x] Multi-turn conversation (via prompt design)
+- [x] Asks for missing info (via prompt design)
+- [ ] Explicit `input-required` state in A2A response (advanced feature)
 
 ## Cloudflare Worker Considerations
 

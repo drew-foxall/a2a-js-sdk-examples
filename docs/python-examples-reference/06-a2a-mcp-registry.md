@@ -1,7 +1,7 @@
 # A2A with MCP Registry Reference
 
 > **Source**: `samples/python/agents/a2a_mcp/`
-> **Our Implementation**: Not yet implemented ❌ (Advanced Pattern)
+> **Our Implementation**: Partial - See `examples/workers/airbnb-mcp-server/` for MCP pattern ⚠️
 
 ## Overview
 
@@ -414,13 +414,13 @@ class Orchestrator {
 
 ## Checklist for Implementation
 
-- [ ] MCP Server with agent card resources
+- [x] MCP Server pattern (`workers/airbnb-mcp-server/`)
+- [x] A2A agents that use MCP tools (`travel-planner-multiagent/airbnb-agent/`)
+- [ ] MCP Server as agent registry (advanced)
 - [ ] `find_agent` tool with embedding-based matching
-- [ ] Agent card storage (file system or database)
-- [ ] Orchestrator agent with MCP client
-- [ ] Planner agent (LangGraph or similar)
-- [ ] Task agents (reuse existing implementations)
+- [ ] Orchestrator with MCP-based agent discovery
 - [ ] Re-planning on task failure
-- [ ] Budget/constraint checking
-- [ ] Result aggregation and summarization
+
+**Note**: Our current implementation uses MCP for tool access (Airbnb API) rather than
+agent registry. The registry pattern is an advanced use case for larger systems.
 

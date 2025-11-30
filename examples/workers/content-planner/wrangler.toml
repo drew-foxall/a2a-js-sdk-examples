@@ -1,0 +1,22 @@
+# Content Planner Agent - Cloudflare Worker Configuration
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+# Logs:   wrangler tail
+
+name = "a2a-content-planner"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+# nodejs_compat not required - using edge-compatible dependencies
+
+# Environment variables (non-sensitive)
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+
+# Secrets are set via CLI:
+#   wrangler secret put OPENAI_API_KEY
+#
+# For local development, create a .dev.vars file:
+#   OPENAI_API_KEY=sk-proj-xxxxx
+

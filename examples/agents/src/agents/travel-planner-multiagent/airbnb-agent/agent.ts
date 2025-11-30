@@ -5,7 +5,7 @@
  * Part of the Travel Planner Multi-Agent System.
  */
 
-import { type LanguageModel, ToolLoopAgent } from "ai";
+import { type LanguageModel, ToolLoopAgent, type ToolSet } from "ai";
 import type { getAirbnbMCPTools } from "./mcp-client";
 import { getAirbnbAgentPrompt } from "./prompt";
 
@@ -25,9 +25,16 @@ export function createAirbnbAgent(
   model: LanguageModel,
   mcpTools: Awaited<ReturnType<typeof getAirbnbMCPTools>>
 ) {
+  // NOTE: Type assertion required at AI SDK boundary.
+  // MCP client tools are structurally compatible with ToolSet but TypeScript
+  // cannot verify this due to AI SDK's complex generic constraints.
+  // This is a documented limitation when combining MCP tools with ToolLoopAgent.
+  // See: https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling
+  const tools = mcpTools as ToolSet;
+
   return new ToolLoopAgent({
     model,
     instructions: getAirbnbAgentPrompt(),
-    tools: mcpTools, // Use real MCP tools instead of mock
+    tools,
   });
 }

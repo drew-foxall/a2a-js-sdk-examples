@@ -1,7 +1,7 @@
 # BeeAI Chat Agent Reference
 
 > **Source**: `samples/python/agents/beeai-chat/`
-> **Our Implementation**: Not started
+> **Our Implementation**: `examples/agents/local-llm-chat/` + `examples/workers/local-llm-chat/` ✅
 
 ## Overview
 
@@ -138,12 +138,13 @@ docker run -p 9999:9999 \
 
 ## Checklist for Implementation
 
-- [ ] Local LLM support (via Ollama provider)
-- [ ] Web search tool
-- [ ] Weather tool
-- [ ] A2A server
-- [ ] Docker deployment
-- [ ] Workers deployment (with Cloudflare AI)
+- [x] Local LLM support (via Ollama provider)
+- [x] Web search tool
+- [x] Weather tool (Open-Meteo API)
+- [x] A2A server (`agents/local-llm-chat/`)
+- [x] Workers deployment (`workers/local-llm-chat/`)
+- [ ] Docker deployment (optional)
+- [ ] Cloudflare Workers AI integration (optional)
 
 ## Notes
 

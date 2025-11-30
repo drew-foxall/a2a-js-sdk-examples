@@ -1,7 +1,7 @@
 # ADK Expense Reimbursement Agent Reference
 
 > **Source**: `samples/python/agents/adk_expense_reimbursement/`
-> **Our Implementation**: Not started
+> **Our Implementation**: `examples/agents/expense-agent/` + `examples/workers/expense-agent/` ✅
 
 ## Overview
 
@@ -236,12 +236,14 @@ await eventQueue.enqueue({
 
 ## Checklist for Implementation
 
-- [ ] Expense form schema (Zod)
-- [ ] Natural language parsing
-- [ ] Form part response
-- [ ] Form data handling
-- [ ] Validation and submission
-- [ ] Worker deployment
+- [x] Expense form schema (Zod)
+- [x] Natural language parsing (via LLM)
+- [x] Multi-turn data collection
+- [x] Validation and submission (via tool)
+- [x] Reference number generation
+- [x] Local agent (`agents/expense-agent/`)
+- [x] Worker deployment (`workers/expense-agent/`)
+- [ ] Explicit form part response (advanced A2A feature)
 
 ## Notes
 

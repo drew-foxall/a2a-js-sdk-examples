@@ -8,15 +8,25 @@
 // Agent Factory Functions
 // ============================================================================
 
+// Adversarial agents
+export { createAttackerAgent } from "../agents/adversarial/attacker.js";
+export { createDefenderAgent } from "../agents/adversarial/defender.js";
 export { createAnalyticsAgent } from "../agents/analytics-agent/agent.js";
+// Code review agent
+export { createCodeReviewAgent } from "../agents/code-review/agent.js";
 // Content agents
 export { createCoderAgent } from "../agents/coder/agent.js";
+export { createContactExtractorAgent } from "../agents/contact-extractor/agent.js";
 export { createContentEditorAgent } from "../agents/content-editor/agent.js";
+export { createContentPlannerAgent } from "../agents/content-planner/agent.js";
 export { createCurrencyAgent } from "../agents/currency-agent/agent.js";
 export { createDiceAgent } from "../agents/dice-agent/agent.js";
+export { createExpenseAgent } from "../agents/expense-agent/agent.js";
 export { createGitHubAgent } from "../agents/github-agent/agent.js";
 // Simple agents
 export { createHelloWorldAgent } from "../agents/hello-world/agent.js";
+export { createImageGeneratorAgent } from "../agents/image-generator/agent.js";
+export { createLocalLLMChatAgent } from "../agents/local-llm-chat/agent.js";
 // API-integrated agents
 export { createMovieAgent } from "../agents/movie-agent/agent.js";
 export {
@@ -50,6 +60,7 @@ export {
 // Prompts (for Workers)
 // ============================================================================
 
+export { getContentPlannerPrompt } from "../agents/content-planner/prompt.js";
 export { getCurrencyAgentPrompt } from "../agents/currency-agent/prompt.js";
 export { getDiceAgentPrompt } from "../agents/dice-agent/prompt.js";
 export { getHelloWorldPrompt } from "../agents/hello-world/prompt.js";

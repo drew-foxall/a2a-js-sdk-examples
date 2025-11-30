@@ -1,0 +1,20 @@
+{
+  "name": "a2a-number-game-carol-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "@drew-foxall/a2a-js-sdk": "^0.3.6",
+    "hono": "^4.10.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251128.0",
+    "wrangler": "^4.51.0"
+  }
+}
+

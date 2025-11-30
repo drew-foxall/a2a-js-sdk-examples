@@ -131,10 +131,11 @@ Our analytics agent focuses on:
 
 - [x] Agent Card with chart skill
 - [x] Basic message handling
-- [ ] Full matplotlib-equivalent chart generation
-- [ ] Image artifact return
-- [ ] Session-based caching
-- [ ] Worker deployment
+- [x] Streaming support
+- [x] Worker deployment (`workers/analytics-agent/`)
+- [ ] Full matplotlib-equivalent chart generation (deferred - complex in Workers)
+- [ ] Image artifact return (deferred - binary handling)
+- [ ] Session-based caching (deferred)
 
 ## Cloudflare Worker Considerations
 
@@ -142,4 +143,7 @@ For a Cloudflare Worker version:
 - Use canvas libraries compatible with Workers (e.g., `@napi-rs/canvas`)
 - Consider server-side chart rendering services
 - Handle binary data carefully in Workers environment
+
+**Note**: Our current implementation focuses on text-based chart descriptions rather than
+actual image generation due to Workers limitations with canvas libraries.
 

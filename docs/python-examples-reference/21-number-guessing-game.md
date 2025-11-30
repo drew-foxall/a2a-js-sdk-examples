@@ -1,7 +1,7 @@
 # Number Guessing Game Reference
 
 > **Source**: `samples/python/agents/number_guessing_game/`
-> **Our Implementation**: Not started
+> **Our Implementation**: `examples/agents/number-game/` + `examples/workers/number-game-*` ✅
 
 ## Overview
 
@@ -187,11 +187,12 @@ async function play() {
 
 ## Checklist for Implementation
 
-- [ ] Alice agent (grader logic)
-- [ ] Bob agent (CLI coordinator)
-- [ ] Carol agent (visualizer)
-- [ ] Multi-agent communication
-- [ ] No LLM dependency
+- [x] Alice agent (grader logic) - `number-game/alice/`
+- [x] Carol agent (visualizer) - `number-game/carol/`
+- [x] Worker: Alice - `workers/number-game-alice/`
+- [x] Worker: Carol - `workers/number-game-carol/`
+- [x] No LLM dependency
+- [ ] Bob agent (CLI coordinator) - optional, use any A2A client
 
 ## Notes
 

@@ -1,0 +1,15 @@
+name = "a2a-local-llm-chat"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+
+# Note: OPENAI_API_KEY must be set as a secret:
+# wrangler secret put OPENAI_API_KEY
+#
+# For true edge inference, consider using Cloudflare Workers AI:
+# AI_PROVIDER = "cloudflare"
+# AI_MODEL = "@cf/meta/llama-3-8b-instruct"
+

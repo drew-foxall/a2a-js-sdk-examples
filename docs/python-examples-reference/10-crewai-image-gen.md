@@ -1,7 +1,7 @@
 # CrewAI Image Generation Agent Reference
 
 > **Source**: `samples/python/agents/crewai/`
-> **Our Implementation**: Not planned (requires Gemini image generation)
+> **Our Implementation**: `examples/agents/image-generator/` + `examples/workers/image-generator/` ✅
 
 ## Overview
 
@@ -158,18 +158,17 @@ const generateImage = tool({
 
 ## Checklist for Implementation
 
-- [ ] Image generation tool (DALL-E or similar)
-- [ ] Session-based image caching
-- [ ] Image modification support
-- [ ] Binary artifact handling
-- [ ] Worker deployment (challenging due to binary size)
+- [x] Image generation tool (DALL-E 3)
+- [x] Local agent (`agents/image-generator/`)
+- [x] Multiple size/quality/style options
+- [x] Worker deployment (`workers/image-generator/`)
+- [ ] Session-based image caching (deferred)
+- [ ] Image modification support (deferred)
 
 ## Notes
 
-This example demonstrates advanced artifact handling but may not be practical for Cloudflare Workers due to:
-- Response size limits
-- Binary data handling complexity
-- Image generation API latency
-
-Consider as a Node.js-only implementation if needed.
+The worker implementation is provided but note potential limitations:
+- Response size limits for large images
+- Image generation API latency (~10-30s)
+- Consider Node.js deployment for production use cases
 

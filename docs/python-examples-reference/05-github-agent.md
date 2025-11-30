@@ -1,7 +1,7 @@
 # GitHub Agent Reference
 
 > **Source**: `samples/python/agents/github-agent/`
-> **Our Implementation**: Not yet implemented ❌
+> **Our Implementation**: `examples/agents/github-agent/` + `examples/workers/github-agent/` ✅
 
 ## Overview
 
@@ -461,16 +461,16 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 
 ## Checklist for Implementation
 
-- [ ] Create `examples/agents/github-agent/` directory
-- [ ] Implement agent with Octokit
-- [ ] `get_user_repositories` tool
-- [ ] `get_recent_commits` tool
-- [ ] `search_repositories` tool
-- [ ] Structured response types (Zod schemas)
-- [ ] System prompt
-- [ ] Agent Card
-- [ ] Local server entry point
-- [ ] Worker deployment
-- [ ] Tests
-- [ ] Documentation
+- [x] Create `examples/agents/github-agent/` directory
+- [x] Implement agent with Octokit
+- [x] `get_user_repositories` tool
+- [x] `get_recent_commits` tool
+- [x] `search_repositories` tool
+- [x] Structured response types (Zod schemas)
+- [x] System prompt
+- [x] Agent Card
+- [x] Local server entry point
+- [x] Worker deployment (`examples/workers/github-agent/`)
+- [x] Tests
+- [x] Documentation
 

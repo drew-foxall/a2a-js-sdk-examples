@@ -1,7 +1,7 @@
 # AG2 Mypy Agent Reference
 
 > **Source**: `samples/python/agents/ag2/`
-> **Our Implementation**: Not started
+> **Our Implementation**: `examples/agents/code-review/` + `examples/workers/code-review/` ✅
 
 ## Overview
 
@@ -170,10 +170,11 @@ const typescriptReviewerAgent = new ToolLoopAgent({
 
 ## Checklist for Implementation
 
-- [ ] Code review agent with tool
-- [ ] External type-checking service integration
-- [ ] Multiple client examples
-- [ ] Worker deployment
+- [x] Code review agent with tool (`agents/code-review/`)
+- [x] Built-in pattern-based analysis
+- [x] Security vulnerability detection
+- [x] Worker deployment (`workers/code-review/`)
+- [ ] External type-checking service integration (optional)
 
 ## Notes
 

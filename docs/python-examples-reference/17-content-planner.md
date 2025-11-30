@@ -1,7 +1,7 @@
 # Content Planner Agent Reference
 
 > **Source**: `samples/python/agents/content_planner/`
-> **Our Implementation**: `examples/agents/content-editor/` (similar)
+> **Our Implementation**: `examples/agents/content-planner/` + `examples/workers/content-planner/` ✅
 
 ## Overview
 
@@ -138,10 +138,10 @@ const contentOrchestrator = new ToolLoopAgent({
 ## Checklist for Implementation
 
 - [x] Content editing agent (content-editor)
-- [ ] Content planning agent (outline generation)
+- [x] Content planning agent (`content-planner/`)
+- [x] Worker deployment (`workers/content-planner/`)
 - [ ] Content writing agent (draft generation)
 - [ ] Multi-agent orchestrator
-- [ ] Worker deployment
 
 ## Notes
 

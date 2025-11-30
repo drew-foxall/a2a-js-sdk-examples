@@ -1,0 +1,11 @@
+# Alice Agent (Number Game Grader) - Cloudflare Worker Configuration
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+# Logs:   wrangler tail
+
+name = "a2a-number-game-alice"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+# No nodejs_compat needed - no LLM, pure logic
+

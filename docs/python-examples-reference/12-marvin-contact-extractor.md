@@ -1,7 +1,7 @@
 # Marvin Contact Extractor Agent Reference
 
 > **Source**: `samples/python/agents/marvin/`
-> **Our Implementation**: Not started
+> **Our Implementation**: `examples/agents/contact-extractor/` + `examples/workers/contact-extractor/` ✅
 
 ## Overview
 
@@ -186,12 +186,13 @@ async function extractContact(text: string, history: Message[]) {
 
 ## Checklist for Implementation
 
-- [ ] Contact info schema (Zod)
-- [ ] Structured extraction with generateObject
-- [ ] Multi-turn conversation handling
-- [ ] Input-required state support
-- [ ] Data part in artifacts
-- [ ] Worker deployment
+- [x] Contact info extraction via prompt engineering
+- [x] Multi-turn conversation handling (asks for missing fields)
+- [x] Local agent (`agents/contact-extractor/`)
+- [x] Worker deployment (`workers/contact-extractor/`)
+- [ ] Zod schema validation for extracted data
+- [ ] Explicit `input-required` state in A2A response
+- [ ] Data part in artifacts (structured JSON)
 
 ## Use Cases
 

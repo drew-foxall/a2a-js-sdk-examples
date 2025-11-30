@@ -1,7 +1,7 @@
 # Adversarial Multi-Agent Simulation Reference
 
 > **Source**: `samples/python/agents/any_agent_adversarial_multiagent/`
-> **Our Implementation**: Not started
+> **Our Implementation**: `examples/agents/adversarial/` + `examples/workers/adversarial-defender/` ✅
 
 ## Overview
 
@@ -202,12 +202,13 @@ async function runSimulation(maxTurns: number = 20) {
 
 ## Checklist for Implementation
 
-- [ ] Defender agent with guardrails
-- [ ] Attacker agent with tools
-- [ ] A2A communication
-- [ ] Conversation reset capability
-- [ ] Logging and analysis
-- [ ] Worker deployment (both agents)
+- [x] Defender agent with guardrails (`agents/adversarial/defender.ts`)
+- [x] Attacker agent with tools (`agents/adversarial/attacker.ts`)
+- [x] A2A communication
+- [x] Simulation runner (`agents/adversarial/simulation.ts`)
+- [x] Logging and analysis
+- [x] Worker deployment (`workers/adversarial-defender/`)
+- [ ] Conversation reset capability (optional)
 
 ## Notes
 
