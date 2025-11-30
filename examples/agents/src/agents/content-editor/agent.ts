@@ -65,7 +65,7 @@ export function createContentEditorAgent(model: LanguageModel) {
 }
 
 /**
- * Default Content Editor Agent
+ * Get default Content Editor Agent (lazy initialization)
  *
  * Uses model from environment variables:
  * - AI_PROVIDER: openai|anthropic|google|azure|cohere|mistral|groq|ollama
@@ -74,5 +74,10 @@ export function createContentEditorAgent(model: LanguageModel) {
  * For custom providers or configurations, use createContentEditorAgent()
  *
  * No A2A-specific code here - pure AI SDK!
+ *
+ * NOTE: This is a function (not a singleton) to avoid calling getModel()
+ * at module load time, which would break edge runtimes like Cloudflare Workers.
  */
-export const contentEditorAgent = createContentEditorAgent(getModel());
+export function getContentEditorAgent() {
+  return createContentEditorAgent(getModel());
+}

@@ -29,7 +29,6 @@ import { getModel } from "../../shared/utils.js";
 // ============================================================================
 
 interface Env extends BaseEnv {
-  INTERNAL_ONLY?: string;
   AIRBNB_MCP_URL?: string;
   AIRBNB_MCP?: Fetcher; // Service binding to MCP server
 }
@@ -261,27 +260,12 @@ app.get("/health", (c) => {
     status: "healthy",
     agent: "airbnb-agent",
     version: "1.0.0",
-    internal: c.env.INTERNAL_ONLY === "true",
   });
 });
 
 // A2A routes
 app.all("/*", async (c, next) => {
   try {
-    // Check if this is an internal-only agent being accessed externally
-    if (c.env.INTERNAL_ONLY === "true") {
-      const internalHeader = c.req.header("X-Worker-Internal");
-      if (!internalHeader) {
-        return c.json(
-          {
-            error: "Forbidden",
-            message: "This agent is only accessible via internal service bindings",
-          },
-          403
-        );
-      }
-    }
-
     const url = new URL(c.req.url);
     const baseUrl = `${url.protocol}//${url.host}`;
     const agentCard = createAgentCard(baseUrl);

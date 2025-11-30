@@ -41,7 +41,7 @@ import {
 import { jsonSchema, type LanguageModel, ToolLoopAgent } from "ai";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { toJSONSchema, z } from "zod";
+import { z, toJSONSchema } from "zod/v4";
 import type { Env } from "../../shared/types.js";
 import { getModel, getModelInfo } from "../../shared/utils.js";
 
@@ -201,76 +201,12 @@ function createAgentCard(baseUrl: string): AgentCard {
 }
 
 // ============================================================================
-// Security: Check if request is from Service Binding
-// ============================================================================
-
-/**
- * Check if the request comes from a Service Binding (internal) or public internet
- *
- * Service Binding requests have special characteristics:
- * - The URL hostname is "internal" or similar (we use this convention)
- * - CF-Connecting-IP header may be absent
- * - The request comes directly from another worker
- */
-function isInternalRequest(request: Request): boolean {
-  const url = new URL(request.url);
-
-  // Service Binding calls use a synthetic URL - we use "internal" as the host
-  if (url.hostname === "internal") {
-    return true;
-  }
-
-  // Check for localhost (local development)
-  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
-    return true;
-  }
-
-  // Check for X-Worker-Internal header (set by orchestrator)
-  const internalHeader = request.headers.get("X-Worker-Internal");
-  if (internalHeader === "true") {
-    return true;
-  }
-
-  // Service Bindings may not have CF-Connecting-IP header
-  const cfConnectingIp = request.headers.get("CF-Connecting-IP");
-  if (!cfConnectingIp) {
-    return true;
-  }
-
-  return false;
-}
-
-// ============================================================================
 // Hono App Setup
 // ============================================================================
 
 const app = new Hono<WeatherHonoEnv>();
 
-// ============================================================================
-// Security Middleware
-// ============================================================================
-
-app.use("*", async (c, next) => {
-  const isInternal = isInternalRequest(c.req.raw);
-  const internalOnly = c.env.INTERNAL_ONLY === "true";
-
-  // If INTERNAL_ONLY is set and request is from public internet, reject it
-  if (internalOnly && !isInternal) {
-    return c.json(
-      {
-        error: "Forbidden",
-        message:
-          "This agent is not publicly accessible. It can only be called via Service Binding.",
-        hint: "Use the Travel Planner orchestrator to access weather forecasts.",
-      },
-      403
-    );
-  }
-
-  return next();
-});
-
-// CORS only needed for local development
+// CORS for development
 app.use(
   "*",
   cors({
@@ -282,13 +218,11 @@ app.use(
 
 app.get("/health", (c) => {
   const modelInfo = getModelInfo(c.env);
-  const internalOnly = c.env.INTERNAL_ONLY === "true";
 
   return c.json({
     status: "healthy",
     agent: "Weather Agent",
     role: "Specialist (Multi-Agent System)",
-    access: internalOnly ? "🔒 Private (Service Binding only)" : "🌐 Public",
     provider: modelInfo.provider,
     model: modelInfo.model,
     runtime: "Cloudflare Workers",

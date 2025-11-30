@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0",
-    "@anthropic-ai/sdk": "^0.39.0"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251127.0",

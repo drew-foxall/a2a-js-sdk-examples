@@ -50,8 +50,8 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-// Import the agent definition
-import { movieAgent } from "./agent";
+// Import the agent factory function
+import { getMovieAgent } from "./agent";
 
 // Environment validation
 if (!process.env.TMDB_API_KEY) {
@@ -111,7 +111,7 @@ function transformMovieAgentResponse(result: { text: string }): string {
 /**
  * Create the adapter with advanced options
  */
-const agentExecutor: AgentExecutor = new A2AAdapter(movieAgent, {
+const agentExecutor: AgentExecutor = new A2AAdapter(getMovieAgent(), {
   mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Processing your question, hang tight!",
 

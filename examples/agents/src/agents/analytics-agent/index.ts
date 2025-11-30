@@ -60,7 +60,6 @@ const agentCard: AgentCard = {
   version: "1.0.0",
   protocolVersion: "0.3.0",
   preferredTransport: "JSONRPC", // ✅ Specify JSON-RPC 2.0 transport
-  preferred_transport: "JSONRPC", // ✅ Python client compatibility (snake_case)
   defaultInputModes: ["text"],
   defaultOutputModes: ["text", "image/png"],
   capabilities: {

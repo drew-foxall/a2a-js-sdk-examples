@@ -7,9 +7,7 @@
 name = "a2a-currency-agent"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
-
-# Enable Node.js compatibility for AI SDK dependencies
-compatibility_flags = ["nodejs_compat"]
+# nodejs_compat not required - using edge-compatible dependencies
 
 # Environment variables (non-sensitive)
 [vars]

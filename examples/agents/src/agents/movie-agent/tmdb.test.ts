@@ -126,9 +126,11 @@ describe("Movie Agent - TMDB Utilities", () => {
 
       expect(result.results).toBeDefined();
       expect(result.results).toHaveLength(2);
-      expect(result.results[0].poster_path).toBe("https://image.tmdb.org/t/p/w500/path1.jpg");
-      expect(result.results[0].backdrop_path).toBe("https://image.tmdb.org/t/p/w500/backdrop1.jpg");
-      expect(result.results[1].poster_path).toBe("https://image.tmdb.org/t/p/w500/path2.jpg");
+      expect(result.results[0]?.poster_path).toBe("https://image.tmdb.org/t/p/w500/path1.jpg");
+      expect(result.results[0]?.backdrop_path).toBe(
+        "https://image.tmdb.org/t/p/w500/backdrop1.jpg"
+      );
+      expect(result.results[1]?.poster_path).toBe("https://image.tmdb.org/t/p/w500/path2.jpg");
     });
 
     it("should handle movies without poster paths", async () => {
@@ -150,7 +152,7 @@ describe("Movie Agent - TMDB Utilities", () => {
 
       expect(result.results).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].poster_path).toBeUndefined();
+      expect(result.results[0]?.poster_path).toBeUndefined();
     });
 
     it("should handle empty search results", async () => {
@@ -219,13 +221,12 @@ describe("Movie Agent - TMDB Utilities", () => {
 
       expect(result.results).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].profile_path).toBe("https://image.tmdb.org/t/p/w500/profile1.jpg");
-      expect(result.results[0].known_for[0].poster_path).toBe(
-        "https://image.tmdb.org/t/p/w500/poster1.jpg"
-      );
-      expect(result.results[0].known_for[0].backdrop_path).toBe(
-        "https://image.tmdb.org/t/p/w500/backdrop1.jpg"
-      );
+      const person = result.results[0];
+      expect(person).toBeDefined();
+      expect(person?.profile_path).toBe("https://image.tmdb.org/t/p/w500/profile1.jpg");
+      const knownForItem = person?.known_for?.[0];
+      expect(knownForItem?.poster_path).toBe("https://image.tmdb.org/t/p/w500/poster1.jpg");
+      expect(knownForItem?.backdrop_path).toBe("https://image.tmdb.org/t/p/w500/backdrop1.jpg");
     });
 
     it("should handle people without profile paths", async () => {
@@ -248,7 +249,7 @@ describe("Movie Agent - TMDB Utilities", () => {
 
       expect(result.results).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].profile_path).toBeUndefined();
+      expect(result.results[0]?.profile_path).toBeUndefined();
     });
 
     it("should handle people without known_for field", async () => {
@@ -271,7 +272,7 @@ describe("Movie Agent - TMDB Utilities", () => {
 
       expect(result.results).toBeDefined();
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].profile_path).toBe("https://image.tmdb.org/t/p/w500/profile.jpg");
+      expect(result.results[0]?.profile_path).toBe("https://image.tmdb.org/t/p/w500/profile.jpg");
     });
 
     it("should handle empty search results", async () => {
@@ -326,8 +327,10 @@ describe("Movie Agent - TMDB Utilities", () => {
       const result = await searchPeople("test");
 
       expect(result.results).toBeDefined();
-      expect(result.results[0].known_for).toBeDefined();
-      expect(result.results[0].known_for[0].poster_path).toBeUndefined();
+      const person = result.results[0];
+      expect(person?.known_for).toBeDefined();
+      const knownForItem = person?.known_for?.[0];
+      expect(knownForItem?.poster_path).toBeUndefined();
     });
 
     it("should propagate API errors", async () => {

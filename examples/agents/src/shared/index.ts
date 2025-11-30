@@ -8,60 +8,80 @@
 // Agent Factory Functions
 // ============================================================================
 
-// Simple agents
-export { createHelloWorldAgent } from "../agents/hello-world/agent.js";
-export { createDiceAgent } from "../agents/dice-agent/agent.js";
-export { createCurrencyAgent } from "../agents/currency-agent/agent.js";
-
+export { createAnalyticsAgent } from "../agents/analytics-agent/agent.js";
 // Content agents
 export { createCoderAgent } from "../agents/coder/agent.js";
 export { createContentEditorAgent } from "../agents/content-editor/agent.js";
-
+export { createCurrencyAgent } from "../agents/currency-agent/agent.js";
+export { createDiceAgent } from "../agents/dice-agent/agent.js";
+export { createGitHubAgent } from "../agents/github-agent/agent.js";
+// Simple agents
+export { createHelloWorldAgent } from "../agents/hello-world/agent.js";
 // API-integrated agents
 export { createMovieAgent } from "../agents/movie-agent/agent.js";
-export { createGitHubAgent } from "../agents/github-agent/agent.js";
-export { createAnalyticsAgent } from "../agents/analytics-agent/agent.js";
-
-// Multi-agent system
-export { createWeatherAgent } from "../agents/travel-planner-multiagent/weather-agent/agent.js";
 export {
   createPlannerAgent,
-  createTravelPlannerAgent,
   type PlannerAgentConfig,
+  type SendMessageFn,
+  type SendMessageOptions,
 } from "../agents/travel-planner-multiagent/planner/agent.js";
+// Agent discovery (for building registries)
+export {
+  type AgentDiscoveryConfig,
+  AgentRegistry,
+  DEFAULT_LOCAL_AGENT_URLS,
+  DEFAULT_WORKER_AGENT_URLS,
+  fetchAgentCard,
+  type RegisteredAgent,
+} from "../agents/travel-planner-multiagent/planner/agent-discovery.js";
+// Multi-agent system
+export { createWeatherAgent } from "../agents/travel-planner-multiagent/weather-agent/agent.js";
 
 // ============================================================================
-// Agent Card Configurations (for Workers)
+// Agent Cards (for Workers)
 // ============================================================================
 
-export { getHelloWorldPrompt } from "../agents/hello-world/prompt.js";
-export { getDiceAgentPrompt } from "../agents/dice-agent/prompt.js";
+export {
+  createTravelPlannerCard,
+  travelPlanningSkill,
+} from "../agents/travel-planner-multiagent/planner/card.js";
+
+// ============================================================================
+// Prompts (for Workers)
+// ============================================================================
+
 export { getCurrencyAgentPrompt } from "../agents/currency-agent/prompt.js";
+export { getDiceAgentPrompt } from "../agents/dice-agent/prompt.js";
+export { getHelloWorldPrompt } from "../agents/hello-world/prompt.js";
+export {
+  getSimplePlannerPrompt,
+  getTravelPlannerPrompt,
+  type PlannerPromptConfig,
+} from "../agents/travel-planner-multiagent/planner/prompt.js";
 export { getWeatherAgentPrompt } from "../agents/travel-planner-multiagent/weather-agent/prompt.js";
 
 // ============================================================================
 // Tool Functions (for Workers that need them)
 // ============================================================================
 
-// Dice tools (pure functions, no external deps)
-export { rollDice, checkPrime } from "../agents/dice-agent/tools.js";
-
 // Currency tools (external API)
 export {
+  type ExchangeRateError,
+  type ExchangeRateResponse,
   getExchangeRate,
   isExchangeRateError,
-  type ExchangeRateResponse,
-  type ExchangeRateError,
 } from "../agents/currency-agent/tools.js";
+// Dice tools (pure functions, no external deps)
+export { checkPrime, rollDice } from "../agents/dice-agent/tools.js";
 
 // Weather tools (external API)
 export {
-  getWeatherForecast,
-  getWeatherDescription,
-  isWeatherError,
-  geocodeLocation,
-  type WeatherForecast,
   type GeocodeResult,
+  geocodeLocation,
+  getWeatherDescription,
+  getWeatherForecast,
+  isWeatherError,
+  type WeatherForecast,
 } from "../agents/travel-planner-multiagent/weather-agent/tools.js";
 
 // ============================================================================

@@ -39,8 +39,8 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-// Import the agent definition (kept separate to avoid starting server when importing)
-import { contentEditorAgent } from "./agent";
+// Import the agent factory function
+import { getContentEditorAgent } from "./agent";
 
 // ============================================================================
 // 1. AI Agent is defined in agent.ts (Pure, Protocol-Agnostic)
@@ -51,7 +51,7 @@ import { contentEditorAgent } from "./agent";
 // 2. Create A2A Adapter (Automatically Uses Simple Mode)
 // ============================================================================
 
-const agentExecutor: AgentExecutor = new A2AAdapter(contentEditorAgent, {
+const agentExecutor: AgentExecutor = new A2AAdapter(getContentEditorAgent(), {
   mode: "stream", // Real-time text streaming (like AI SDK's streamText)
   workingMessage: "Editing content...",
   debug: false,
@@ -119,9 +119,7 @@ async function main() {
   const appBuilder = new A2AHonoApp(requestHandler);
   appBuilder.setupRoutes(app);
 
-  console.log(
-    `[ContentEditorAgent] ✅ AI SDK v6 + Unified A2AAdapter started on ${BASE_URL}`
-  );
+  console.log(`[ContentEditorAgent] ✅ AI SDK v6 + Unified A2AAdapter started on ${BASE_URL}`);
   console.log(
     `[ContentEditorAgent] 🃏 Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
   );

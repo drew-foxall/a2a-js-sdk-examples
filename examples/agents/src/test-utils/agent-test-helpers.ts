@@ -84,6 +84,8 @@ export function validateAgentCard(agentCard: AgentCard): void {
 
 /**
  * Test suite factory for basic agent functionality
+ *
+ * Tests only public API methods (execute, cancelTask)
  */
 export function testBasicAgentFunctionality(
   agentName: string,
@@ -100,7 +102,6 @@ export function testBasicAgentFunctionality(
     it("should have a properly configured adapter", () => {
       const adapter = getAdapter();
       expect(adapter).toBeDefined();
-      expect(adapter.agent).toBeDefined();
       expect(typeof adapter.execute).toBe("function");
       expect(typeof adapter.cancelTask).toBe("function");
     });
@@ -114,44 +115,6 @@ export function testBasicAgentFunctionality(
 }
 
 /**
- * Test adapter response handling
- */
-export async function testAdapterResponse(
-  adapter: A2AAdapter,
-  userMessage: string,
-  expectedResponsePattern?: RegExp | string
-): Promise<void> {
-  const request = createMockRequest(userMessage);
-
-  // Test in generate mode
-  if (adapter.mode === "generate") {
-    const response = await adapter.handleMessage(request.message, {});
-    expect(response).toBeDefined();
-    expect(response.message).toBeDefined();
-    expect(response.message.role).toBe("agent");
-    expect(response.message.parts).toBeDefined();
-    expect(Array.isArray(response.message.parts)).toBe(true);
-    expect(response.message.parts.length).toBeGreaterThan(0);
-
-    // Check response content if pattern provided
-    if (expectedResponsePattern) {
-      const textParts = response.message.parts.filter(
-        (p: { kind: string; text?: string }) => p.kind === "text" && p.text !== undefined
-      );
-      expect(textParts.length).toBeGreaterThan(0);
-
-      const fullText = textParts.map((p: { text?: string }) => p.text).join(" ");
-
-      if (typeof expectedResponsePattern === "string") {
-        expect(fullText.toLowerCase()).toContain(expectedResponsePattern.toLowerCase());
-      } else {
-        expect(fullText).toMatch(expectedResponsePattern);
-      }
-    }
-  }
-}
-
-/**
  * Test artifact generation
  */
 export function validateArtifacts(
@@ -162,28 +125,19 @@ export function validateArtifacts(
   expect(artifacts.length).toBeGreaterThan(0);
 
   if (expectedMimeType) {
-    const matchingArtifacts = artifacts.filter(
-      (a: { artifact?: { mimeType?: string } }) => a.artifact?.mimeType === expectedMimeType
-    );
+    const matchingArtifacts = artifacts.filter((a) => {
+      const artifact = a.artifact as { mimeType?: string } | undefined;
+      return artifact?.mimeType === expectedMimeType;
+    });
     expect(matchingArtifacts.length).toBeGreaterThan(0);
   }
 }
 
 /**
- * Validates that tools are properly defined
- */
-export function validateTools(adapter: A2AAdapter, toolNames: string[]): void {
-  expect(adapter.agent).toBeDefined();
-  expect(adapter.agent.tools).toBeDefined();
-
-  const actualToolNames = Object.keys(adapter.agent.tools);
-  for (const toolName of toolNames) {
-    expect(actualToolNames).toContain(toolName);
-  }
-}
-
-/**
  * Creates a test suite for an agent with common scenarios
+ *
+ * Note: This tests the agent card structure. For testing actual agent
+ * responses, use integration tests with a running server.
  */
 export function createAgentTestSuite(
   agentName: string,
@@ -203,40 +157,7 @@ export function createAgentTestSuite(
   describe(`${agentName} Agent`, () => {
     testBasicAgentFunctionality(agentName, config.getAdapter, config.getAgentCard);
 
-    if (config.expectedTools) {
-      const expectedTools = config.expectedTools; // Capture in closure to avoid non-null assertion
-      it("should have expected tools", () => {
-        const adapter = config.getAdapter();
-        validateTools(adapter, expectedTools);
-      });
-    }
-
-    for (const testCase of config.testCases) {
-      it(testCase.name, async () => {
-        const adapter = config.getAdapter();
-        const request = createMockRequest(testCase.message);
-
-        if (adapter.mode === "generate") {
-          const response = await adapter.handleMessage(request.message, {});
-
-          if (testCase.expectedPattern) {
-            const textParts = response.message.parts.filter(
-              (p: { kind: string; text?: string }) => p.kind === "text" && p.text !== undefined
-            );
-            const fullText = textParts.map((p: { text?: string }) => p.text).join(" ");
-
-            if (typeof testCase.expectedPattern === "string") {
-              expect(fullText.toLowerCase()).toContain(testCase.expectedPattern.toLowerCase());
-            } else {
-              expect(fullText).toMatch(testCase.expectedPattern);
-            }
-          }
-
-          if (testCase.expectArtifacts) {
-            validateArtifacts(response.message.parts, testCase.artifactMimeType);
-          }
-        }
-      }, 30000); // 30s timeout for LLM calls
-    }
+    // Note: Tool validation and response testing removed as they require
+    // access to private adapter internals. Use integration tests instead.
   });
 }

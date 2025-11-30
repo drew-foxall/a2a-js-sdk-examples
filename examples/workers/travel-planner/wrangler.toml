@@ -23,9 +23,7 @@
 name = "a2a-travel-planner"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
-
-# Enable Node.js compatibility for AI SDK dependencies
-compatibility_flags = ["nodejs_compat"]
+# nodejs_compat not required - using edge-compatible dependencies
 
 # ============================================================================
 # Service Bindings - Private Worker-to-Worker Communication

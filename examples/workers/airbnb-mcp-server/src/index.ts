@@ -10,37 +10,42 @@
  */
 
 import * as cheerio from "cheerio";
+import { z } from "zod/v4";
 
 // ============================================================================
-// Types
+// Types & Validation Schemas
 // ============================================================================
 
 interface Env {
   IGNORE_ROBOTS_TXT?: string;
 }
 
-interface AirbnbSearchParams {
-  location: string;
-  checkin?: string;
-  checkout?: string;
-  adults?: number;
-  children?: number;
-  infants?: number;
-  pets?: number;
-  minPrice?: number;
-  maxPrice?: number;
-  cursor?: string;
-}
+// Zod schemas for runtime validation of tool arguments
+const airbnbSearchParamsSchema = z.object({
+  location: z.string(),
+  checkin: z.string().optional(),
+  checkout: z.string().optional(),
+  adults: z.number().optional(),
+  children: z.number().optional(),
+  infants: z.number().optional(),
+  pets: z.number().optional(),
+  minPrice: z.number().optional(),
+  maxPrice: z.number().optional(),
+  cursor: z.string().optional(),
+});
 
-interface AirbnbListingDetailsParams {
-  id: string;
-  checkin?: string;
-  checkout?: string;
-  adults?: number;
-  children?: number;
-  infants?: number;
-  pets?: number;
-}
+const airbnbListingDetailsParamsSchema = z.object({
+  id: z.string(),
+  checkin: z.string().optional(),
+  checkout: z.string().optional(),
+  adults: z.number().optional(),
+  children: z.number().optional(),
+  infants: z.number().optional(),
+  pets: z.number().optional(),
+});
+
+type AirbnbSearchParams = z.infer<typeof airbnbSearchParamsSchema>;
+type AirbnbListingDetailsParams = z.infer<typeof airbnbListingDetailsParamsSchema>;
 
 interface MCPRequest {
   jsonrpc: "2.0";
@@ -496,13 +501,37 @@ async function handleToolCall(
     let result: unknown;
 
     switch (toolName) {
-      case "airbnb_search":
-        result = await searchAirbnb(args as unknown as AirbnbSearchParams);
+      case "airbnb_search": {
+        const parseResult = airbnbSearchParamsSchema.safeParse(args);
+        if (!parseResult.success) {
+          return {
+            jsonrpc: "2.0",
+            id,
+            error: {
+              code: -32602,
+              message: `Invalid parameters: ${parseResult.error.message}`,
+            },
+          };
+        }
+        result = await searchAirbnb(parseResult.data);
         break;
+      }
 
-      case "airbnb_listing_details":
-        result = await getListingDetails(args as unknown as AirbnbListingDetailsParams);
+      case "airbnb_listing_details": {
+        const parseResult = airbnbListingDetailsParamsSchema.safeParse(args);
+        if (!parseResult.success) {
+          return {
+            jsonrpc: "2.0",
+            id,
+            error: {
+              code: -32602,
+              message: `Invalid parameters: ${parseResult.error.message}`,
+            },
+          };
+        }
+        result = await getListingDetails(parseResult.data);
         break;
+      }
 
       default:
         return {

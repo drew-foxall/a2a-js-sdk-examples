@@ -9,7 +9,7 @@
 name = "airbnb-mcp-server"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
-compatibility_flags = ["nodejs_compat"]
+# nodejs_compat not required - using edge-compatible dependencies
 
 [vars]
 # Set to "true" to ignore robots.txt (not recommended for production)

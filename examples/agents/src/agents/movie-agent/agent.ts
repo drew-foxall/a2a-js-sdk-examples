@@ -161,5 +161,10 @@ export function createMovieAgent(model: LanguageModel) {
  * - REST APIs (future)
  * - MCP servers (future)
  * - Automated tests (no mocking)
+ *
+ * NOTE: This is a function (not a singleton) to avoid calling getModel()
+ * at module load time, which would break edge runtimes like Cloudflare Workers.
  */
-export const movieAgent = createMovieAgent(getModel());
+export function getMovieAgent() {
+  return createMovieAgent(getModel());
+}

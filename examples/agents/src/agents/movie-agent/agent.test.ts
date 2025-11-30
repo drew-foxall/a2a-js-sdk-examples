@@ -58,6 +58,9 @@ describe("Movie Agent", () => {
     const agent = createMovieAgent(mockModel);
     const result = await agent.generate({
       prompt: "Tell me about Inception",
+      options: {
+        contextId: "test-context-123",
+      },
     });
 
     expect(result.text).toBeDefined();

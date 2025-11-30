@@ -53,8 +53,8 @@ import {
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-// Import the agent definition
-import { coderAgent } from "./agent";
+// Import the agent factory function
+import { getCoderAgent } from "./agent";
 // Import code parsing utilities
 import { extractCodeBlocks } from "./code-format";
 
@@ -136,7 +136,7 @@ function buildCoderFinalMessage(
  * Uses STREAM mode for real-time code generation (like AI SDK's streamText).
  * Text chunks and code artifacts are streamed to the client as they're generated.
  */
-const agentExecutor: AgentExecutor = new A2AAdapter(coderAgent, {
+const agentExecutor: AgentExecutor = new A2AAdapter(getCoderAgent(), {
   mode: "stream", // Real-time streaming (like AI SDK's streamText)
   parseArtifacts: parseCodeArtifacts, // Extract code blocks incrementally
   buildFinalMessage: buildCoderFinalMessage,

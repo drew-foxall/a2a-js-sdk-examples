@@ -63,7 +63,7 @@ export function createCoderAgent(model: LanguageModel) {
 }
 
 /**
- * Default Coder Agent
+ * Get default Coder Agent (lazy initialization)
  *
  * Uses model from environment variables:
  * - AI_PROVIDER: openai|anthropic|google|azure|cohere|mistral|groq|ollama
@@ -79,35 +79,38 @@ export function createCoderAgent(model: LanguageModel) {
  * - Automated tests (no mocking)
  *
  * No tools are needed for this agent - it's pure code generation.
+ *
+ * NOTE: This is a function (not a singleton) to avoid calling getModel()
+ * at module load time, which would break edge runtimes like Cloudflare Workers.
  */
-export const coderAgent = createCoderAgent(getModel());
+export function getCoderAgent() {
+  return createCoderAgent(getModel());
+}
 
 /**
- * Stream code generation from the agent
+ * Stream code generation
  *
  * This function provides a simple async generator interface for streaming.
- * It handles the difference between ToolLoopAgent's potential streaming
- * API and the fallback to streamText().
+ * It uses the default model from environment variables.
  *
  * Usage:
  * ```typescript
- * for await (const chunk of streamCoderGeneration(coderAgent, messages)) {
+ * for await (const chunk of streamCoderGeneration(messages)) {
  *   console.log(chunk);
  * }
  * ```
  *
- * @param agent The ToolLoopAgent instance
  * @param messages Array of messages (user/assistant)
+ * @param model Optional custom model (defaults to getModel())
  * @returns AsyncGenerator yielding text chunks
  */
 export async function* streamCoderGeneration(
-  agent: ToolLoopAgent<LanguageModel, Record<string, never>, never>,
-  messages: Array<{ role: "user" | "assistant"; content: string }>
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  model?: LanguageModel
 ): AsyncGenerator<string> {
-  // Use streamText() with the agent's model and system prompt
   const { textStream } = streamText({
-    model: agent.model,
-    system: agent.system,
+    model: model ?? getModel(),
+    system: CODER_SYSTEM_PROMPT,
     messages,
   });
 
@@ -124,16 +127,19 @@ export async function* streamCoderGeneration(
  *
  * Usage:
  * ```typescript
- * const code = await generateCode(coderAgent, messages);
+ * const code = await generateCode(messages);
  * console.log(code);
  * ```
+ *
+ * @param messages Array of messages (user/assistant)
+ * @param model Optional custom model (defaults to getModel())
  */
 export async function generateCode(
-  agent: ToolLoopAgent<LanguageModel, Record<string, never>, never>,
-  messages: Array<{ role: "user" | "assistant"; content: string }>
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  model?: LanguageModel
 ): Promise<string> {
   let result = "";
-  for await (const chunk of streamCoderGeneration(agent, messages)) {
+  for await (const chunk of streamCoderGeneration(messages, model)) {
     result += chunk;
   }
   return result;
