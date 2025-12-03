@@ -137,8 +137,7 @@ function analyzeCodePatterns(code: string, language: string): AnalysisResult {
 function findLineNumber(code: string, pattern: string): number | undefined {
   const lines = code.split("\n");
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line !== undefined && line.includes(pattern)) {
+    if (lines[i]?.includes(pattern)) {
       return i + 1;
     }
   }

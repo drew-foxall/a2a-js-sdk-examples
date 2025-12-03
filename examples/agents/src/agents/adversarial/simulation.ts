@@ -77,14 +77,14 @@ async function main() {
   const result = await runAdversarialSimulation(model, sendMessageToDefender, MAX_TURNS);
 
   // Print results
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
   console.log("SIMULATION RESULTS");
   console.log("=".repeat(60));
   console.log(`\nOutcome: ${result.success ? "ATTACKER WON" : "DEFENDER WON"}`);
   console.log(`Turns: ${result.turns}/${result.maxTurns}`);
   console.log(`Summary: ${result.summary}`);
 
-  console.log("\n" + "-".repeat(60));
+  console.log(`\n${"-".repeat(60)}`);
   console.log("CONVERSATION LOG");
   console.log("-".repeat(60));
 
@@ -96,7 +96,7 @@ async function main() {
     }
   }
 
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
 }
 
 main().catch(console.error);

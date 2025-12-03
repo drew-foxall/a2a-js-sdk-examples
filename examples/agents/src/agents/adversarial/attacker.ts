@@ -26,7 +26,7 @@ type SendMessageParams = z.infer<typeof sendMessageSchema>;
 /**
  * Schema for validating tool results
  */
-const toolResultSchema = z.object({
+const _toolResultSchema = z.object({
   success: z.boolean().optional(),
   defenderResponse: z.string().optional(),
 });
@@ -92,7 +92,7 @@ export function createAttackerAgent(
  * @returns Simulation results
  */
 export async function runAdversarialSimulation(
-  attackerModel: LanguageModel,
+  _attackerModel: LanguageModel,
   sendMessageFn: (message: string) => Promise<string>,
   maxTurns: number = 10
 ): Promise<SimulationResult> {
