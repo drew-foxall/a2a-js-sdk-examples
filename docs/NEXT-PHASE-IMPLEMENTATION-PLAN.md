@@ -4,13 +4,19 @@
 
 This document outlines the next phase of development for our A2A examples, combining three key initiatives:
 
-1. **Task Store Integration** - Replace `InMemoryTaskStore` with `UpstashRedisTaskStore`
+1. **Task Store Integration** - Replace `InMemoryTaskStore` with `UpstashRedisTaskStore` **where appropriate**
 2. **Workflow DevKit Integration** - Add durability, observability, and fault tolerance
 3. **Platform Portability** - Demonstrate same agent on multiple platforms
 
-### Design Principle: Redis-First
+### Design Principle: Redis Where It Matters
 
-All examples will use **Upstash Redis** as the unified persistence layer:
+**Not all workers need persistent task storage.** Simple, stateless agents work fine with `InMemoryTaskStore`. We use Redis selectively for agents that benefit from:
+- Multi-turn conversation persistence
+- Task history and observability  
+- Multi-agent coordination
+- Long-running operations
+
+Examples that use **Upstash Redis** as the unified persistence layer:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -49,14 +55,18 @@ All examples will use **Upstash Redis** as the unified persistence layer:
 | Local agents implemented | 17 | ✅ Complete |
 | Cloudflare workers implemented | 17 | ✅ Complete |
 
-### Current Limitations
+### Current State: InMemoryTaskStore
 
-All workers currently use `InMemoryTaskStore`:
-- ❌ Tasks lost on worker restart
-- ❌ No multi-turn persistence
-- ❌ No task history/observability
-- ❌ No push notification persistence
-- ❌ No workflow durability
+All workers currently use `InMemoryTaskStore`, which is **fine for simple, stateless agents**:
+- ✅ Simple request/response agents (hello-world, dice-agent)
+- ✅ Single-turn interactions
+- ✅ No external coordination required
+
+However, some agents would benefit from persistent storage:
+- ❌ Multi-turn conversations lost on restart
+- ❌ Multi-agent coordination has no shared state
+- ❌ Long-running operations can't be resumed
+- ❌ No task history for observability
 
 ---
 
@@ -64,7 +74,43 @@ All workers currently use `InMemoryTaskStore`:
 
 ### Phase 1: Task Store Foundation (Week 1)
 
-**Goal**: Replace `InMemoryTaskStore` with `UpstashRedisTaskStore` in all workers
+**Goal**: Add `UpstashRedisTaskStore` to workers that **benefit from persistence**
+
+#### Task Store Selection Criteria
+
+| Criteria | Needs Redis | Keep InMemory |
+|----------|-------------|---------------|
+| Multi-turn conversations | ✅ | |
+| Multi-agent coordination | ✅ | |
+| Long-running operations | ✅ | |
+| Task history/observability | ✅ | |
+| Simple request/response | | ✅ |
+| Single-turn interactions | | ✅ |
+| Stateless operations | | ✅ |
+
+#### Worker Classification
+
+| Worker | Task Store | Reason |
+|--------|------------|--------|
+| `hello-world` | 🟢 InMemory | Simple, stateless greeting |
+| `dice-agent` | 🟢 InMemory | Single-turn, no state needed |
+| `currency-agent` | 🟢 InMemory | Single-turn API call |
+| `weather-agent` | 🟢 InMemory | Single-turn API call |
+| `github-agent` | 🟢 InMemory | Single-turn API call |
+| `analytics-agent` | 🟢 InMemory | Single-turn chart generation |
+| `content-planner` | 🟢 InMemory | Single-turn outline generation |
+| `contact-extractor` | 🟢 InMemory | Single-turn extraction |
+| `code-review` | 🟢 InMemory | Single-turn analysis |
+| **`travel-planner`** | 🔴 **Redis** | Multi-agent orchestration, needs coordination |
+| **`airbnb-agent`** | 🔴 **Redis** | Part of multi-agent system |
+| **`number-game-alice`** | 🔴 **Redis** | Multi-turn game state |
+| **`number-game-carol`** | 🔴 **Redis** | Multi-turn game state |
+| **`adversarial-defender`** | 🔴 **Redis** | Conversation history for security testing |
+| **`image-generator`** | 🔴 **Redis** | Long-running DALL-E operations |
+| **`expense-agent`** | 🟡 **Redis** | Multi-step form handling |
+| **`local-llm-chat`** | 🟡 **Redis** | Chat history persistence |
+
+**Summary**: 7 workers need Redis, 10 workers stay with InMemory
 
 #### Step 1.1: Prerequisites
 
@@ -72,12 +118,17 @@ All workers currently use `InMemoryTaskStore`:
 - [ ] Create Redis database for examples
 - [ ] Document credentials setup
 
-#### Step 1.2: Update dice-agent (Proof of Concept)
+#### Step 1.2: Update travel-planner (Proof of Concept)
+
+The travel planner is the best proof of concept because it:
+- Orchestrates multiple agents (weather, airbnb)
+- Benefits from task coordination
+- Demonstrates the full value of persistence
 
 Transform:
 
 ```typescript
-// BEFORE: examples/workers/dice-agent/src/index.ts
+// BEFORE: examples/workers/travel-planner/src/index.ts
 import { InMemoryTaskStore } from "@drew-foxall/a2a-js-sdk/server";
 
 const taskStore: TaskStore = new InMemoryTaskStore();
@@ -86,7 +137,7 @@ const taskStore: TaskStore = new InMemoryTaskStore();
 Into:
 
 ```typescript
-// AFTER: examples/workers/dice-agent/src/index.ts
+// AFTER: examples/workers/travel-planner/src/index.ts
 import { Redis } from "@upstash/redis";
 import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 
@@ -97,34 +148,24 @@ const redis = new Redis({
 
 const taskStore = new UpstashRedisTaskStore({
   client: redis,
-  prefix: 'a2a:dice:',
+  prefix: 'a2a:travel:',
   ttlSeconds: 86400 * 7, // 7 days
 });
 ```
 
-#### Step 1.3: Update All Workers
+#### Step 1.3: Update Selected Workers
 
-Apply same pattern to all 17 workers:
+Apply Redis task store to workers that benefit:
 
-| Worker | Prefix | Priority |
-|--------|--------|----------|
-| `dice-agent` | `a2a:dice:` | 🔴 High (PoC) |
-| `hello-world` | `a2a:hello:` | 🟡 Medium |
-| `currency-agent` | `a2a:currency:` | 🟡 Medium |
-| `travel-planner` | `a2a:travel:` | 🔴 High (multi-agent) |
-| `weather-agent` | `a2a:weather:` | 🟡 Medium |
-| `airbnb-agent` | `a2a:airbnb:` | 🟡 Medium |
-| `github-agent` | `a2a:github:` | 🟡 Medium |
-| `analytics-agent` | `a2a:analytics:` | 🟡 Medium |
-| `content-planner` | `a2a:content:` | 🟡 Medium |
-| `contact-extractor` | `a2a:contact:` | 🟡 Medium |
-| `expense-agent` | `a2a:expense:` | 🟡 Medium |
-| `number-game-alice` | `a2a:alice:` | 🔴 High (multi-turn) |
-| `number-game-carol` | `a2a:carol:` | 🔴 High (multi-turn) |
-| `image-generator` | `a2a:image:` | 🟡 Medium |
-| `code-review` | `a2a:code:` | 🟡 Medium |
-| `local-llm-chat` | `a2a:llm:` | 🟡 Medium |
-| `adversarial-defender` | `a2a:adversarial:` | 🟡 Medium |
+| Worker | Prefix | Priority | Reason |
+|--------|--------|----------|--------|
+| `travel-planner` | `a2a:travel:` | 🔴 High | Multi-agent orchestration (PoC) |
+| `airbnb-agent` | `a2a:airbnb:` | 🔴 High | Part of travel system |
+| `number-game-alice` | `a2a:alice:` | 🔴 High | Multi-turn game state |
+| `number-game-carol` | `a2a:carol:` | 🔴 High | Multi-turn game state |
+| `adversarial-defender` | `a2a:adversarial:` | 🟡 Medium | Conversation history |
+| `image-generator` | `a2a:image:` | 🟡 Medium | Long-running operations |
+| `expense-agent` | `a2a:expense:` | 🟡 Medium | Multi-step forms |
 
 #### Step 1.4: Shared Utilities
 
@@ -162,14 +203,15 @@ export function createTaskStore(
 
 #### Step 1.5: Documentation
 
-- [ ] Update `examples/workers/README.md` with Upstash setup
-- [ ] Add `.env.example` to each worker
+- [ ] Update `examples/workers/README.md` explaining when to use each task store
+- [ ] Add `.env.example` to workers that use Redis
 - [ ] Document wrangler secret commands
 
 **Deliverables**:
-- [ ] All 17 workers use `UpstashRedisTaskStore`
+- [ ] 7 workers updated to use `UpstashRedisTaskStore`
+- [ ] 10 workers remain with `InMemoryTaskStore` (appropriate for their use case)
 - [ ] Shared Redis utilities
-- [ ] Documentation for Upstash setup
+- [ ] Documentation explaining task store selection
 
 ---
 
@@ -455,10 +497,10 @@ export async function mcpRegistryWorkflow(query: string) {
 
 ### Phase 1: Task Store Foundation
 - [ ] Create Upstash Redis account
-- [ ] Update `dice-agent` worker with Redis task store
+- [ ] Update `travel-planner` worker with Redis task store (PoC)
 - [ ] Create shared Redis utilities
-- [ ] Update all 17 workers
-- [ ] Add documentation
+- [ ] Update 6 additional workers that benefit from persistence
+- [ ] Document task store selection criteria
 
 ### Phase 2: Workflow DevKit Foundation
 - [ ] Add Workflow DevKit dependencies
@@ -488,9 +530,10 @@ export async function mcpRegistryWorkflow(query: string) {
 ## Success Criteria
 
 ### Phase 1 Complete When:
-- [ ] All workers use `UpstashRedisTaskStore`
-- [ ] Tasks persist across worker restarts
-- [ ] Multi-turn conversations work
+- [ ] 7 workers use `UpstashRedisTaskStore` (those that benefit)
+- [ ] 10 workers remain with `InMemoryTaskStore` (appropriate for use case)
+- [ ] Multi-agent coordination works (travel-planner)
+- [ ] Multi-turn game state persists (number-game)
 
 ### Phase 2 Complete When:
 - [ ] `dice-agent` has durable workflow
@@ -549,8 +592,8 @@ Mitigation:
 
 | Week | Phase | Deliverables |
 |------|-------|--------------|
-| 1 | Task Store Foundation | All workers use Redis task store |
-| 2 | Workflow Foundation | dice-agent has durable workflow |
+| 1 | Task Store Foundation | 7 workers use Redis task store (where appropriate) |
+| 2 | Workflow Foundation | travel-planner has durable workflow |
 | 3 | High-Value Workflows | 4 agents have workflows |
 | 4 | Platform Portability | Vercel example + docs |
 | 5-6 | Unlock Deferred | 3 previously impossible examples |

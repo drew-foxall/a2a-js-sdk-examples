@@ -2,37 +2,56 @@
 
 ## Executive Summary
 
-The `a2a-js-taskstores` repository provides **edge-compatible persistent task storage adapters** for the A2A JavaScript SDK. These adapters are a critical piece of our worker infrastructure, addressing the fundamental limitation of our current examples: **in-memory task storage**.
+The `a2a-js-taskstores` repository provides **edge-compatible persistent task storage adapters** for the A2A JavaScript SDK. These adapters address limitations of in-memory task storage **for agents that need persistence**.
 
-### Design Decision: Redis-First Approach
+### Design Decision: Use Persistence Where Appropriate
 
-**For simplicity of demonstration, all examples will use Upstash Redis as the common persistence layer.**
+**Not all agents need persistent task storage.** We use Redis selectively:
 
-This decision enables us to:
-- **Focus on worker configurations** - Different platforms (Cloudflare, Vercel, AWS) with the same storage
-- **Maximize portability** - Upstash Redis works everywhere via HTTP (no TCP required)
-- **Unify persistence** - Same backend for Task Stores AND Workflow DevKit (Redis World)
-- **Simplify setup** - One service, one set of credentials across all examples
+| Use Redis When | Keep InMemory When |
+|----------------|-------------------|
+| Multi-turn conversations | Simple request/response |
+| Multi-agent coordination | Single-turn interactions |
+| Long-running operations | Stateless operations |
+| Task history needed | No state needed |
 
-### Current State
+### When to Use Each
 
-Our worker examples (e.g., `dice-agent`) use `InMemoryTaskStore`:
+**`InMemoryTaskStore`** (default for simple agents):
+- ✅ Hello World, Dice Agent, Currency Agent
+- ✅ Single-turn API calls (GitHub, Weather, Analytics)
+- ✅ Stateless extraction (Contact Extractor, Content Planner)
+
+**`UpstashRedisTaskStore`** (for stateful agents):
+- ✅ Travel Planner (multi-agent orchestration)
+- ✅ Number Game (multi-turn game state)
+- ✅ Adversarial (conversation history)
+- ✅ Image Generator (long-running operations)
+
+### Why Upstash Redis for Persistence
+
+When persistence IS needed, we use Upstash Redis because:
+- **Portability** - Works on Cloudflare, Vercel, AWS, Deno via HTTP
+- **Unified stack** - Same backend for Task Stores AND Workflow DevKit
+- **Simple setup** - One service, one set of credentials
+
+### Example: Agents That Need Persistence
 
 ```typescript
-// examples/workers/dice-agent/src/index.ts
-const taskStore: TaskStore = new InMemoryTaskStore();
-const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
+// travel-planner needs coordination across multiple agents
+const taskStore = new UpstashRedisTaskStore({
+  client: redis,
+  prefix: 'a2a:travel:',
+  ttlSeconds: 86400 * 7,
+});
 ```
 
-This means:
-- **Tasks are lost** when the worker restarts
-- **No multi-turn conversations** can persist across requests
-- **No task history** is maintained for observability
-- **Push notifications** cannot be configured persistently
+### Example: Agents That Don't Need Persistence
 
-### Solution: Upstash Redis Task Store
-
-All examples will use `@drew-foxall/a2a-js-taskstore-upstash-redis`:
+```typescript
+// dice-agent is stateless, single-turn - InMemory is fine
+const taskStore = new InMemoryTaskStore();
+```
 
 ```typescript
 import { Redis } from "@upstash/redis";
@@ -186,16 +205,12 @@ All examples use the same pattern - Upstash Redis for both Task Store and Workfl
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Phase 1: Replace InMemoryTaskStore
+### Phase 1: Add Redis to Workers That Need It
 
-Update all workers to use Upstash Redis:
+Update **only workers that benefit** from persistence:
 
 ```typescript
-// Before (current)
-import { InMemoryTaskStore } from "@drew-foxall/a2a-js-sdk/server";
-const taskStore = new InMemoryTaskStore();
-
-// After (with Upstash Redis)
+// Workers that NEED persistence (travel-planner, number-game, etc.)
 import { Redis } from "@upstash/redis";
 import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 
@@ -206,9 +221,16 @@ const redis = new Redis({
 
 const taskStore = new UpstashRedisTaskStore({
   client: redis,
-  prefix: 'a2a:dice:',
+  prefix: 'a2a:travel:',
   ttlSeconds: 86400 * 7, // 7 days
 });
+```
+
+```typescript
+// Workers that DON'T need persistence (hello-world, dice-agent, etc.)
+// Keep using InMemoryTaskStore - it's appropriate for their use case
+import { InMemoryTaskStore } from "@drew-foxall/a2a-js-sdk/server";
+const taskStore = new InMemoryTaskStore();
 ```
 
 ### Phase 2: Add Workflow DevKit
@@ -284,15 +306,30 @@ WORKFLOW_TARGET_WORLD=@workflow-worlds/redis
 
 ### Worker Updates
 
-For each worker:
+**For workers that need persistence** (7 workers):
 
-1. [ ] Replace `InMemoryTaskStore` with `UpstashRedisTaskStore`
+1. [ ] Add `UpstashRedisTaskStore` 
 2. [ ] Add Redis environment variables
 3. [ ] Update environment type definitions
 4. [ ] Test task persistence across restarts
-5. [ ] Document Upstash setup in worker README
 
-### Example: dice-agent Update
+**For workers that don't need persistence** (10 workers):
+
+1. [ ] Keep `InMemoryTaskStore` - no changes needed
+
+### Workers Requiring Redis
+
+| Worker | Prefix | Reason |
+|--------|--------|--------|
+| `travel-planner` | `a2a:travel:` | Multi-agent orchestration |
+| `airbnb-agent` | `a2a:airbnb:` | Part of travel system |
+| `number-game-alice` | `a2a:alice:` | Multi-turn game state |
+| `number-game-carol` | `a2a:carol:` | Multi-turn game state |
+| `adversarial-defender` | `a2a:adversarial:` | Conversation history |
+| `image-generator` | `a2a:image:` | Long-running operations |
+| `expense-agent` | `a2a:expense:` | Multi-step forms |
+
+### Example: travel-planner Update
 
 ```toml
 # wrangler.toml (Cloudflare)
@@ -322,7 +359,7 @@ app.all("/*", async (c, next) => {
 
   const taskStore = new UpstashRedisTaskStore({
     client: redis,
-    prefix: 'a2a:dice:',
+    prefix: 'a2a:travel:',
     ttlSeconds: 86400 * 7,
   });
   
@@ -372,31 +409,33 @@ Together, these form a complete stack for building production-ready A2A agents o
 
 ## Next Steps
 
-1. **Immediate**: Update `dice-agent` worker to use `UpstashRedisTaskStore`
-2. **Short-term**: Update all remaining workers to use Redis
+1. **Immediate**: Update `travel-planner` worker to use `UpstashRedisTaskStore` (best PoC for multi-agent)
+2. **Short-term**: Update 6 additional workers that benefit from persistence
 3. **Medium-term**: Add Workflow DevKit with shared Redis World
 4. **Long-term**: Demonstrate same agent on multiple platforms (Cloudflare, Vercel, AWS)
+
+**Note**: 10 workers will remain with `InMemoryTaskStore` - this is intentional and appropriate for their use case.
 
 ---
 
 ## Platform-Specific Examples (Future)
 
-Once Redis is integrated, we can demonstrate the same agent on different platforms:
+Once Redis is integrated for stateful agents, we can demonstrate the same agent on different platforms:
 
 ```
 examples/workers/
-├── dice-agent/                    # Current (Cloudflare)
-├── dice-agent-vercel/             # Same agent, Vercel Edge
-├── dice-agent-aws/                # Same agent, AWS Lambda
-└── dice-agent-deno/               # Same agent, Deno Deploy
+├── travel-planner/                # Cloudflare Workers (with Redis)
+├── travel-planner-vercel/         # Same agent, Vercel Edge
+├── travel-planner-aws/            # Same agent, AWS Lambda
+└── travel-planner-deno/           # Same agent, Deno Deploy
 ```
 
 Each uses:
 - Same agent logic from `a2a-agents`
-- Same Upstash Redis for persistence
+- Same Upstash Redis for persistence (for agents that need it)
 - Different platform-specific configuration
 
-This demonstrates the **portability** of the A2A + AI SDK + Redis stack.
+This demonstrates the **portability** of the A2A + AI SDK + Redis stack for stateful agents.
 
 ---
 
