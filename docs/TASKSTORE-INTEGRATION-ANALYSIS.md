@@ -4,6 +4,16 @@
 
 The `a2a-js-taskstores` repository provides **edge-compatible persistent task storage adapters** for the A2A JavaScript SDK. These adapters are a critical piece of our worker infrastructure, addressing the fundamental limitation of our current examples: **in-memory task storage**.
 
+### Design Decision: Redis-First Approach
+
+**For simplicity of demonstration, all examples will use Upstash Redis as the common persistence layer.**
+
+This decision enables us to:
+- **Focus on worker configurations** - Different platforms (Cloudflare, Vercel, AWS) with the same storage
+- **Maximize portability** - Upstash Redis works everywhere via HTTP (no TCP required)
+- **Unify persistence** - Same backend for Task Stores AND Workflow DevKit (Redis World)
+- **Simplify setup** - One service, one set of credentials across all examples
+
 ### Current State
 
 Our worker examples (e.g., `dice-agent`) use `InMemoryTaskStore`:
@@ -20,16 +30,36 @@ This means:
 - **No task history** is maintained for observability
 - **Push notifications** cannot be configured persistently
 
-### Solution: a2a-js-taskstores
+### Solution: Upstash Redis Task Store
 
-The task store adapters provide drop-in replacements that persist to various backends:
+All examples will use `@drew-foxall/a2a-js-taskstore-upstash-redis`:
 
-| Adapter | Backend | Best For |
+```typescript
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
+
+const redis = new Redis({
+  url: env.UPSTASH_REDIS_REST_URL,
+  token: env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+const taskStore = new UpstashRedisTaskStore({
+  client: redis,
+  prefix: 'a2a:dice:',
+  ttlSeconds: 86400 * 7, // 7 days
+});
+```
+
+### Available Adapters (Reference)
+
+While we standardize on Redis, other adapters exist for specific use cases:
+
+| Adapter | Backend | Use Case |
 |---------|---------|----------|
-| `cloudflare-kv` | Cloudflare KV | Simple caching, global distribution |
-| `cloudflare-d1` | Cloudflare D1 (SQLite) | Complex queries, strong consistency |
-| `upstash-redis` | Upstash Redis (HTTP) | High throughput, edge-compatible |
-| `dynamodb` | AWS DynamoDB | AWS Lambda deployments |
+| `upstash-redis` | Upstash Redis (HTTP) | **Our default** - portable, edge-compatible |
+| `cloudflare-kv` | Cloudflare KV | Cloudflare-only, eventual consistency |
+| `cloudflare-d1` | Cloudflare D1 (SQLite) | Cloudflare-only, complex queries |
+| `dynamodb` | AWS DynamoDB | AWS-only deployments |
 | `drizzle` | PostgreSQL/MySQL/SQLite | Existing database infrastructure |
 
 ---
@@ -130,42 +160,60 @@ This means:
 
 ## Integration Approach
 
+### Unified Redis Architecture
+
+All examples use the same pattern - Upstash Redis for both Task Store and Workflow DevKit:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         WORKER (Any Platform)                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐│
+│  │  Cloudflare Worker | Vercel Edge | AWS Lambda | Deno Deploy         ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ HTTP (REST API)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         UPSTASH REDIS                                    │
+│  ┌─────────────────────────┐  ┌─────────────────────────────────────┐  │
+│  │  Task Store             │  │  Workflow DevKit (Redis World)      │  │
+│  │  prefix: a2a:{agent}:   │  │  prefix: workflow:                  │  │
+│  │  - Task state           │  │  - Workflow runs                    │  │
+│  │  - Message history      │  │  - Step results                     │  │
+│  │  - Push configs         │  │  - Job queue (BullMQ)               │  │
+│  └─────────────────────────┘  └─────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
 ### Phase 1: Replace InMemoryTaskStore
 
-Update existing workers to use persistent task stores:
+Update all workers to use Upstash Redis:
 
 ```typescript
 // Before (current)
 import { InMemoryTaskStore } from "@drew-foxall/a2a-js-sdk/server";
 const taskStore = new InMemoryTaskStore();
 
-// After (with Cloudflare KV)
-import { CloudflareKVTaskStore } from "@drew-foxall/a2a-js-taskstore-cloudflare-kv";
-const taskStore = new CloudflareKVTaskStore({
-  kv: env.TASKS_KV,
-  expirationTtl: 86400 * 7, // 7 days
+// After (with Upstash Redis)
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
+
+const redis = new Redis({
+  url: env.UPSTASH_REDIS_REST_URL,
+  token: env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+const taskStore = new UpstashRedisTaskStore({
+  client: redis,
+  prefix: 'a2a:dice:',
+  ttlSeconds: 86400 * 7, // 7 days
 });
 ```
 
-### Phase 2: Add Extended Query Capabilities
+### Phase 2: Add Workflow DevKit
 
-For workers that need task queries (e.g., dashboards, multi-turn):
-
-```typescript
-// With Cloudflare D1 for complex queries
-import { CloudflareD1TaskStore } from "@drew-foxall/a2a-js-taskstore-cloudflare-d1";
-
-const taskStore = new CloudflareD1TaskStore({ db: env.DB });
-
-// Extended capabilities
-const contextTasks = await taskStore.loadByContextId(contextId);
-const workingTasks = await taskStore.loadByStatus('working');
-const taskCount = await taskStore.countByStatus('completed');
-```
-
-### Phase 3: Combine with Workflow DevKit
-
-For agents that need both A2A task persistence AND workflow durability:
+Same Redis instance, different prefix:
 
 ```typescript
 // examples/workers/dice-agent-durable/src/index.ts
@@ -179,53 +227,38 @@ import { diceAgentWorkflow } from "a2a-agents/dice-agent/workflow";
 const app = new Hono<{ Bindings: Env }>();
 
 app.all("/*", async (c, next) => {
+  // Single Redis client for both purposes
   const redis = new Redis({
     url: c.env.UPSTASH_REDIS_REST_URL,
     token: c.env.UPSTASH_REDIS_REST_TOKEN,
   });
 
-  // A2A Task Store for protocol-level persistence
+  // A2A Task Store (protocol-level persistence)
   const taskStore = new UpstashRedisTaskStore({
     client: redis,
     prefix: 'a2a:dice:',
+    ttlSeconds: 86400 * 7,
   });
 
-  // Workflow DevKit for execution durability
-  // (World configured via WORKFLOW_TARGET_WORLD env var)
+  // Workflow DevKit (execution durability)
+  // Uses same Redis via WORKFLOW_TARGET_WORLD=@workflow-worlds/redis
   
   // ... A2A handler that uses taskStore and triggers workflow
 });
 ```
 
----
+### Phase 3: Demonstrate Platform Portability
 
-## Recommended Adapter Selection
+The same agent code deploys to multiple platforms with identical Redis config:
 
-### For Our Examples
+| Platform | Worker Config | Redis Config |
+|----------|---------------|--------------|
+| Cloudflare Workers | `wrangler.toml` | Same Upstash credentials |
+| Vercel Edge | `vercel.json` | Same Upstash credentials |
+| AWS Lambda | `template.yaml` | Same Upstash credentials |
+| Deno Deploy | `deno.json` | Same Upstash credentials |
 
-| Worker | Recommended Adapter | Rationale |
-|--------|---------------------|-----------|
-| `dice-agent` | Cloudflare KV | Simple, low-latency, eventual consistency OK |
-| `currency-agent` | Cloudflare KV | Same as above |
-| `travel-planner` | Cloudflare D1 | Multi-agent needs task queries |
-| `adversarial` | Upstash Redis | High throughput, conversation history |
-| `number-game` | Cloudflare D1 | Game state needs strong consistency |
-
-### Decision Matrix
-
-```
-                    Simple Tasks    Complex Queries    Multi-Turn    High Throughput
-                    ────────────    ───────────────    ──────────    ───────────────
-Cloudflare KV           ✅               ❌               ⚠️              ⚠️
-Cloudflare D1           ✅               ✅               ✅              ⚠️
-Upstash Redis           ✅               ⚠️               ✅              ✅
-DynamoDB                ✅               ⚠️               ✅              ✅
-Drizzle                 ✅               ✅               ✅              ⚠️
-
-✅ = Excellent fit
-⚠️ = Possible but not optimal
-❌ = Not recommended
-```
+This is the **key demonstration**: agent logic is portable, only worker configuration changes.
 
 ---
 
@@ -233,44 +266,64 @@ Drizzle                 ✅               ✅               ✅              ⚠
 
 ### Prerequisites
 
-- [ ] Add `@drew-foxall/a2a-js-taskstore-cloudflare-kv` to worker dependencies
-- [ ] Add `@drew-foxall/a2a-js-taskstore-cloudflare-d1` for complex workers
-- [ ] Add `@drew-foxall/a2a-js-taskstore-upstash-redis` for Redis-based workers
-- [ ] Configure KV namespaces in `wrangler.toml`
-- [ ] Run D1 migrations for D1-based workers
+- [ ] Create Upstash Redis instance (free tier available)
+- [ ] Add `@drew-foxall/a2a-js-taskstore-upstash-redis` to worker dependencies
+- [ ] Add `@upstash/redis` to worker dependencies
+- [ ] Configure environment variables for all platforms
+
+### Environment Variables (All Platforms)
+
+```bash
+# Required for Task Store
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=AXxx...
+
+# Required for Workflow DevKit (when enabled)
+WORKFLOW_TARGET_WORLD=@workflow-worlds/redis
+```
 
 ### Worker Updates
 
 For each worker:
 
-1. [ ] Replace `InMemoryTaskStore` with appropriate adapter
-2. [ ] Add KV/D1/Redis bindings to `wrangler.toml`
+1. [ ] Replace `InMemoryTaskStore` with `UpstashRedisTaskStore`
+2. [ ] Add Redis environment variables
 3. [ ] Update environment type definitions
 4. [ ] Test task persistence across restarts
-5. [ ] Document storage requirements in worker README
+5. [ ] Document Upstash setup in worker README
 
 ### Example: dice-agent Update
 
 ```toml
-# wrangler.toml
-[[kv_namespaces]]
-binding = "TASKS_KV"
-id = "your-kv-namespace-id"
+# wrangler.toml (Cloudflare)
+[vars]
+# Non-secret config here
+
+# Secrets via: wrangler secret put UPSTASH_REDIS_REST_URL
+# Secrets via: wrangler secret put UPSTASH_REDIS_REST_TOKEN
 ```
 
 ```typescript
 // src/index.ts
-import { CloudflareKVTaskStore } from "@drew-foxall/a2a-js-taskstore-cloudflare-kv";
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 
 type Bindings = {
   OPENAI_API_KEY: string;
-  TASKS_KV: KVNamespace;
+  UPSTASH_REDIS_REST_URL: string;
+  UPSTASH_REDIS_REST_TOKEN: string;
 };
 
 app.all("/*", async (c, next) => {
-  const taskStore = new CloudflareKVTaskStore({
-    kv: c.env.TASKS_KV,
-    expirationTtl: 86400 * 7,
+  const redis = new Redis({
+    url: c.env.UPSTASH_REDIS_REST_URL,
+    token: c.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  const taskStore = new UpstashRedisTaskStore({
+    client: redis,
+    prefix: 'a2a:dice:',
+    ttlSeconds: 86400 * 7,
   });
   
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
@@ -319,10 +372,31 @@ Together, these form a complete stack for building production-ready A2A agents o
 
 ## Next Steps
 
-1. **Immediate**: Update `dice-agent` worker to use `CloudflareKVTaskStore`
-2. **Short-term**: Add D1 support to `travel-planner` for multi-agent task queries
-3. **Medium-term**: Integrate with Workflow DevKit using shared Upstash Redis
-4. **Long-term**: Implement telemetry example (19) with persistent push notifications
+1. **Immediate**: Update `dice-agent` worker to use `UpstashRedisTaskStore`
+2. **Short-term**: Update all remaining workers to use Redis
+3. **Medium-term**: Add Workflow DevKit with shared Redis World
+4. **Long-term**: Demonstrate same agent on multiple platforms (Cloudflare, Vercel, AWS)
+
+---
+
+## Platform-Specific Examples (Future)
+
+Once Redis is integrated, we can demonstrate the same agent on different platforms:
+
+```
+examples/workers/
+├── dice-agent/                    # Current (Cloudflare)
+├── dice-agent-vercel/             # Same agent, Vercel Edge
+├── dice-agent-aws/                # Same agent, AWS Lambda
+└── dice-agent-deno/               # Same agent, Deno Deploy
+```
+
+Each uses:
+- Same agent logic from `a2a-agents`
+- Same Upstash Redis for persistence
+- Different platform-specific configuration
+
+This demonstrates the **portability** of the A2A + AI SDK + Redis stack.
 
 ---
 
@@ -332,4 +406,5 @@ Together, these form a complete stack for building production-ready A2A agents o
 - [Workflow Integration Plan](./WORKFLOW-INTEGRATION-PLAN.md)
 - [Python Examples Reference](./python-examples-reference/)
 - [A2A JS SDK Issue #114](https://github.com/a2aproject/a2a-js/issues/114)
+- [Upstash Redis](https://upstash.com/redis)
 

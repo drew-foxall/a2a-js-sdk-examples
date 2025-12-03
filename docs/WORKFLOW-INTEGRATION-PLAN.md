@@ -11,6 +11,19 @@ This document outlines a comprehensive plan for integrating [Workflow DevKit](ht
 
 This separation enables the **same agent code** to run across different deployment targets (Cloudflare, Vercel, AWS, Railway) by swapping only the World configuration.
 
+### Design Decision: Redis-First Approach
+
+**All examples will use Upstash Redis as the unified persistence layer** for both:
+- **Task Stores** (A2A protocol persistence) - via `@drew-foxall/a2a-js-taskstore-upstash-redis`
+- **Workflow DevKit** (execution durability) - via `@workflow-worlds/redis`
+
+This enables:
+- **Platform portability** - Same Redis works on Cloudflare, Vercel, AWS, Deno
+- **Simplified setup** - One service, one set of credentials
+- **Focus on worker configurations** - Demonstrate different platforms, not different storage backends
+
+See [Task Store Integration Analysis](./TASKSTORE-INTEGRATION-ANALYSIS.md) for details on the unified Redis architecture.
+
 ---
 
 ## Architecture Overview
@@ -236,27 +249,37 @@ app.post("/", async (c) => {
 export default app;
 ```
 
-### Layer 6: World Configuration
+### Layer 6: World Configuration (Redis-First)
 
-World selection happens entirely via environment variables:
+All examples use Redis World via environment variables:
 
 ```bash
-# Local development (default)
-# No config needed - uses Local World
+# Local development
+# Uses Local World by default, or Redis World if configured
 
-# Vercel deployment
-# Auto-detected - uses Vercel World
-
-# Redis World (Upstash - works with Cloudflare Workers)
+# All deployed environments (Cloudflare, Vercel, AWS, etc.)
 WORKFLOW_TARGET_WORLD=@workflow-worlds/redis
 UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
 UPSTASH_REDIS_REST_TOKEN=xxx
+```
 
-# Postgres World (Railway, Render, Fly.io)
-WORKFLOW_TARGET_WORLD=@workflow/world-postgres
-WORKFLOW_POSTGRES_URL=postgres://user:pass@host:5432/db
-WORKFLOW_POSTGRES_JOB_PREFIX=workflow_
-WORKFLOW_POSTGRES_WORKER_CONCURRENCY=10
+The same Redis instance serves both **Task Store** and **Workflow DevKit**:
+
+```typescript
+// Shared Upstash Redis configuration
+const redis = new Redis({
+  url: env.UPSTASH_REDIS_REST_URL,
+  token: env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+// Task Store (A2A protocol persistence)
+const taskStore = new UpstashRedisTaskStore({
+  client: redis,
+  prefix: 'a2a:dice:',  // Namespaced by agent
+});
+
+// Workflow DevKit (execution durability)
+// Uses prefix: 'workflow:' automatically
 ```
 
 ---
@@ -379,18 +402,16 @@ export * as steps from "./steps";
 
 ---
 
-## World Selection Guide
+## World Selection: Redis-First
 
-### Decision Matrix
+### Why Redis World for All Examples
 
-| Deployment Target | Recommended World | Notes |
-|-------------------|-------------------|-------|
-| **Local Development** | Local World | Default, no config |
-| **Vercel** | Vercel World | Auto-detected |
-| **Cloudflare Workers** | Redis World | Upstash (HTTP-based) |
-| **AWS Lambda** | Redis World | Upstash or ElastiCache |
-| **Railway/Render/Fly.io** | Postgres World | Long-running processes |
-| **Docker/Self-hosted** | Postgres World | Full control |
+| Benefit | Description |
+|---------|-------------|
+| **Portability** | HTTP-based, works on any edge runtime |
+| **Unified Stack** | Same Redis for Task Store + Workflow DevKit |
+| **Simple Setup** | One Upstash account, one set of credentials |
+| **Focus** | Demonstrate platform differences, not storage differences |
 
 ### Redis World Benefits
 
@@ -399,29 +420,59 @@ From the [workflow-worlds/redis](https://github.com/mizzle-dev/workflow-worlds/t
 - **BullMQ** for reliable job queuing
 - **Redis Streams** for output streaming
 - **Upstash** provides HTTP-based Redis (edge-compatible)
-- Works with Cloudflare Workers, Vercel Edge, AWS Lambda
+- Works with Cloudflare Workers, Vercel Edge, AWS Lambda, Deno Deploy
 
-### Configuration Examples
+### Configuration (All Platforms)
 
 ```bash
-# Cloudflare Workers + Upstash
-# wrangler.toml
+# Environment variables (same for all platforms)
+WORKFLOW_TARGET_WORLD=@workflow-worlds/redis
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxx
+```
+
+Platform-specific setup:
+
+```toml
+# Cloudflare Workers (wrangler.toml)
 [vars]
 WORKFLOW_TARGET_WORLD = "@workflow-worlds/redis"
 
-# Secrets via wrangler secret put
-# UPSTASH_REDIS_REST_URL
-# UPSTASH_REDIS_REST_TOKEN
+# Secrets via: wrangler secret put UPSTASH_REDIS_REST_URL
+# Secrets via: wrangler secret put UPSTASH_REDIS_REST_TOKEN
 ```
 
-```bash
-# Railway + Postgres
-# .env
-WORKFLOW_TARGET_WORLD=@workflow/world-postgres
-WORKFLOW_POSTGRES_URL=$DATABASE_URL
-WORKFLOW_POSTGRES_JOB_PREFIX=workflow_
-WORKFLOW_POSTGRES_WORKER_CONCURRENCY=10
+```json
+// Vercel (vercel.json or dashboard)
+{
+  "env": {
+    "WORKFLOW_TARGET_WORLD": "@workflow-worlds/redis",
+    "UPSTASH_REDIS_REST_URL": "@upstash-redis-url",
+    "UPSTASH_REDIS_REST_TOKEN": "@upstash-redis-token"
+  }
+}
 ```
+
+```yaml
+# AWS Lambda (template.yaml)
+Environment:
+  Variables:
+    WORKFLOW_TARGET_WORLD: "@workflow-worlds/redis"
+    UPSTASH_REDIS_REST_URL: !Ref UpstashRedisUrl
+    UPSTASH_REDIS_REST_TOKEN: !Ref UpstashRedisToken
+```
+
+### Alternative Worlds (Reference Only)
+
+For users with specific requirements, other Worlds are available:
+
+| World | Use Case |
+|-------|----------|
+| Local World | Development only (default) |
+| Vercel World | Vercel-native deployments |
+| Postgres World | Long-running processes, existing Postgres |
+| Turso World | SQLite at the edge |
+| MongoDB World | Existing MongoDB infrastructure |
 
 ---
 
