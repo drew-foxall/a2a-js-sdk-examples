@@ -8,6 +8,8 @@
  * - Agent logic is imported from the shared `a2a-agents` package (no duplication!)
  * - Worker only handles deployment-specific concerns (env, routing)
  *
+ * Task Store: Uses Redis for persistent task state (multi-step forms)
+ *
  * Deployment:
  *   wrangler deploy
  *
@@ -15,6 +17,8 @@
  *   wrangler dev
  */
 
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
@@ -28,8 +32,40 @@ import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createExpenseAgent } from "a2a-agents";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { HonoEnv } from "../../shared/types.js";
+import type { Env as BaseEnv } from "../../shared/types.js";
 import { getModel, getModelInfo } from "../../shared/utils.js";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface Env extends BaseEnv {
+  UPSTASH_REDIS_REST_URL?: string;
+  UPSTASH_REDIS_REST_TOKEN?: string;
+}
+
+type ExpenseHonoEnv = { Bindings: Env };
+
+// ============================================================================
+// Task Store Configuration
+// ============================================================================
+
+function createTaskStore(env: Env): TaskStore {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    });
+
+    return new UpstashRedisTaskStore({
+      client: redis,
+      prefix: "a2a:expense:",
+      ttlSeconds: 86400 * 7, // 7 days
+    });
+  }
+
+  return new InMemoryTaskStore();
+}
 
 // ============================================================================
 // Agent Card Configuration
@@ -72,7 +108,7 @@ function createAgentCard(baseUrl: string): AgentCard {
 // Hono App Setup
 // ============================================================================
 
-const app = new Hono<HonoEnv>();
+const app = new Hono<ExpenseHonoEnv>();
 
 app.use(
   "*",
@@ -112,7 +148,7 @@ app.all("/*", async (c, next) => {
     workingMessage: "Processing expense request...",
   });
 
-  const taskStore: TaskStore = new InMemoryTaskStore();
+  const taskStore = createTaskStore(c.env);
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
   const a2aRouter = new Hono();

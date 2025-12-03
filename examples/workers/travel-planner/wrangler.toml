@@ -55,7 +55,14 @@ AIRBNB_AGENT_URL_FALLBACK = "http://localhost:8789/.well-known/agent-card.json"
 
 # Secrets are set via CLI:
 #   wrangler secret put OPENAI_API_KEY
+#   wrangler secret put UPSTASH_REDIS_REST_URL
+#   wrangler secret put UPSTASH_REDIS_REST_TOKEN
 #
 # For local development, create a .dev.vars file:
 #   OPENAI_API_KEY=sk-proj-xxxxx
+#   UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+#   UPSTASH_REDIS_REST_TOKEN=AXxx...
+#
+# Note: Redis is optional. If not configured, falls back to InMemoryTaskStore.
+# Redis provides persistent task state for multi-agent coordination.
 

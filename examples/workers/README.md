@@ -268,6 +268,71 @@ pnpm --filter a2a-weather-agent-worker exec wrangler tail --format json
 
 ---
 
+## 💾 Task Store Selection
+
+Workers use **task stores** to persist A2A task state. We use two types based on agent requirements:
+
+### InMemoryTaskStore (Default)
+
+For simple, stateless agents that don't need persistence:
+
+| Worker | Reason |
+|--------|--------|
+| `hello-world` | Simple greeting, no state |
+| `dice-agent` | Single-turn, stateless |
+| `currency-agent` | Single-turn API call |
+| `weather-agent` | Single-turn API call |
+| `github-agent` | Single-turn API call |
+| `analytics-agent` | Single-turn chart generation |
+| `content-planner` | Single-turn outline |
+| `contact-extractor` | Single-turn extraction |
+| `code-review` | Single-turn analysis |
+| `local-llm-chat` | Simple chat |
+| `number-game-alice` | Custom JSON-RPC (no SDK task store) |
+| `number-game-carol` | Custom JSON-RPC (no SDK task store) |
+
+### UpstashRedisTaskStore (Persistent)
+
+For agents that benefit from persistent task state:
+
+| Worker | Prefix | Reason |
+|--------|--------|--------|
+| `travel-planner` | `a2a:travel:` | Multi-agent orchestration |
+| `airbnb-agent` | `a2a:airbnb:` | Part of travel system |
+| `adversarial-defender` | `a2a:adversarial:` | Conversation history for security testing |
+| `image-generator` | `a2a:image:` | Long-running DALL-E operations |
+| `expense-agent` | `a2a:expense:` | Multi-step form handling |
+
+### Configuring Redis
+
+Workers with Redis support automatically fall back to `InMemoryTaskStore` if Redis isn't configured.
+
+To enable Redis persistence:
+
+```bash
+# Set Upstash Redis credentials
+wrangler secret put UPSTASH_REDIS_REST_URL
+wrangler secret put UPSTASH_REDIS_REST_TOKEN
+```
+
+For local development, add to `.dev.vars`:
+
+```bash
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=AXxx...
+```
+
+### When to Use Redis
+
+| Use Redis When | Keep InMemory When |
+|----------------|-------------------|
+| Multi-turn conversations | Simple request/response |
+| Multi-agent coordination | Single-turn interactions |
+| Long-running operations | Stateless operations |
+| Task history needed | No state needed |
+
+---
+
 ## 🔧 Configuration
 
 ### Environment Variables

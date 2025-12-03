@@ -3,9 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "import": "./index.ts"
+    }
+  },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.0-beta.54",
     "@ai-sdk/google": "3.0.0-beta.48",
-    "@ai-sdk/openai": "3.0.0-beta.61"
+    "@ai-sdk/openai": "3.0.0-beta.61",
+    "@drew-foxall/a2a-js-taskstore-core": "link:../../../../a2a-js-taskstores/packages/core",
+    "@drew-foxall/a2a-js-taskstore-upstash-redis": "link:../../../../a2a-js-taskstores/packages/upstash-redis",
+    "@upstash/redis": "^1.34.3"
   }
 }

@@ -129,6 +129,15 @@ importers:
       '@drew-foxall/a2a-js-sdk':
         specifier: ^0.3.6
         version: 0.3.6(express@5.1.0)
+      '@drew-foxall/a2a-js-taskstore-core':
+        specifier: link:../../../../a2a-js-taskstores/packages/core
+        version: link:../../../../a2a-js-taskstores/packages/core
+      '@drew-foxall/a2a-js-taskstore-upstash-redis':
+        specifier: link:../../../../a2a-js-taskstores/packages/upstash-redis
+        version: link:../../../../a2a-js-taskstores/packages/upstash-redis
+      '@upstash/redis':
+        specifier: ^1.34.3
+        version: 1.35.7
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -166,6 +175,15 @@ importers:
       '@drew-foxall/a2a-js-sdk':
         specifier: ^0.3.6
         version: 0.3.6(express@5.1.0)
+      '@drew-foxall/a2a-js-taskstore-core':
+        specifier: link:../../../../a2a-js-taskstores/packages/core
+        version: link:../../../../a2a-js-taskstores/packages/core
+      '@drew-foxall/a2a-js-taskstore-upstash-redis':
+        specifier: link:../../../../a2a-js-taskstores/packages/upstash-redis
+        version: link:../../../../a2a-js-taskstores/packages/upstash-redis
+      '@upstash/redis':
+        specifier: ^1.34.3
+        version: 1.35.7
       a2a-workers-shared:
         specifier: workspace:*
         version: link:../shared
@@ -447,6 +465,15 @@ importers:
       '@drew-foxall/a2a-js-sdk':
         specifier: ^0.3.6
         version: 0.3.6(express@5.1.0)
+      '@drew-foxall/a2a-js-taskstore-core':
+        specifier: link:../../../../a2a-js-taskstores/packages/core
+        version: link:../../../../a2a-js-taskstores/packages/core
+      '@drew-foxall/a2a-js-taskstore-upstash-redis':
+        specifier: link:../../../../a2a-js-taskstores/packages/upstash-redis
+        version: link:../../../../a2a-js-taskstores/packages/upstash-redis
+      '@upstash/redis':
+        specifier: ^1.34.3
+        version: 1.35.7
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -555,6 +582,15 @@ importers:
       '@drew-foxall/a2a-js-sdk':
         specifier: ^0.3.6
         version: 0.3.6(express@5.1.0)
+      '@drew-foxall/a2a-js-taskstore-core':
+        specifier: link:../../../../a2a-js-taskstores/packages/core
+        version: link:../../../../a2a-js-taskstores/packages/core
+      '@drew-foxall/a2a-js-taskstore-upstash-redis':
+        specifier: link:../../../../a2a-js-taskstores/packages/upstash-redis
+        version: link:../../../../a2a-js-taskstores/packages/upstash-redis
+      '@upstash/redis':
+        specifier: ^1.34.3
+        version: 1.35.7
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -655,6 +691,15 @@ importers:
       '@ai-sdk/openai':
         specifier: 3.0.0-beta.61
         version: 3.0.0-beta.61(zod@4.1.13)
+      '@drew-foxall/a2a-js-taskstore-core':
+        specifier: link:../../../../a2a-js-taskstores/packages/core
+        version: link:../../../../a2a-js-taskstores/packages/core
+      '@drew-foxall/a2a-js-taskstore-upstash-redis':
+        specifier: link:../../../../a2a-js-taskstores/packages/upstash-redis
+        version: link:../../../../a2a-js-taskstores/packages/upstash-redis
+      '@upstash/redis':
+        specifier: ^1.34.3
+        version: 1.35.7
 
   examples/workers/travel-planner:
     dependencies:
@@ -673,6 +718,15 @@ importers:
       '@drew-foxall/a2a-js-sdk':
         specifier: ^0.3.6
         version: 0.3.6(express@5.1.0)
+      '@drew-foxall/a2a-js-taskstore-core':
+        specifier: link:../../../../a2a-js-taskstores/packages/core
+        version: link:../../../../a2a-js-taskstores/packages/core
+      '@drew-foxall/a2a-js-taskstore-upstash-redis':
+        specifier: link:../../../../a2a-js-taskstores/packages/upstash-redis
+        version: link:../../../../a2a-js-taskstores/packages/upstash-redis
+      '@upstash/redis':
+        specifier: ^1.34.3
+        version: 1.35.7
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -1923,6 +1977,9 @@ packages:
     resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
     deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
 
+  '@upstash/redis@1.35.7':
+    resolution: {integrity: sha512-bdCdKhke+kYUjcLLuGWSeQw7OLuWIx3eyKksyToLBAlGIMX9qiII0ptp8E0y7VFE1yuBxBd/3kSzJ8774Q4g+A==}
+
   '@vercel/oidc@3.0.3':
     resolution: {integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==}
     engines: {node: '>= 20'}
@@ -2786,6 +2843,9 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  uncrypto@0.1.3:
+    resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
 
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
@@ -3781,6 +3841,10 @@ snapshots:
   '@types/uuid@11.0.0':
     dependencies:
       uuid: 13.0.0
+
+  '@upstash/redis@1.35.7':
+    dependencies:
+      uncrypto: 0.1.3
 
   '@vercel/oidc@3.0.3': {}
 
@@ -4815,6 +4879,8 @@ snapshots:
       mime-types: 3.0.2
 
   typescript@5.9.3: {}
+
+  uncrypto@0.1.3: {}
 
   undici-types@7.16.0: {}
 

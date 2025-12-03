@@ -20,6 +20,12 @@ export interface PlannerEnv {
   // Fallback URLs (when Service Bindings unavailable)
   WEATHER_AGENT_URL?: string;
   AIRBNB_AGENT_URL?: string;
+
+  // Redis persistence (for task store)
+  // Set via: wrangler secret put UPSTASH_REDIS_REST_URL
+  // Set via: wrangler secret put UPSTASH_REDIS_REST_TOKEN
+  UPSTASH_REDIS_REST_URL?: string;
+  UPSTASH_REDIS_REST_TOKEN?: string;
 }
 
 /**

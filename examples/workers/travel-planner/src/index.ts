@@ -12,11 +12,18 @@
  * - Agent Card: Imported from a2a-agents (shared definition)
  * - Communication: Worker-specific (Service Bindings + HTTP fallback)
  * - Discovery: Worker-specific (fetches Agent Cards via bindings or HTTP)
+ * - Task Store: Redis for persistent multi-agent coordination
  */
 
 import { createOpenAI } from "@ai-sdk/openai";
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import { DefaultRequestHandler, InMemoryTaskStore } from "@drew-foxall/a2a-js-sdk/server";
+import {
+  DefaultRequestHandler,
+  InMemoryTaskStore,
+  type TaskStore,
+} from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 // Import shared agent logic and card from a2a-agents
 import { createPlannerAgent, createTravelPlannerCard } from "a2a-agents";
@@ -38,6 +45,44 @@ function getModel(env: PlannerEnv) {
 
   const modelId = env.AI_MODEL || "gpt-4o-mini";
   return openai.chat(modelId);
+}
+
+// ============================================================================
+// Task Store Configuration
+// ============================================================================
+
+/**
+ * Create the appropriate task store based on environment configuration.
+ *
+ * Uses Redis if UPSTASH_REDIS_REST_URL is configured, otherwise falls back
+ * to InMemoryTaskStore for local development.
+ *
+ * Redis provides:
+ * - Persistent task state across worker restarts
+ * - Multi-agent coordination state
+ * - Task history for observability
+ */
+function createTaskStore(env: PlannerEnv): TaskStore {
+  // Use Redis if configured
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    });
+
+    return new UpstashRedisTaskStore({
+      client: redis,
+      prefix: "a2a:travel:",
+      ttlSeconds: 86400 * 7, // 7 days
+    });
+  }
+
+  // Fall back to in-memory for local development
+  console.warn(
+    "Redis not configured - using InMemoryTaskStore. " +
+      "Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for persistence."
+  );
+  return new InMemoryTaskStore();
 }
 
 // ============================================================================
@@ -97,7 +142,7 @@ app.all("/*", async (c) => {
   // Create A2A request handler with shared Agent Card
   const requestUrl = new URL(c.req.url);
   const agentCard = createTravelPlannerCard(`${requestUrl.protocol}//${requestUrl.host}`);
-  const taskStore = new InMemoryTaskStore();
+  const taskStore = createTaskStore(env);
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
   // Build A2A Hono routes

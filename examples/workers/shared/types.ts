@@ -39,6 +39,29 @@ export interface Env {
 }
 
 /**
+ * Environment bindings for workers that use Redis persistence
+ *
+ * Extends base Env with Upstash Redis credentials.
+ * Use this for workers that need persistent task storage.
+ */
+export interface EnvWithRedis extends Env {
+  /**
+   * Upstash Redis REST URL (SECRET - set via wrangler secret put)
+   */
+  UPSTASH_REDIS_REST_URL: string;
+
+  /**
+   * Upstash Redis REST Token (SECRET - set via wrangler secret put)
+   */
+  UPSTASH_REDIS_REST_TOKEN: string;
+}
+
+/**
  * Hono app type with environment bindings
  */
 export type HonoEnv = { Bindings: Env };
+
+/**
+ * Hono app type with Redis environment bindings
+ */
+export type HonoEnvWithRedis = { Bindings: EnvWithRedis };

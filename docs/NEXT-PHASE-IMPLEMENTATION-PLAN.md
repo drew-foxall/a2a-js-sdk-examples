@@ -103,14 +103,14 @@ However, some agents would benefit from persistent storage:
 | `code-review` | 🟢 InMemory | Single-turn analysis |
 | **`travel-planner`** | 🔴 **Redis** | Multi-agent orchestration, needs coordination |
 | **`airbnb-agent`** | 🔴 **Redis** | Part of multi-agent system |
-| **`number-game-alice`** | 🔴 **Redis** | Multi-turn game state |
-| **`number-game-carol`** | 🔴 **Redis** | Multi-turn game state |
+| `number-game-alice` | 🟢 InMemory | Custom JSON-RPC (no SDK task store) |
+| `number-game-carol` | 🟢 InMemory | Custom JSON-RPC (no SDK task store) |
 | **`adversarial-defender`** | 🔴 **Redis** | Conversation history for security testing |
 | **`image-generator`** | 🔴 **Redis** | Long-running DALL-E operations |
 | **`expense-agent`** | 🟡 **Redis** | Multi-step form handling |
 | **`local-llm-chat`** | 🟡 **Redis** | Chat history persistence |
 
-**Summary**: 7 workers need Redis, 10 workers stay with InMemory
+**Summary**: 5 workers use Redis, 12 workers stay with InMemory
 
 #### Step 1.1: Prerequisites
 
@@ -161,8 +161,6 @@ Apply Redis task store to workers that benefit:
 |--------|--------|----------|--------|
 | `travel-planner` | `a2a:travel:` | 🔴 High | Multi-agent orchestration (PoC) |
 | `airbnb-agent` | `a2a:airbnb:` | 🔴 High | Part of travel system |
-| `number-game-alice` | `a2a:alice:` | 🔴 High | Multi-turn game state |
-| `number-game-carol` | `a2a:carol:` | 🔴 High | Multi-turn game state |
 | `adversarial-defender` | `a2a:adversarial:` | 🟡 Medium | Conversation history |
 | `image-generator` | `a2a:image:` | 🟡 Medium | Long-running operations |
 | `expense-agent` | `a2a:expense:` | 🟡 Medium | Multi-step forms |

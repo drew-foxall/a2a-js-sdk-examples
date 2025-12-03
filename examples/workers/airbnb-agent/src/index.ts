@@ -6,8 +6,12 @@
  *
  * The agent connects to the Airbnb MCP Server via HTTP transport, which
  * works in the Cloudflare Workers environment (unlike stdio transport).
+ *
+ * Task Store: Uses Redis for persistent task state (part of multi-agent system)
  */
 
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
@@ -31,6 +35,35 @@ import { getModel } from "../../shared/utils.js";
 interface Env extends BaseEnv {
   AIRBNB_MCP_URL?: string;
   AIRBNB_MCP?: Fetcher; // Service binding to MCP server
+  // Redis persistence (for task store)
+  UPSTASH_REDIS_REST_URL?: string;
+  UPSTASH_REDIS_REST_TOKEN?: string;
+}
+
+// ============================================================================
+// Task Store Configuration
+// ============================================================================
+
+/**
+ * Create the appropriate task store based on environment configuration.
+ * Uses Redis if configured (for multi-agent coordination with travel-planner).
+ */
+function createTaskStore(env: Env): TaskStore {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    });
+
+    return new UpstashRedisTaskStore({
+      client: redis,
+      prefix: "a2a:airbnb:",
+      ttlSeconds: 86400 * 7, // 7 days
+    });
+  }
+
+  // Fall back to in-memory for local development
+  return new InMemoryTaskStore();
 }
 
 type HonoEnv = {
@@ -279,7 +312,7 @@ app.all("/*", async (c, next) => {
       includeHistory: true,
     });
 
-    const taskStore: TaskStore = new InMemoryTaskStore();
+    const taskStore = createTaskStore(c.env);
     const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
     const a2aRouter = new Hono();
