@@ -17,6 +17,11 @@ build/
 # Cloudflare Workers secrets (NEVER commit these!)
 .dev.vars
 workers/**/.dev.vars
+**/.dev.vars
+
+# Wrangler local state
+.wrangler/
+**/.wrangler/
 
 # IDE
 .vscode/
