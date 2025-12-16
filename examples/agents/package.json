@@ -51,7 +51,7 @@
     "@ai-sdk/mistral": "3.0.0-beta.26",
     "@ai-sdk/openai": "3.0.0-beta.61",
     "@drew-foxall/a2a-ai-sdk-adapter": "workspace:*",
-    "@drew-foxall/a2a-js-sdk": "^0.4.1",
+    "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "@hono/node-server": "^1.19.6",
     "@modelcontextprotocol/sdk": "^1.23.0",
     "@octokit/rest": "22.0.1",

@@ -60,8 +60,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/a2a-ai-sdk-adapter
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/workflow-ai':
         specifier: ^0.1.0
         version: 0.1.0(ai@6.0.0-beta.99(zod@4.1.13))(workflow@4.0.1-beta.24(@aws-sdk/client-sts@3.943.0)(@opentelemetry/api@1.9.0)(magicast@0.5.1)(next@16.0.6(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.9.3))
@@ -131,10 +131,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/a2a-js-taskstore-upstash-redis':
         specifier: ^0.1.0
         version: 0.1.0(@a2a-js/sdk@0.3.5(express@5.1.0))(@upstash/redis@1.35.7)
@@ -174,10 +174,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/a2a-js-taskstore-upstash-redis':
         specifier: ^0.1.0
         version: 0.1.0(@a2a-js/sdk@0.3.5(express@5.1.0))(@upstash/redis@1.35.7)
@@ -239,10 +239,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -276,10 +276,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -313,10 +313,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -350,10 +350,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -387,10 +387,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -424,10 +424,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -455,10 +455,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/a2a-js-taskstore-upstash-redis':
         specifier: ^0.1.0
         version: 0.1.0(@a2a-js/sdk@0.3.5(express@5.1.0))(@upstash/redis@1.35.7)
@@ -513,10 +513,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/a2a-js-taskstore-upstash-redis':
         specifier: ^0.1.0
         version: 0.1.0(@a2a-js/sdk@0.3.5(express@5.1.0))(@upstash/redis@1.35.7)
@@ -556,10 +556,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@octokit/rest':
         specifier: ^21.0.0
         version: 21.1.1
@@ -593,10 +593,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -627,10 +627,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/a2a-js-taskstore-upstash-redis':
         specifier: ^0.1.0
         version: 0.1.0(@a2a-js/sdk@0.3.5(express@5.1.0))(@upstash/redis@1.35.7)
@@ -670,10 +670,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -697,8 +697,8 @@ importers:
   examples/workers/number-game-alice:
     dependencies:
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       hono:
         specifier: ^4.10.7
         version: 4.10.7
@@ -713,8 +713,8 @@ importers:
   examples/workers/number-game-carol:
     dependencies:
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       hono:
         specifier: ^4.10.7
         version: 4.10.7
@@ -760,10 +760,10 @@ importers:
         version: link:../../../packages/a2a-ai-provider-v3
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@drew-foxall/a2a-js-taskstore-upstash-redis':
         specifier: ^0.1.0
         version: 0.1.0(@a2a-js/sdk@0.3.5(express@5.1.0))(@upstash/redis@1.35.7)
@@ -803,10 +803,10 @@ importers:
         version: 3.0.0-beta.61(zod@4.1.13)
       '@drew-foxall/a2a-ai-sdk-adapter':
         specifier: ^1.0.2
-        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
+        version: 1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       a2a-agents:
         specifier: workspace:*
         version: link:../../agents
@@ -836,8 +836,8 @@ importers:
         specifier: 4.0.0-beta.41
         version: 4.0.0-beta.41(zod@4.1.13)
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       ai:
         specifier: '>=6.0.0-beta.0'
         version: 6.0.0-beta.99(zod@4.1.13)
@@ -861,8 +861,8 @@ importers:
         specifier: 2.3.8
         version: 2.3.8
       '@drew-foxall/a2a-js-sdk':
-        specifier: ^0.4.1
-        version: 0.4.1(express@5.1.0)(hono@4.10.7)
+        specifier: ^0.4.2
+        version: 0.4.2(express@5.1.0)(hono@4.10.7)
       '@total-typescript/tsconfig':
         specifier: 1.0.4
         version: 1.0.4
@@ -1382,8 +1382,8 @@ packages:
       ai: ^6.0.0
       uuid: ^11.0.0
 
-  '@drew-foxall/a2a-js-sdk@0.4.1':
-    resolution: {integrity: sha512-0vtkyHZCtDBT65V76hM6xJepS+BqP7oQ5Q/eOx0ytE6NaQKwLkg5zDb+5ctltBYypMfVlo52Rzw3vCWVmfPXtQ==}
+  '@drew-foxall/a2a-js-sdk@0.4.2':
+    resolution: {integrity: sha512-wOvZlVJD04k3kna6poWWR5X6SkPB1tMGFu8xPCPszNcgXEbG63lFpJGkiX22mOPXQr/KXZMY2EemnFXsgEMCkQ==}
     engines: {node: '>=15'}
     peerDependencies:
       express: ^4.21.2 || ^5.1.0
@@ -5705,13 +5705,13 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@drew-foxall/a2a-ai-sdk-adapter@1.0.2(@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)':
+  '@drew-foxall/a2a-ai-sdk-adapter@1.0.2(@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7))(ai@6.0.0-beta.99(zod@4.1.13))(uuid@13.0.0)':
     dependencies:
-      '@drew-foxall/a2a-js-sdk': 0.4.1(express@5.1.0)(hono@4.10.7)
+      '@drew-foxall/a2a-js-sdk': 0.4.2(express@5.1.0)(hono@4.10.7)
       ai: 6.0.0-beta.99(zod@4.1.13)
       uuid: 13.0.0
 
-  '@drew-foxall/a2a-js-sdk@0.4.1(express@5.1.0)(hono@4.10.7)':
+  '@drew-foxall/a2a-js-sdk@0.4.2(express@5.1.0)(hono@4.10.7)':
     dependencies:
       uuid: 11.1.0
     optionalDependencies:

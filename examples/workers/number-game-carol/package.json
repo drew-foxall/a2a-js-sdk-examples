@@ -9,7 +9,7 @@
     "tail": "wrangler tail"
   },
   "dependencies": {
-    "@drew-foxall/a2a-js-sdk": "^0.4.1",
+    "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "hono": "^4.10.7"
   },
   "devDependencies": {

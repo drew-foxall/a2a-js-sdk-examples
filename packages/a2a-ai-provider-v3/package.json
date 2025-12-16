@@ -43,7 +43,7 @@
   "dependencies": {
     "@ai-sdk/provider": "3.0.0-beta.16",
     "@ai-sdk/provider-utils": "4.0.0-beta.41",
-    "@drew-foxall/a2a-js-sdk": "^0.4.1"
+    "@drew-foxall/a2a-js-sdk": "^0.4.2"
   },
   "devDependencies": {
     "@total-typescript/tsconfig": "1.0.4",
