@@ -2,32 +2,23 @@
  * Expense Agent Tests
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { ToolLoopAgent } from "ai";
+import { MockLanguageModelV3 } from "ai/test";
+import { describe, expect, it } from "vitest";
 import { createExpenseAgent } from "./agent";
 import { getExpenseAgentPrompt } from "./prompt";
-
-// Mock the AI SDK
-vi.mock("ai", () => ({
-  ToolLoopAgent: vi.fn().mockImplementation((config) => ({
-    config,
-    tools: config.tools,
-    generate: vi.fn().mockResolvedValue({
-      text: "Expense submitted successfully",
-    }),
-  })),
-}));
 
 describe("Expense Agent", () => {
   describe("createExpenseAgent", () => {
     it("should create an agent", () => {
-      const mockModel = {} as Parameters<typeof createExpenseAgent>[0];
+      const mockModel = new MockLanguageModelV3();
       const agent = createExpenseAgent(mockModel);
 
-      expect(agent).toBeDefined();
+      expect(agent).toBeInstanceOf(ToolLoopAgent);
     });
 
     it("should have submit_expense tool", () => {
-      const mockModel = {} as Parameters<typeof createExpenseAgent>[0];
+      const mockModel = new MockLanguageModelV3();
       const agent = createExpenseAgent(mockModel);
 
       expect(agent.tools).toHaveProperty("submit_expense");

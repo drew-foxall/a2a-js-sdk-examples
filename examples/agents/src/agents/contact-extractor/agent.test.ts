@@ -2,27 +2,19 @@
  * Contact Extractor Agent Tests
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { ToolLoopAgent } from "ai";
+import { MockLanguageModelV3 } from "ai/test";
+import { describe, expect, it } from "vitest";
 import { createContactExtractorAgent } from "./agent";
 import { getContactExtractorPrompt } from "./prompt";
-
-// Mock the AI SDK
-vi.mock("ai", () => ({
-  ToolLoopAgent: vi.fn().mockImplementation((config) => ({
-    config,
-    generate: vi.fn().mockResolvedValue({
-      text: "Contact extracted:\n- Name: John Doe\n- Email: john@example.com\n- Phone: +1-555-123-4567",
-    }),
-  })),
-}));
 
 describe("Contact Extractor Agent", () => {
   describe("createContactExtractorAgent", () => {
     it("should create an agent", () => {
-      const mockModel = {} as Parameters<typeof createContactExtractorAgent>[0];
+      const mockModel = new MockLanguageModelV3();
       const agent = createContactExtractorAgent(mockModel);
 
-      expect(agent).toBeDefined();
+      expect(agent).toBeInstanceOf(ToolLoopAgent);
     });
   });
 

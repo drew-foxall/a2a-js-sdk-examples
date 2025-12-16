@@ -16,15 +16,15 @@
  */
 
 import { createOpenAI } from "@ai-sdk/openai";
-import { Redis } from "@upstash/redis";
-import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import {
   DefaultRequestHandler,
   InMemoryTaskStore,
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
+import { Redis } from "@upstash/redis";
 // Import shared agent logic and card from a2a-agents
 import { createPlannerAgent, createTravelPlannerCard } from "a2a-agents";
 import { Hono } from "hono";
@@ -50,6 +50,9 @@ function getModel(env: PlannerEnv) {
 // ============================================================================
 // Task Store Configuration
 // ============================================================================
+
+// Module-level logger for use outside request handlers
+const moduleLogger: Logger = ConsoleLogger.create();
 
 /**
  * Create the appropriate task store based on environment configuration.
@@ -78,9 +81,8 @@ function createTaskStore(env: PlannerEnv): TaskStore {
   }
 
   // Fall back to in-memory for local development
-  console.warn(
-    "Redis not configured - using InMemoryTaskStore. " +
-      "Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for persistence."
+  moduleLogger.warn(
+    "Redis not configured - using InMemoryTaskStore. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for persistence."
   );
   return new InMemoryTaskStore();
 }
@@ -145,8 +147,9 @@ app.all("/*", async (c) => {
   const taskStore = createTaskStore(env);
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
-  // Build A2A Hono routes
-  const a2aApp = new A2AHonoApp(requestHandler);
+  // Build A2A Hono routes with native logger
+  const logger: Logger = ConsoleLogger.create();
+  const a2aApp = new A2AHonoApp(requestHandler, { logger });
   const subApp = new Hono();
   a2aApp.setupRoutes(subApp);
 

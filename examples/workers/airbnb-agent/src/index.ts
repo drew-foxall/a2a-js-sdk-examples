@@ -20,7 +20,7 @@ import {
   InMemoryTaskStore,
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { jsonSchema, type LanguageModel, ToolLoopAgent } from "ai";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -316,7 +316,8 @@ app.all("/*", async (c, next) => {
     const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
     const a2aRouter = new Hono();
-    const appBuilder = new A2AHonoApp(requestHandler);
+    const logger: Logger = ConsoleLogger.create();
+    const appBuilder = new A2AHonoApp(requestHandler, { logger });
     appBuilder.setupRoutes(a2aRouter);
 
     const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);
@@ -327,7 +328,13 @@ app.all("/*", async (c, next) => {
 
     return next();
   } catch (error) {
-    console.error("Airbnb Agent Error:", error);
+    const errorLogger: Logger = ConsoleLogger.create();
+    errorLogger.error("Airbnb Agent Error", {
+      error:
+        error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack }
+          : { name: "UnknownError", message: String(error) },
+    });
     return c.json(
       {
         error: "Internal Server Error",

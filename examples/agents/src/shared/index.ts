@@ -30,19 +30,19 @@ export { createLocalLLMChatAgent } from "../agents/local-llm-chat/agent.js";
 // API-integrated agents
 export { createMovieAgent } from "../agents/movie-agent/agent.js";
 export {
+  type AgentArtifact,
+  type AgentArtifactPart,
+  type AgentContext,
   createPlannerAgent,
   type PlannerAgentConfig,
   type SendMessageFn,
   type SendMessageOptions,
+  type SendMessageResult,
 } from "../agents/travel-planner-multiagent/planner/agent.js";
-// Agent discovery (for building registries)
+// Agent discovery URLs (discovery is handled by @drew-foxall/a2a-ai-provider-v3)
 export {
-  type AgentDiscoveryConfig,
-  AgentRegistry,
   DEFAULT_LOCAL_AGENT_URLS,
   DEFAULT_WORKER_AGENT_URLS,
-  fetchAgentCard,
-  type RegisteredAgent,
 } from "../agents/travel-planner-multiagent/planner/agent-discovery.js";
 // Multi-agent system
 export { createWeatherAgent } from "../agents/travel-planner-multiagent/weather-agent/agent.js";

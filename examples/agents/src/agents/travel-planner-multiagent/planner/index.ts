@@ -7,6 +7,13 @@
  * - Single sendMessage tool for routing to any agent
  * - Active agent state tracking for follow-ups
  *
+ * V3 PROVIDER CAPABILITIES LEVERAGED:
+ * - discoverAgent() with supportsCapability() for capability checking
+ * - contextId/taskId for multi-turn conversation continuity
+ * - providerMetadata.a2a for input-required detection
+ * - Artifact extraction from responses
+ * - Rich task state handling
+ *
  * Port: 41254
  *
  * Usage:
@@ -17,7 +24,15 @@
  *   pnpm agents:travel-planner
  */
 
+import {
+  type A2aProviderMetadata,
+  a2aV3,
+  discoverAgent,
+  supportsCapability,
+  toJSONObject,
+} from "@drew-foxall/a2a-ai-provider-v3";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
   DefaultRequestHandler,
@@ -26,17 +41,18 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { serve } from "@hono/node-server";
-import { a2a } from "a2a-ai-provider";
 import { generateText } from "ai";
 import { Hono } from "hono";
 import { loadEnv } from "../../../shared/load-env.js";
 import { getModel } from "../../../shared/utils.js";
-import { createPlannerAgent, type SendMessageFn } from "./agent.js";
 import {
-  type AgentDiscoveryConfig,
-  AgentRegistry,
-  DEFAULT_LOCAL_AGENT_URLS,
-} from "./agent-discovery.js";
+  type AgentArtifact,
+  type AgentContext,
+  createPlannerAgent,
+  type SendMessageFn,
+  type SendMessageResult,
+} from "./agent.js";
+import { DEFAULT_LOCAL_AGENT_URLS } from "./agent-discovery.js";
 import { createTravelPlannerCard } from "./card.js";
 
 // Load environment variables
@@ -55,42 +71,179 @@ const WEATHER_AGENT_URL = process.env.WEATHER_AGENT_URL || DEFAULT_LOCAL_AGENT_U
 const AIRBNB_AGENT_URL = process.env.AIRBNB_AGENT_URL || DEFAULT_LOCAL_AGENT_URLS.airbnbAgent;
 
 // ============================================================================
-// HTTP-based sendMessage (Local Development)
+// Agent Registry with V3 Discovery
 // ============================================================================
 
 /**
- * Create an HTTP-based sendMessage function using a2a-ai-provider
+ * Registered agent info with full V3 capabilities
+ */
+interface RegisteredAgent {
+  name: string;
+  description: string;
+  url: string;
+  /** Full agent card for capability checking */
+  card?: AgentCard;
+  /** Whether agent supports streaming */
+  supportsStreaming: boolean;
+}
+
+/**
+ * Agent registry using V3 provider discovery with capability checking
+ */
+class AgentRegistry {
+  private agents = new Map<string, RegisteredAgent>();
+
+  /**
+   * Discover an agent using V3 provider's discoverAgent helper
+   * Stores full agent card for capability checking
+   */
+  async discover(url: string, fallback?: { name: string; description: string }): Promise<void> {
+    try {
+      const { agentUrl, agentCard } = await discoverAgent(url);
+
+      // Check capabilities using V3 helper
+      const supportsStreaming = supportsCapability(agentCard, "streaming");
+
+      this.agents.set(agentCard.name, {
+        name: agentCard.name,
+        description: agentCard.description ?? `Agent at ${url}`,
+        url: agentUrl,
+        card: agentCard,
+        supportsStreaming,
+      });
+
+      console.log(
+        `   ✓ ${agentCard.name}: streaming=${supportsStreaming}, skills=${agentCard.skills?.length ?? 0}`
+      );
+    } catch (error) {
+      if (fallback) {
+        this.agents.set(fallback.name, {
+          ...fallback,
+          url,
+          supportsStreaming: false, // Assume no streaming if discovery failed
+        });
+        console.warn(`   ⚠ Discovery failed for ${url}, using fallback: ${fallback.name}`);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  getAgent(name: string): RegisteredAgent | undefined {
+    return this.agents.get(name);
+  }
+
+  getAgentNames(): string[] {
+    return Array.from(this.agents.keys());
+  }
+
+  getAllAgents(): RegisteredAgent[] {
+    return Array.from(this.agents.values());
+  }
+
+  /**
+   * Build agent roster with capability info for prompt injection
+   */
+  buildAgentRoster(): string {
+    return this.getAllAgents()
+      .map((agent) =>
+        JSON.stringify({
+          name: agent.name,
+          description: agent.description,
+          capabilities: {
+            streaming: agent.supportsStreaming,
+          },
+        })
+      )
+      .join("\n");
+  }
+}
+
+// ============================================================================
+// V3-Enhanced sendMessage Implementation
+// ============================================================================
+
+/**
+ * Extract artifacts from V3 provider metadata
+ */
+function extractArtifacts(metadata: A2aProviderMetadata | undefined): AgentArtifact[] {
+  if (!metadata?.artifacts) return [];
+
+  return metadata.artifacts.map((artifact) => ({
+    artifactId: artifact.artifactId ?? "unknown",
+    name: artifact.name ?? undefined,
+    description: artifact.description ?? undefined,
+    parts:
+      artifact.parts?.map((part) => ({
+        kind: part.kind as "text" | "file" | "data",
+        text: part.text ?? undefined,
+        data: part.data ?? undefined,
+        file: part.file ?? undefined,
+      })) ?? [],
+  }));
+}
+
+/**
+ * Create an HTTP-based sendMessage function using a2a-ai-provider-v3
  *
- * This is the local development implementation that uses standard HTTP
- * to communicate with other agents via the A2A protocol.
+ * LEVERAGES V3 CAPABILITIES:
+ * - providerOptions.a2a for contextId/taskId continuity
+ * - providerMetadata.a2a for rich response metadata
+ * - inputRequired flag for multi-turn handling
+ * - Artifact extraction
+ * - Task state mapping
  *
  * NOTE: Uses generateText (non-streaming) for agent-to-agent communication.
- * This matches the Python reference implementation which uses a simple
- * request/response pattern for send_message. The orchestrator needs the
- * complete response to decide what to do next (e.g., route to another agent).
- *
+ * The orchestrator needs the complete response to decide what to do next.
  * Streaming to the USER is handled by the A2AAdapter wrapping the ToolLoopAgent.
  */
 function createHttpSendMessage(registry: AgentRegistry): SendMessageFn {
-  return async (agentName, task, _options) => {
+  return async (agentName, task, options): Promise<SendMessageResult> => {
     const agent = registry.getAgent(agentName);
     if (!agent) {
-      return `Error: Agent "${agentName}" not found. Available: ${registry.getAgentNames().join(", ")}`;
+      return {
+        text: `Error: Agent "${agentName}" not found. Available: ${registry.getAgentNames().join(", ")}`,
+        inputRequired: false,
+        artifacts: [],
+      };
     }
 
     try {
-      // Use a2a-ai-provider to call the agent as an AI SDK model
-      // generateText is correct here - we need the full response for tool execution
-      // (Same pattern as Python's await client.send_message())
+      // Use a2a-ai-provider-v3 with full providerOptions support
       const result = await generateText({
-        model: a2a(agent.url),
+        model: a2aV3(agent.url),
         prompt: task,
+        // V3 Provider Options for context continuity
+        providerOptions: {
+          a2a: {
+            contextId: options?.contextId,
+            taskId: options?.taskId,
+            metadata: options?.metadata ? toJSONObject(options.metadata) : undefined,
+          },
+        },
       });
 
-      return result.text;
+      // Extract V3 provider metadata
+      const a2aMetadata = result.providerMetadata?.a2a as A2aProviderMetadata | undefined;
+
+      // Build rich result with all V3 metadata
+      return {
+        text: result.text,
+        taskId: a2aMetadata?.taskId ?? undefined,
+        contextId: a2aMetadata?.contextId ?? undefined,
+        inputRequired: a2aMetadata?.inputRequired ?? false,
+        taskState: a2aMetadata?.taskState ?? undefined,
+        artifacts: extractArtifacts(a2aMetadata),
+        metadata: a2aMetadata?.metadata ?? undefined,
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      return `Error communicating with ${agent.name}: ${errorMessage}`;
+      return {
+        text: `Error communicating with ${agent.name}: ${errorMessage}`,
+        inputRequired: false,
+        artifacts: [],
+        taskState: "failed",
+      };
     }
   };
 }
@@ -103,38 +256,35 @@ async function main() {
   console.log(`
 🎭 Travel Planner Orchestrator - Starting...
 
-🔍 Discovering specialist agents...
+🔍 Discovering specialist agents (using a2a-ai-provider-v3)...
    - Weather Agent: ${WEATHER_AGENT_URL}
    - Airbnb Agent: ${AIRBNB_AGENT_URL}
 `);
 
-  // Build discovery configs
-  const discoveryConfigs: AgentDiscoveryConfig[] = [
-    {
-      url: WEATHER_AGENT_URL,
-      fallbackName: "Weather Agent",
-      fallbackDescription: "Provides weather forecasts for any location worldwide",
-    },
-    {
-      url: AIRBNB_AGENT_URL,
-      fallbackName: "Airbnb Agent",
-      fallbackDescription: "Searches for Airbnb accommodations",
-    },
-  ];
-
-  // Discover agents
+  // Discover agents using V3 provider's discovery helpers
   const registry = new AgentRegistry();
-  await registry.discoverAgents(discoveryConfigs);
 
-  console.log(`✅ Discovered ${registry.getAllAgents().length} agents:`);
-  for (const agent of registry.getAllAgents()) {
-    console.log(`   - ${agent.name}: ${agent.description}`);
-  }
+  await Promise.all([
+    registry.discover(WEATHER_AGENT_URL, {
+      name: "Weather Agent",
+      description: "Provides weather forecasts for any location worldwide",
+    }),
+    registry.discover(AIRBNB_AGENT_URL, {
+      name: "Airbnb Agent",
+      description: "Searches for Airbnb accommodations",
+    }),
+  ]);
+
+  console.log(`
+✅ Discovered ${registry.getAllAgents().length} agents with capabilities`);
 
   // Track active agent state
   let activeAgent: string | null = null;
 
-  // Create the planner agent with HTTP-based sendMessage
+  // Track agent contexts for conversation continuity (V3 feature)
+  const agentContexts = new Map<string, AgentContext>();
+
+  // Create the planner agent with V3-enhanced sendMessage
   const plannerAgent = createPlannerAgent({
     model: getModel(),
     agentRoster: registry.buildAgentRoster(),
@@ -143,7 +293,14 @@ async function main() {
     sendMessage: createHttpSendMessage(registry),
     onActiveAgentChange: (name) => {
       activeAgent = name;
-      console.log(`📌 Active agent changed to: ${name}`);
+      console.log(`📌 Active agent: ${name}`);
+    },
+    // V3 context tracking
+    agentContexts,
+    onAgentContextUpdate: (name, context) => {
+      console.log(
+        `🔄 Context updated for ${name}: taskId=${context.taskId}, contextId=${context.contextId}, inputRequired=${context.inputRequired}`
+      );
     },
   });
 
@@ -169,15 +326,16 @@ async function main() {
 📋 Agent Card: ${BASE_URL}/.well-known/agent-card.json
 
 🤖 Agent: Travel Planner (Orchestrator)
-🔧 Framework: AI SDK v6 (ToolLoopAgent) + a2a-ai-provider + A2A Protocol
+🔧 Framework: AI SDK v6 (ToolLoopAgent) + a2a-ai-provider-v3 + A2A Protocol
 🧠 Model: ${process.env.AI_PROVIDER || "openai"} / ${process.env.AI_MODEL || "default"}
 🌊 Streaming: ENABLED
 
-✨ Python Pattern Implementation:
-   - Dynamic agent discovery (fetches Agent Cards at startup)
-   - Single sendMessage tool for routing
-   - Active agent state tracking for follow-ups
-   - Agent roster injected into prompt
+✨ V3 Provider Capabilities:
+   - Agent discovery with capability checking
+   - Context continuity (contextId/taskId)
+   - Input-required state handling
+   - Artifact extraction from sub-agents
+   - Rich task state metadata
 
 📝 Try it:
    curl -X POST ${BASE_URL}/ \\

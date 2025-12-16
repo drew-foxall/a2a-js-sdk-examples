@@ -30,7 +30,7 @@ import {
   InMemoryTaskStore,
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { A2AHonoApp, ConsoleLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
 // Import weather tools from agents package (reuse the actual implementation)
 import {
   getWeatherAgentPrompt,
@@ -254,7 +254,8 @@ app.all("/*", async (c, next) => {
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
   const a2aRouter = new Hono();
-  const appBuilder = new A2AHonoApp(requestHandler);
+  const logger = ConsoleLogger.create();
+  const appBuilder = new A2AHonoApp(requestHandler, { logger });
   appBuilder.setupRoutes(a2aRouter);
 
   const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);

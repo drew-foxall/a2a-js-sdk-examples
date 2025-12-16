@@ -64,6 +64,12 @@ import type {
   ExecutionEventBus,
   RequestContext,
 } from "@drew-foxall/a2a-js-sdk/server";
+import {
+  type LogContext,
+  type Logger,
+  ConsoleLogger as SDKConsoleLogger,
+  NoopLogger as SDKNoopLogger,
+} from "@drew-foxall/a2a-js-sdk/server/hono";
 import type { ModelMessage, ToolLoopAgent, ToolSet } from "ai";
 import { v4 as uuidv4 } from "uuid";
 
@@ -113,57 +119,32 @@ import { v4 as uuidv4 } from "uuid";
 /**
  * Logger interface for A2AAdapter
  *
+ * Re-exports the Logger interface from @drew-foxall/a2a-js-sdk for consistency.
  * Allows consumers to inject custom logging implementations
  * (Winston, Pino, Bunyan, etc.) or create mock loggers for testing.
+ *
+ * @deprecated Use Logger from @drew-foxall/a2a-js-sdk/server/hono directly
  */
-export interface A2ALogger {
-  debug(message: string, meta?: Record<string, unknown>): void;
-  info(message: string, meta?: Record<string, unknown>): void;
-  warn(message: string, meta?: Record<string, unknown>): void;
-  error(message: string, meta?: Record<string, unknown>): void;
-}
+export type A2ALogger = Logger;
+
+/**
+ * Re-export LogContext for convenience
+ */
+export type { LogContext };
 
 /**
  * Default console logger implementation
+ *
+ * @deprecated Use ConsoleLogger from @drew-foxall/a2a-js-sdk/server/hono directly
  */
-export class ConsoleLogger implements A2ALogger {
-  constructor(private prefix: string = "[A2AAdapter]") {}
-
-  debug(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
-    console.log(`${this.prefix} [DEBUG] ${message}${metaStr}`);
-  }
-
-  info(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
-    console.log(`${this.prefix} [INFO] ${message}${metaStr}`);
-  }
-
-  warn(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
-    console.warn(`${this.prefix} [WARN] ${message}${metaStr}`);
-  }
-
-  error(message: string, meta?: Record<string, unknown>): void {
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
-    console.error(`${this.prefix} [ERROR] ${message}${metaStr}`);
-  }
-}
+export const ConsoleLogger = SDKConsoleLogger;
 
 /**
  * No-op logger for when debug is disabled
- * Still logs errors to ensure critical issues are visible
+ *
+ * @deprecated Use NoopLogger from @drew-foxall/a2a-js-sdk/server/hono directly
  */
-export class NoOpLogger implements A2ALogger {
-  debug(): void {}
-  info(): void {}
-  warn(): void {}
-  error(message: string, meta?: Record<string, unknown>): void {
-    // Always log errors even in production
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
-    console.error(`[A2AAdapter] ERROR: ${message}${metaStr}`);
-  }
-}
+export const NoOpLogger = SDKNoopLogger;
 
 /**
  * Context provided to generateArtifacts function
@@ -368,22 +349,26 @@ export interface A2AAdapterConfig {
   /**
    * Custom logger implementation
    *
-   * If not provided, uses ConsoleLogger (when debug: true) or NoOpLogger.
+   * If not provided, uses ConsoleLogger (when debug: true) or NoopLogger from @drew-foxall/a2a-js-sdk.
    * Allows integration with Winston, Pino, Bunyan, or any custom logging system.
    *
    * @example
+   * // Using the SDK's ConsoleLogger
+   * import { ConsoleLogger } from '@drew-foxall/a2a-js-sdk/server/hono';
+   * logger: ConsoleLogger.create()
+   *
    * // Using Winston
    * import winston from 'winston';
    * const winstonLogger = winston.createLogger({...});
    *
    * logger: {
-   *   debug: (msg, meta) => winstonLogger.debug(msg, meta),
-   *   info: (msg, meta) => winstonLogger.info(msg, meta),
-   *   warn: (msg, meta) => winstonLogger.warn(msg, meta),
-   *   error: (msg, meta) => winstonLogger.error(msg, meta),
+   *   debug: (msg, ctx) => winstonLogger.debug(msg, ctx),
+   *   info: (msg, ctx) => winstonLogger.info(msg, ctx),
+   *   warn: (msg, ctx) => winstonLogger.warn(msg, ctx),
+   *   error: (msg, ctx) => winstonLogger.error(msg, ctx),
    * }
    */
-  logger?: A2ALogger;
+  logger?: Logger;
 }
 
 /**
@@ -413,7 +398,7 @@ export interface A2AAdapterConfig {
  */
 export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecutor {
   private cancelledTasks = new Set<string>();
-  private logger: A2ALogger;
+  private logger: Logger;
   private config: Required<
     Omit<
       A2AAdapterConfig,
@@ -459,16 +444,15 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       buildFinalMessage: config?.buildFinalMessage,
     };
 
+    // Initialize logger first so we can use it for warnings
+    this.logger = config?.logger || (this.config.debug ? SDKConsoleLogger.create() : SDKNoopLogger);
+
     // Validate mode-specific config
     if (config.mode === "generate" && config.parseArtifacts) {
-      this.logger = config?.logger || new ConsoleLogger();
       this.logger.warn(
         "parseArtifacts is ignored in 'generate' mode. Use 'stream' mode for incremental artifact parsing."
       );
     }
-
-    // Initialize logger
-    this.logger = config?.logger || (this.config.debug ? new ConsoleLogger() : new NoOpLogger());
   }
 
   /**
@@ -543,7 +527,10 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       }
     } catch (error: unknown) {
       const errorMessage = this.getErrorMessage(error);
-      this.logger.error("Error in task", { taskId, error: errorMessage });
+      this.logger.error("Error in task", {
+        taskId,
+        error: this.toLogContextError(error),
+      });
       this.publishFailure(taskId, contextId, errorMessage, eventBus);
     } finally {
       // Clean up cancelled tasks
@@ -643,8 +630,10 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
           count: artifacts.length,
         });
       } catch (error: unknown) {
-        const errorMessage = this.getErrorMessage(error);
-        this.logger.error("Error generating artifacts", { taskId, error: errorMessage });
+        this.logger.error("Error generating artifacts", {
+          taskId,
+          error: this.toLogContextError(error),
+        });
         // Don't fail the task - just log the error and continue
       }
     }
@@ -1013,7 +1002,10 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       final: true,
     };
     eventBus.publish(failureUpdate);
-    this.logger.error("Task failed", { taskId, error: errorMessage });
+    this.logger.error("Task failed", {
+      taskId,
+      error: { name: "TaskError", message: errorMessage },
+    });
   }
 
   /**
@@ -1054,6 +1046,23 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       return String(error.message);
     }
     return "Unknown error occurred";
+  }
+
+  /**
+   * Convert an unknown error to LogContextError format
+   */
+  private toLogContextError(error: unknown): LogContext["error"] {
+    if (error instanceof Error) {
+      return {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      };
+    }
+    return {
+      name: "UnknownError",
+      message: this.getErrorMessage(error),
+    };
   }
 
   /**

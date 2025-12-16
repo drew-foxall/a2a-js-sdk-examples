@@ -20,7 +20,7 @@ import {
   InMemoryTaskStore,
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { A2AHonoApp, ConsoleLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createImageGeneratorAgent } from "a2a-agents";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -148,7 +148,8 @@ app.all("/*", async (c, next) => {
   );
 
   const a2aRouter = new Hono();
-  const appBuilder = new A2AHonoApp(requestHandler);
+  const logger = ConsoleLogger.create();
+  const appBuilder = new A2AHonoApp(requestHandler, { logger });
   appBuilder.setupRoutes(a2aRouter);
 
   const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);

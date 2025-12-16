@@ -27,7 +27,7 @@ import {
   InMemoryTaskStore,
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createWorld } from "@drew-foxall/upstash-workflow-world";
 // Import agent factory from the shared agents package
 import { createDiceAgent } from "a2a-agents";
@@ -99,6 +99,9 @@ function createAgentCard(baseUrl: string): AgentCard {
 // Task Store Factory
 // ============================================================================
 
+// Create a module-level logger for use outside request handlers
+const logger: Logger = ConsoleLogger.create();
+
 /**
  * Creates a task store based on environment configuration.
  * Uses Upstash Redis if credentials are available, otherwise falls back to in-memory.
@@ -114,7 +117,7 @@ function getTaskStore(env: DurableDiceEnv["Bindings"]): TaskStore {
   }
 
   // Fallback to in-memory for local development without Redis
-  console.warn("⚠️ Redis credentials not found, using in-memory task store");
+  logger.warn("Redis credentials not found, using in-memory task store");
   return new InMemoryTaskStore();
 }
 
@@ -187,7 +190,7 @@ app.post("/.well-known/workflow/v1/step", async (c) => {
 
   const handler = world.createQueueHandler("__wkf_step_", async (message, meta) => {
     // The workflow runtime handles step execution
-    console.log(`[workflow] Processing step: ${meta.messageId}`);
+    logger.debug("Processing workflow step", { messageId: meta.messageId });
   });
 
   return handler(c.req.raw);
@@ -202,7 +205,7 @@ app.post("/.well-known/workflow/v1/flow", async (c) => {
 
   const handler = world.createQueueHandler("__wkf_workflow_", async (message, meta) => {
     // The workflow runtime handles workflow execution
-    console.log(`[workflow] Processing workflow: ${meta.messageId}`);
+    logger.debug("Processing workflow", { messageId: meta.messageId });
   });
 
   return handler(c.req.raw);
@@ -234,7 +237,7 @@ app.all("/*", async (c, next) => {
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
 
   const a2aRouter = new Hono();
-  const appBuilder = new A2AHonoApp(requestHandler);
+  const appBuilder = new A2AHonoApp(requestHandler, { logger });
   appBuilder.setupRoutes(a2aRouter);
 
   const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);

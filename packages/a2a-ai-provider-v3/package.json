@@ -1,0 +1,79 @@
+{
+  "name": "@drew-foxall/a2a-ai-provider-v3",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI SDK LanguageModelV3 provider for A2A protocol - enables agent-to-agent communication",
+  "author": "Drew Foxall",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/drew-foxall/a2a-js-sdk-examples/tree/main/packages/a2a-ai-provider-v3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drew-foxall/a2a-js-sdk-examples.git",
+    "directory": "packages/a2a-ai-provider-v3"
+  },
+  "bugs": {
+    "url": "https://github.com/drew-foxall/a2a-js-sdk-examples/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "pnpm exec biome check .",
+    "lint:fix": "pnpm exec biome check --write --unsafe .",
+    "format": "pnpm exec biome format .",
+    "format:write": "pnpm exec biome format --write ."
+  },
+  "dependencies": {
+    "@ai-sdk/provider": "3.0.0-beta.16",
+    "@ai-sdk/provider-utils": "4.0.0-beta.41",
+    "@drew-foxall/a2a-js-sdk": "^0.4.1"
+  },
+  "devDependencies": {
+    "@total-typescript/tsconfig": "1.0.4",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  },
+  "peerDependencies": {
+    "ai": ">=6.0.0-beta.0"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "keywords": [
+    "a2a",
+    "ai-sdk",
+    "language-model",
+    "v3",
+    "agent-to-agent",
+    "multi-agent",
+    "vercel",
+    "streaming",
+    "llm",
+    "ai",
+    "agent",
+    "protocol"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

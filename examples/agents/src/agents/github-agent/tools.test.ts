@@ -1,27 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GitHubCommit, GitHubRepository } from "./tools";
 
-// Mock @octokit/rest
+// Mock @octokit/rest with a proper class constructor
 vi.mock("@octokit/rest", () => {
-  const mockOctokit = vi.fn(() => ({
-    repos: {
-      listForUser: vi.fn(),
-      listForAuthenticatedUser: vi.fn(),
-      listCommits: vi.fn(),
-    },
-    search: {
-      repos: vi.fn(),
-    },
-  }));
-
   return {
-    Octokit: mockOctokit,
+    Octokit: class MockOctokit {
+      repos = {
+        listForUser: vi.fn(),
+        listForAuthenticatedUser: vi.fn(),
+        listCommits: vi.fn(),
+      };
+      search = {
+        repos: vi.fn(),
+      };
+    },
   };
 });
 
 describe("GitHub Agent Tools", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
   });
 
   describe("getRecentCommits", () => {
@@ -31,7 +30,7 @@ describe("GitHub Agent Tools", () => {
       const result = await getRecentCommits("invalid-format", 7, 10);
 
       expect(result.status).toBe("error");
-      expect(result.error).toContain("Invalid repository format");
+      expect(result.error).toBe("Invalid repository format");
     });
 
     it("should validate repository format with slash", () => {
