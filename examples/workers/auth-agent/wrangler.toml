@@ -1,0 +1,38 @@
+name = "a2a-auth-agent"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+# nodejs_compat not required - using edge-compatible dependencies
+
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+
+# ============================================================================
+# Auth Configuration
+# ============================================================================
+# For real OAuth2 provider (Auth0, Okta, etc.), set these via secrets:
+#   wrangler secret put AUTH_DOMAIN
+#   wrangler secret put AUTH_CLIENT_ID
+#   wrangler secret put AUTH_CLIENT_SECRET
+#   wrangler secret put AUTH_AUDIENCE
+#
+# For demo mode, leave unset and the mock provider will be used.
+# ============================================================================
+
+# ============================================================================
+# Task Store (for persistent state)
+# ============================================================================
+# Set these via wrangler secret put:
+#   wrangler secret put UPSTASH_REDIS_REST_URL
+#   wrangler secret put UPSTASH_REDIS_REST_TOKEN
+# ============================================================================
+
+# ============================================================================
+# Environment-specific configuration
+# ============================================================================
+[env.production]
+name = "a2a-auth-agent"
+
+[env.development]
+name = "a2a-auth-agent-dev"
+

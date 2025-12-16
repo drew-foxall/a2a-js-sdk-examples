@@ -356,7 +356,9 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
           ({ a2aMetadata, finishReason } = this.handleStatusUpdate(
             event,
             a2aMetadata,
-            finishReason
+            finishReason,
+            controller,
+            activeTextIds
           ));
         } else if (event.kind === "artifact-update") {
           a2aMetadata = this.handleArtifactUpdate(event, a2aMetadata, controller, activeTextIds);
@@ -400,9 +402,24 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
   private handleStatusUpdate(
     event: A2AStreamEventData & { kind: "status-update" },
     metadata: A2aProviderMetadata,
-    currentFinishReason: LanguageModelV3FinishReason
+    currentFinishReason: LanguageModelV3FinishReason,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
+    activeTextIds: Set<string>
   ) {
     const taskState = event.status?.state ?? null;
+
+    // Stream text content from status message if present
+    // This is the primary mechanism for streaming text deltas per A2A protocol
+    if (event.status?.message?.parts) {
+      const isLastChunk = event.final ?? false;
+      this.enqueueParts(
+        controller,
+        event.status.message.parts,
+        event.status.message.messageId,
+        isLastChunk,
+        activeTextIds
+      );
+    }
 
     let statusMessage: A2aSerializedStatusMessage | null = null;
     if (event.status?.message) {

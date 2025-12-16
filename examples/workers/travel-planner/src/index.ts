@@ -139,6 +139,7 @@ app.all("/*", async (c) => {
   const agentExecutor = new A2AAdapter(plannerAgent, {
     mode: "stream",
     workingMessage: "Planning your trip...",
+    includeHistory: true, // Enable conversation history for multi-turn context
   });
 
   // Create A2A request handler with shared Agent Card

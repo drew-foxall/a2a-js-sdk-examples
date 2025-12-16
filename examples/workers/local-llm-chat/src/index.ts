@@ -6,8 +6,12 @@
  * cloud providers (OpenAI by default) since Workers can't run Ollama.
  *
  * For true edge inference, consider using Cloudflare Workers AI.
+ *
+ * Task Store: Uses Redis for persistent chat history (multi-turn conversations)
  */
 
+import { Redis } from "@upstash/redis";
+import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
 import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
@@ -20,8 +24,44 @@ import { A2AHonoApp, ConsoleLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createLocalLLMChatAgent } from "a2a-agents";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { HonoEnv } from "../../shared/types.js";
+import type { Env as BaseEnv } from "../../shared/types.js";
 import { getModel, getModelInfo } from "../../shared/utils.js";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface Env extends BaseEnv {
+  UPSTASH_REDIS_REST_URL?: string;
+  UPSTASH_REDIS_REST_TOKEN?: string;
+}
+
+type LocalLLMHonoEnv = { Bindings: Env };
+
+// ============================================================================
+// Task Store Configuration
+// ============================================================================
+
+/**
+ * Create the appropriate task store based on environment configuration.
+ * Uses Redis if configured (for chat history persistence).
+ */
+function createTaskStore(env: Env): TaskStore {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    });
+
+    return new UpstashRedisTaskStore({
+      client: redis,
+      prefix: "a2a:local-llm:",
+      ttlSeconds: 86400 * 7, // 7 days
+    });
+  }
+
+  return new InMemoryTaskStore();
+}
 
 /**
  * Agent skill definition for chat
@@ -62,7 +102,7 @@ function createAgentCard(baseUrl: string): AgentCard {
   };
 }
 
-const app = new Hono<HonoEnv>();
+const app = new Hono<LocalLLMHonoEnv>();
 
 // CORS middleware
 app.use(
@@ -100,9 +140,10 @@ app.all("/*", async (c, next) => {
     mode: "stream",
     workingMessage: "Thinking...",
     debug: false,
+    includeHistory: true, // Enable conversation history for multi-turn context
   });
 
-  const taskStore: TaskStore = new InMemoryTaskStore();
+  const taskStore = createTaskStore(c.env);
   const requestHandler = new DefaultRequestHandler(
     agentCard,
     taskStore,

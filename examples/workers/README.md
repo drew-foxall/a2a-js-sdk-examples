@@ -21,17 +21,23 @@ workers/
 ├── shared/                    # 🔧 Shared utilities
 │   ├── types.ts              # Environment type definitions
 │   ├── utils.ts              # Model provider setup (OpenAI, Anthropic, Google)
+│   ├── redis.ts              # Upstash Redis task store utilities
 │   └── package.json          # Shared dependencies
 │
 ├── hello-world/              # 👋 Simple A2A agent
 ├── dice-agent/               # 🎲 Tool-using agent
+├── dice-agent-durable/       # 🎲⚡ Durable dice agent (Workflow DevKit)
 ├── currency-agent/           # 💱 External API integration
 │
 ├── weather-agent/            # 🌤️ Weather specialist (PRIVATE)
 ├── airbnb-agent/             # 🏠 Airbnb specialist (PRIVATE)
 ├── airbnb-mcp-server/        # 🔌 MCP server for Airbnb data
 │
-└── travel-planner/           # ✈️ Multi-agent orchestrator (PUBLIC)
+├── travel-planner/           # ✈️ Multi-agent orchestrator (PUBLIC)
+├── travel-planner-durable/   # ✈️⚡ Durable orchestrator (Workflow DevKit)
+│
+├── image-generator/          # 🎨 DALL-E image generation
+└── image-generator-durable/  # 🎨⚡ Durable image generator (Workflow DevKit)
 ```
 
 ---
@@ -287,7 +293,7 @@ For simple, stateless agents that don't need persistence:
 | `content-planner` | Single-turn outline |
 | `contact-extractor` | Single-turn extraction |
 | `code-review` | Single-turn analysis |
-| `local-llm-chat` | Simple chat |
+| ~~`local-llm-chat`~~ | *Now uses Redis for chat history* |
 | `number-game-alice` | Custom JSON-RPC (no SDK task store) |
 | `number-game-carol` | Custom JSON-RPC (no SDK task store) |
 
@@ -302,6 +308,7 @@ For agents that benefit from persistent task state:
 | `adversarial-defender` | `a2a:adversarial:` | Conversation history for security testing |
 | `image-generator` | `a2a:image:` | Long-running DALL-E operations |
 | `expense-agent` | `a2a:expense:` | Multi-step form handling |
+| `local-llm-chat` | `a2a:local-llm:` | Chat history persistence |
 
 ### Configuring Redis
 
@@ -330,6 +337,48 @@ UPSTASH_REDIS_REST_TOKEN=AXxx...
 | Multi-agent coordination | Single-turn interactions |
 | Long-running operations | Stateless operations |
 | Task history needed | No state needed |
+
+---
+
+## ⚡ Durable Workers (Workflow DevKit)
+
+Some workers have **durable variants** that use [Workflow DevKit](https://useworkflow.dev) for enhanced reliability:
+
+| Worker | Durable Variant | Benefits |
+|--------|----------------|----------|
+| `dice-agent` | `dice-agent-durable` | Step caching, automatic retry |
+| `image-generator` | `image-generator-durable` | Long-running DALL-E with retry |
+| `travel-planner` | `travel-planner-durable` | Multi-agent coordination with retry |
+
+### What Durable Workers Provide
+
+- **Automatic Retry**: Failed API calls retry automatically with backoff
+- **Step Caching**: If a workflow restarts, completed steps return cached results
+- **Observability**: View workflow traces via `npx workflow web`
+- **Fault Tolerance**: Long-running operations survive worker restarts
+
+### Configuring Durable Workers
+
+Durable workers need additional Upstash Redis credentials for Workflow DevKit:
+
+```bash
+# Task Store (same as other Redis workers)
+wrangler secret put UPSTASH_REDIS_REST_URL
+wrangler secret put UPSTASH_REDIS_REST_TOKEN
+
+# Workflow DevKit World (can be same Redis instance)
+wrangler secret put WORKFLOW_UPSTASH_REDIS_REST_URL
+wrangler secret put WORKFLOW_UPSTASH_REDIS_REST_TOKEN
+```
+
+### When to Use Durable Workers
+
+| Use Durable When | Use Standard When |
+|-----------------|------------------|
+| Operations take >30 seconds | Quick responses |
+| Expensive API calls (avoid retries) | Cheap/free operations |
+| Multi-step coordination | Single operation |
+| Need observability traces | Simple debugging |
 
 ---
 

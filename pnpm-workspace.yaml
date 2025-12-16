@@ -3,4 +3,5 @@ packages:
   - 'examples/agents'
   - 'examples/workers/*'
   - 'examples/workers/shared'
+  - 'examples/vercel/*'
 

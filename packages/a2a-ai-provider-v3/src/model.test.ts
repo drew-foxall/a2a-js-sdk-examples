@@ -340,6 +340,102 @@ describe("A2A Flow: Streaming", () => {
     expect(parts.some((p) => p.type === "finish")).toBe(true);
   });
 
+  it("streams text deltas from status-update events", async () => {
+    mockGetAgentCard.mockResolvedValue({ capabilities: { streaming: true } });
+
+    // Simulate incremental text chunks via TaskStatusUpdateEvent
+    const chunk1: TaskStatusUpdateEvent = {
+      kind: "status-update",
+      taskId: "task-123",
+      contextId: "ctx-456",
+      final: false,
+      status: {
+        state: "working",
+        timestamp: new Date().toISOString(),
+        message: {
+          kind: "message",
+          messageId: "msg-1",
+          role: "agent",
+          parts: [{ kind: "text", text: "Hello " }],
+        },
+      },
+    };
+
+    const chunk2: TaskStatusUpdateEvent = {
+      kind: "status-update",
+      taskId: "task-123",
+      contextId: "ctx-456",
+      final: false,
+      status: {
+        state: "working",
+        timestamp: new Date().toISOString(),
+        message: {
+          kind: "message",
+          messageId: "msg-2",
+          role: "agent",
+          parts: [{ kind: "text", text: "World!" }],
+        },
+      },
+    };
+
+    const finalChunk: TaskStatusUpdateEvent = {
+      kind: "status-update",
+      taskId: "task-123",
+      contextId: "ctx-456",
+      final: true,
+      status: {
+        state: "completed",
+        timestamp: new Date().toISOString(),
+        message: {
+          kind: "message",
+          messageId: "msg-final",
+          role: "agent",
+          parts: [{ kind: "text", text: "Complete" }],
+        },
+      },
+    };
+
+    async function* streamEvents() {
+      yield chunk1;
+      yield chunk2;
+      yield finalChunk;
+    }
+    mockSendMessageStream.mockReturnValue(streamEvents());
+
+    const model = a2aV3("http://localhost:3001");
+    const { stream } = await model.doStream({
+      inputFormat: "prompt",
+      mode: { type: "regular" },
+      prompt: [{ role: "user", content: [{ type: "text", text: "Test streaming" }] }],
+    });
+
+    const parts: { type: string; delta?: string; id?: string }[] = [];
+    const reader = stream.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value as { type: string; delta?: string; id?: string });
+    }
+
+    // Should have text-start, text-delta events for each chunk
+    const textStarts = parts.filter((p) => p.type === "text-start");
+    const textDeltas = parts.filter((p) => p.type === "text-delta");
+    const textEnds = parts.filter((p) => p.type === "text-end");
+
+    // Verify text deltas were emitted (critical for streaming UX)
+    expect(textDeltas.length).toBeGreaterThan(0);
+    expect(textDeltas.some((p) => p.delta === "Hello ")).toBe(true);
+    expect(textDeltas.some((p) => p.delta === "World!")).toBe(true);
+    expect(textDeltas.some((p) => p.delta === "Complete")).toBe(true);
+
+    // Verify text streams were properly started and ended
+    expect(textStarts.length).toBeGreaterThan(0);
+    expect(textEnds.length).toBeGreaterThan(0);
+
+    // Verify finish event
+    expect(parts.some((p) => p.type === "finish")).toBe(true);
+  });
+
   it("falls back to non-streaming when unsupported", async () => {
     mockGetAgentCard.mockResolvedValue({ capabilities: { streaming: false } });
     mockSendMessage.mockResolvedValue(completedTask("Fallback response"));

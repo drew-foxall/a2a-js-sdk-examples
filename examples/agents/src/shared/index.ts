@@ -21,6 +21,21 @@ export { createContentEditorAgent } from "../agents/content-editor/agent.js";
 export { createContentPlannerAgent } from "../agents/content-planner/agent.js";
 export { createCurrencyAgent } from "../agents/currency-agent/agent.js";
 export { createDiceAgent } from "../agents/dice-agent/agent.js";
+// Auth agent (CIBA patterns)
+export {
+  createAuthAgent,
+  type AuthAgentConfig,
+  createDevAuthProvider,
+  createMockAuthProvider,
+  type AuthProvider,
+  type CIBARequest,
+  type CIBAResponse,
+  type TokenResponse,
+} from "../agents/auth-agent/index.js";
+export {
+  createInstrumentedDiceAgent,
+  createInstrumentedMessageProcessor,
+} from "../agents/dice-agent/instrumented.js";
 export { createExpenseAgent } from "../agents/expense-agent/agent.js";
 export { createGitHubAgent } from "../agents/github-agent/agent.js";
 // Simple agents
@@ -116,3 +131,64 @@ export {
 // ============================================================================
 
 export { extractText, getModel, getModelInfo } from "./utils.js";
+
+// ============================================================================
+// Security Schemes (A2A Protocol Spec Section 4.5)
+// ============================================================================
+
+export {
+  // Types
+  type APIKeySecurityScheme,
+  type AuthorizationCodeOAuthFlow,
+  type ClientCredentialsOAuthFlow,
+  type HTTPAuthSecurityScheme,
+  type ImplicitOAuthFlow,
+  type MutualTLSSecurityScheme,
+  type OAuth2SecurityScheme,
+  type OAuthFlows,
+  type OpenIdConnectSecurityScheme,
+  type PasswordOAuthFlow,
+  type SecurityRequirement,
+  type SecurityScheme,
+  type SecuritySchemeBase,
+  // Helpers
+  createApiKeyScheme,
+  createBearerScheme,
+  createClientCredentialsScheme,
+  createOpenIdConnectScheme,
+} from "./security-schemes.js";
+
+// ============================================================================
+// Telemetry (Pluggable Observability)
+// ============================================================================
+
+export {
+  // Factory functions
+  createTelemetry,
+  getDefaultTelemetry,
+  instrument,
+  // Providers
+  ConsoleTelemetryProvider,
+  createConsoleTelemetry,
+  createNoOpTelemetry,
+  createOpenTelemetry,
+  NoOpTelemetryProvider,
+  OpenTelemetryProvider,
+  // Types
+  type AttributeValue,
+  type Attributes,
+  type ConsoleProviderConfig,
+  type CreateTelemetryOptions,
+  type LogSeverity,
+  type OpenTelemetryProviderConfig,
+  type Span,
+  type SpanOptions,
+  type SpanStatus,
+  type TelemetryConfig,
+  type TelemetryProvider,
+  type TelemetryProviderFactory,
+  type TelemetryProviderType,
+  // Semantic Conventions
+  AgentAttributes,
+  SpanNames,
+} from "./telemetry/index.js";

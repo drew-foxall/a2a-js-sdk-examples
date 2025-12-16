@@ -4,7 +4,9 @@ This directory contains reference documentation for the official Python A2A samp
 
 ## Implementation Summary
 
-**Implemented**: 17 out of 23 examples (74%)
+**Implemented**: 18 out of 23 examples (78%)
+
+**Phase 1 Complete**: Redis Task Store integration for 6 workers with persistent state needs
 
 ## Example Index
 
@@ -44,7 +46,7 @@ This directory contains reference documentation for the official Python A2A samp
 ### Advanced Examples
 | # | Example | Framework | Description | Our Status |
 |---|---------|-----------|-------------|------------|
-| 18 | [Headless Agent Auth](18-headless-agent-auth.md) | Google ADK | OAuth2/CIBA authentication | ⏸️ Deferred (complex setup) |
+| 18 | [Headless Agent Auth](18-headless-agent-auth.md) | Google ADK | OAuth2/CIBA authentication | ✅ Implemented |
 | 19 | [A2A Telemetry](19-a2a-telemetry.md) | Google ADK | OpenTelemetry tracing | ⏸️ Deferred |
 | 20 | [ADK Expense Reimbursement](20-adk-expense-reimbursement.md) | Google ADK | Expense form handling | ✅ Implemented |
 | 21 | [Number Guessing Game](21-number-guessing-game.md) | None | Multi-agent game (no LLM) | ✅ Implemented |

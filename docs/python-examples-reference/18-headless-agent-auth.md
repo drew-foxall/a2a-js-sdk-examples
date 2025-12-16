@@ -1,7 +1,8 @@
 # Headless Agent Authentication Reference
 
 > **Source**: `samples/python/agents/headless_agent_auth/`
-> **Our Implementation**: Not started
+> **Our Implementation**: ✅ Complete (`examples/agents/src/agents/auth-agent/`, `examples/workers/auth-agent/`)
+> **Aligns with**: [Auth0 + Google Cloud A2A Partnership](https://auth0.com/blog/auth0-google-a2a/)
 
 ## Overview
 
@@ -189,11 +190,51 @@ const clientSecret = env.AUTH0_CLIENT_SECRET;
 
 ## Checklist for Implementation
 
-- [ ] Client Credentials flow
-- [ ] JWT verification middleware
-- [ ] CIBA flow (requires Auth0 Enterprise)
-- [ ] Token caching
-- [ ] Worker deployment with secrets
+- [x] Client Credentials flow (`getClientCredentialsToken()`)
+- [x] JWT verification middleware (via `AuthProvider.verifyToken()`)
+- [x] CIBA flow with durable polling (`completeCIBAFlow()`)
+- [ ] Token caching (deferred - can use Redis)
+- [x] Worker deployment with secrets
+
+## Our TypeScript Implementation
+
+```
+examples/
+├── agents/src/agents/auth-agent/
+│   ├── types.ts           # OAuth2/CIBA type definitions
+│   ├── providers/mock.ts  # Mock auth provider for dev/testing
+│   ├── steps.ts           # Durable steps (getClientToken, completeCIBAFlow)
+│   ├── agent.ts           # Tool-based auth agent
+│   └── index.ts           # Public exports
+│
+├── agents/src/shared/
+│   └── security-schemes.ts  # A2A Protocol Spec Section 4.5 types
+│
+└── workers/auth-agent/
+    └── src/index.ts       # Edge-compatible Cloudflare Worker
+```
+
+**Key Features:**
+- Pluggable `AuthProvider` interface (swap Auth0, Okta, custom)
+- `MockAuthProvider` for demo mode (auto-approves after delay)
+- Durable CIBA polling (survives worker restarts)
+- Security schemes aligned with [Auth0 + Google A2A specs](https://auth0.com/blog/auth0-google-a2a/)
+
+**Usage:**
+
+```typescript
+import { createAuthAgent, createDevAuthProvider } from "a2a-agents";
+
+const agent = createAuthAgent({
+  model: openai.chat("gpt-4o-mini"),
+  authProvider: createDevAuthProvider(), // Mock for dev
+});
+
+// User: "What is John's salary?"
+// → Agent initiates CIBA (push notification to John)
+// → Durable polling waits for approval
+// → On approval, fetches salary with scoped token
+```
 
 ## Notes
 

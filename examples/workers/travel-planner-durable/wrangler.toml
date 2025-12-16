@@ -1,0 +1,59 @@
+# Travel Planner (Durable) - Cloudflare Worker Configuration
+#
+# This is a durable version of the travel planner orchestrator that uses:
+# - Workflow DevKit for durable execution with automatic retries
+# - @drew-foxall/upstash-workflow-world for edge-compatible World
+# - Upstash Redis for persistent task storage
+#
+# Particularly valuable for travel planning because:
+# - Multi-agent coordination involves multiple external calls
+# - Each sub-agent call can fail transiently
+# - Complex plans shouldn't restart from scratch
+#
+# Deploy: wrangler deploy
+# Dev:    wrangler dev
+# Logs:   wrangler tail
+
+name = "a2a-travel-planner-durable"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Environment variables (non-sensitive)
+[vars]
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-4o-mini"
+
+# Sub-agent URLs (can be overridden via secrets for production)
+# These point to other A2A agents that the planner coordinates
+WEATHER_AGENT_URL = "http://localhost:41252"
+AIRBNB_AGENT_URL = "http://localhost:41253"
+
+# Service Bindings for production (faster, private communication)
+# Uncomment when deploying with other workers
+# [[services]]
+# binding = "WEATHER_AGENT"
+# service = "a2a-weather-agent"
+#
+# [[services]]
+# binding = "AIRBNB_AGENT"
+# service = "a2a-airbnb-agent"
+
+# Secrets are set via CLI:
+#   wrangler secret put OPENAI_API_KEY
+#
+#   # For A2A Task Store (persistent tasks)
+#   wrangler secret put UPSTASH_REDIS_REST_URL
+#   wrangler secret put UPSTASH_REDIS_REST_TOKEN
+#
+#   # For Workflow DevKit World (durable execution)
+#   # Can use the same Redis instance as Task Store
+#   wrangler secret put WORKFLOW_UPSTASH_REDIS_REST_URL
+#   wrangler secret put WORKFLOW_UPSTASH_REDIS_REST_TOKEN
+#
+# For local development, create a .dev.vars file:
+#   OPENAI_API_KEY=sk-proj-xxxxx
+#   UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+#   UPSTASH_REDIS_REST_TOKEN=xxx
+#   WORKFLOW_UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+#   WORKFLOW_UPSTASH_REDIS_REST_TOKEN=xxx
+
