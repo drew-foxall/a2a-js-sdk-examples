@@ -6,13 +6,17 @@ on:
       - 'v*.*.*'
       - '@drew-foxall/a2a-ai-sdk-adapter@*.*.*'
 
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
   release:
     name: Publish to NPM
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
-      contents: read
+      contents: write
       id-token: write # Required for npm provenance
 
     steps:
@@ -66,22 +70,10 @@ jobs:
           
           echo "✅ Version match confirmed"
 
-      - name: Type check
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
-
+      # Build only - skip full CI validation since tag should only be pushed after CI passes on main
+      # Turbo remote cache will make this near-instant if CI already ran
       - name: Build
         run: pnpm build
-
-      - name: Test
-        run: pnpm test
-        env:
-          CI: true
-
-      - name: Build adapter package
-        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter build
 
       - name: Publish to NPM
         run: |
@@ -91,12 +83,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          release_name: Release ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
           body: |
             ## 📦 @drew-foxall/a2a-ai-sdk-adapter v${{ steps.version.outputs.version }}
             
@@ -110,4 +100,5 @@ jobs:
             See the [CHANGELOG](./CHANGELOG.md) for details.
           draft: false
           prerelease: false
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -11,45 +11,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
-  ci:
-    name: CI
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Type check
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Build
-        run: pnpm build
-
-      - name: Test
-        run: pnpm test
-        env:
-          # Prevent tests from requiring actual API keys
-          CI: true
-
-  adapter-package:
-    name: Verify Adapter Package
+  # Stage 1: Build everything first (required by dependent jobs)
+  build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -69,30 +38,167 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build adapter package
-        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter build
+      - name: Build all packages
+        run: pnpm build
 
-      - name: Type check adapter
-        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter typecheck
+      # Cache build artifacts for dependent jobs
+      - name: Cache build artifacts
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            packages/*/dist
+            examples/*/dist
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
 
-      - name: Lint adapter
-        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter lint
+  # Stage 2: Parallel validation jobs (run after build completes)
+  typecheck:
+    name: Type Check
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-      - name: Test adapter
-        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            examples/*/dist
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Type check
+        run: pnpm typecheck
+
+  lint:
+    name: Lint
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            examples/*/dist
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Lint
+        run: pnpm lint
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            examples/*/dist
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Test
+        run: pnpm test
+        env:
+          CI: true
+
+  # Stage 3: Package verification (runs after all validations pass)
+  package:
+    name: Verify Adapter Package
+    needs: [typecheck, lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            examples/*/dist
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
 
       - name: Pack adapter
         working-directory: packages/a2a-ai-sdk-adapter
         run: pnpm pack
-        
+
       - name: Verify package contents
         working-directory: packages/a2a-ai-sdk-adapter
         run: tar -tzf drew-foxall-a2a-ai-sdk-adapter-*.tgz
-          
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
           name: adapter-package
           path: packages/a2a-ai-sdk-adapter/*.tgz
           retention-days: 7
-

@@ -31,28 +31,73 @@ The release workflow requires an npm authentication token to publish packages.
    - Value: Paste the token from step 2
    - Click **"Add secret"**
 
+### TURBO_TOKEN & TURBO_TEAM (Required for Remote Caching)
+
+Turborepo remote caching dramatically speeds up CI by sharing build artifacts across runs.
+
+#### Steps to Configure Turbo Remote Cache:
+
+1. **Login to Turbo** (locally):
+   ```bash
+   pnpm turbo login
+   pnpm turbo link
+   ```
+
+2. **Get your Vercel Token**:
+   - Go to https://vercel.com/account/tokens
+   - Click "Create Token"
+   - Name: "GitHub Actions - Turbo Cache"
+   - Scope: Full Account (or specific team)
+   - Click "Create"
+   - **Copy the token**
+
+3. **Get your Team ID**:
+   - Check your local `.turbo/config.json` after running `turbo link`
+   - Or find it in your Vercel dashboard URL: `vercel.com/team_XXXXX`
+
+4. **Add Secrets to GitHub**:
+   - `TURBO_TOKEN`: Your Vercel token from step 2
+   - `TURBO_TEAM`: Your team ID (e.g., `team_zLtiRvigKDHTbeVpusAxIUmN`)
+
 ## Workflows
 
 ### CI Workflow (`.github/workflows/ci.yml`)
 
 **Triggers**: Push or Pull Request to `main` or `develop` branches
 
+**Pipeline Architecture**:
+
+```
+┌─────────┐
+│  Build  │  ← Stage 1: Build all packages
+└────┬────┘
+     │
+     ├──────────────┬──────────────┐
+     ▼              ▼              ▼
+┌─────────┐   ┌─────────┐   ┌─────────┐
+│Typecheck│   │  Lint   │   │  Test   │  ← Stage 2: Parallel validation
+└────┬────┘   └────┬────┘   └────┬────┘
+     │              │              │
+     └──────────────┼──────────────┘
+                    ▼
+              ┌─────────┐
+              │ Package │  ← Stage 3: Verify adapter package
+              └─────────┘
+```
+
 **Jobs**:
-1. **CI** - Runs on all packages:
-   - Type checking (`pnpm typecheck`)
-   - Linting (`pnpm lint`)
-   - Building (`pnpm build`)
-   - Testing (`pnpm test`)
 
-2. **Adapter Package** - Focused verification of the adapter package:
-   - Build adapter
-   - Type check adapter
-   - Lint adapter
-   - Test adapter
-   - Pack adapter and verify contents
-   - Upload package artifact
+1. **Build** - Builds all packages (required first for Turbo cache)
+2. **Typecheck** - Type checks all packages (parallel)
+3. **Lint** - Lints all packages (parallel)
+4. **Test** - Runs all tests (parallel)
+5. **Package** - Verifies adapter package can be packed and uploaded
 
-**Purpose**: Protects main branch from broken code.
+**Benefits**:
+- ✅ Parallel execution of typecheck, lint, and test
+- ✅ Turbo remote cache for instant rebuilds
+- ✅ Fast feedback on failures (parallel jobs fail fast)
+- ✅ Clear pipeline visualization in GitHub Actions UI
 
 ### Release Workflow (`.github/workflows/release.yml`)
 
@@ -67,9 +112,8 @@ The release workflow requires an npm authentication token to publish packages.
 4. Extract version from git tag
 5. Verify `package.json` version matches tag
 6. Run full CI pipeline (type check, lint, test, build)
-7. Build adapter package
-8. Publish to npm with provenance
-9. Create GitHub Release with changelog
+7. Publish to npm with provenance
+8. Create GitHub Release
 
 **Purpose**: Automates npm publishing and release notes.
 
@@ -90,6 +134,36 @@ The repository needs the following permissions for GitHub Actions:
    - Check: ✅ **"Allow GitHub Actions to create and approve pull requests"** (optional)
 3. Click **"Save"**
 
+## Turborepo Remote Caching
+
+The workflows leverage Turborepo for intelligent caching:
+
+- ✅ **Remote caching**: Share cache across CI runs via Vercel
+- ✅ **Dependency tracking**: Only rebuilds what changed
+- ✅ **Parallel execution**: Runs independent tasks simultaneously
+- ✅ **Content-addressable**: Cache keys based on file content, not timestamps
+
+### Expected Performance Improvements:
+
+| Scenario | Without Cache | With Cache |
+|----------|---------------|------------|
+| Full rebuild | ~8-10 min | ~8-10 min |
+| No changes | ~8-10 min | **~2-3 min** |
+| Minor change | ~8-10 min | **~3-4 min** |
+| PR after main build | ~8-10 min | **~2-3 min** |
+
+### Verifying Cache is Working:
+
+In your GitHub Actions logs, look for:
+```
+cache hit, replaying logs...
+```
+
+Or cache miss (first run):
+```
+cache miss, executing...
+```
+
 ## Testing Workflows Locally
 
 ### Option 1: Act (GitHub Actions Locally)
@@ -107,7 +181,10 @@ Run CI workflow:
 act push -W .github/workflows/ci.yml
 
 # Run with secrets
-act push -W .github/workflows/ci.yml -s NPM_TOKEN=your-token-here
+act push -W .github/workflows/ci.yml \
+  -s NPM_TOKEN=your-token \
+  -s TURBO_TOKEN=your-turbo-token \
+  -s TURBO_TEAM=your-team-id
 ```
 
 ### Option 2: Manual Testing
@@ -117,44 +194,14 @@ Run the same commands locally:
 ```bash
 # Full CI pipeline
 pnpm install --frozen-lockfile
+pnpm build
 pnpm typecheck
 pnpm lint
-pnpm build
 pnpm test
 
 # Adapter-specific verification
 pnpm --filter @drew-foxall/a2a-ai-sdk-adapter build
-pnpm --filter @drew-foxall/a2a-ai-sdk-adapter typecheck
-pnpm --filter @drew-foxall/a2a-ai-sdk-adapter lint
-pnpm --filter @drew-foxall/a2a-ai-sdk-adapter test
 pnpm --filter @drew-foxall/a2a-ai-sdk-adapter pack
-```
-
-## Turborepo Caching
-
-The workflows leverage Turborepo for intelligent caching:
-
-- ✅ **Local caching**: Speeds up repeated builds
-- ✅ **Remote caching**: Share cache across CI runs (optional, requires Vercel account)
-- ✅ **Dependency tracking**: Only rebuilds what changed
-- ✅ **Parallel execution**: Runs independent tasks simultaneously
-
-### Enable Remote Caching (Optional):
-
-1. Sign up at https://vercel.com/
-2. Get your team token: https://vercel.com/account/tokens
-3. Add to GitHub Secrets:
-   - Name: `TURBO_TOKEN`
-   - Value: Your Vercel token
-4. Add your team ID:
-   - Name: `TURBO_TEAM`
-   - Value: Your team ID (find in Vercel dashboard)
-
-Then update workflows to include:
-```yaml
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 ```
 
 ## Monitoring Workflows
@@ -164,6 +211,13 @@ env:
 1. Go to repository **Actions** tab
 2. Select a workflow (CI or Release)
 3. Click on a specific run to view logs
+
+### Understanding the Pipeline View:
+
+The CI workflow shows a visual pipeline:
+- Jobs in the same column run in parallel
+- Jobs connected by arrows have dependencies
+- Green ✓ = passed, Red ✗ = failed, Yellow ○ = running
 
 ### Debugging Failed Workflows:
 
@@ -230,14 +284,23 @@ Add these badges to your README:
 
 **Solution**:
 - Check environment variables (CI doesn't have your `.env`)
-- Verify Node.js version matches (workflow uses Node LTS - currently v24.x Krypton)
+- Verify Node.js version matches (workflow uses Node LTS)
 - Ensure pnpm lockfile is committed
 - Check for timing-dependent tests
+
+### Turbo Cache Not Working
+
+**Problem**: Seeing "cache miss" on every run.
+
+**Solution**:
+- Verify `TURBO_TOKEN` and `TURBO_TEAM` secrets are set
+- Check token hasn't expired
+- Ensure `.turbo/config.json` has correct team ID locally
+- Run `pnpm turbo login --force` to refresh credentials
 
 ## Additional Resources
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [npm Publishing Guide](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry)
-- [Turborepo Documentation](https://turbo.build/repo/docs)
+- [Turborepo Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
 - [pnpm CI Guide](https://pnpm.io/continuous-integration)
-
