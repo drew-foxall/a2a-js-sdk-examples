@@ -1,0 +1,48 @@
+# A2A Worker Development Variables
+# Copy this file to .dev.vars in any worker directory for local development
+# See: ENV_TEMPLATE.md for full documentation
+
+# =============================================================================
+# AI Provider Configuration (Required)
+# =============================================================================
+
+# OpenAI (default provider)
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Alternative: Anthropic (set AI_PROVIDER=anthropic)
+# ANTHROPIC_API_KEY=sk-ant-your-anthropic-api-key-here
+
+# Alternative: Google AI (set AI_PROVIDER=google)
+# GOOGLE_GENERATIVE_AI_API_KEY=your-google-api-key-here
+
+# Provider selection (defaults to openai)
+# AI_PROVIDER=openai
+# AI_MODEL=gpt-4o-mini
+
+# =============================================================================
+# Redis/Upstash Configuration
+# =============================================================================
+# For local development with `pnpm local:up`, use these settings:
+
+UPSTASH_REDIS_REST_URL=http://localhost:8079
+UPSTASH_REDIS_REST_TOKEN=local-dev-token
+
+# Note: The local adapter uses Bearer token auth compatible with @upstash/redis
+
+# For production Upstash, get credentials at: https://upstash.com/redis
+# UPSTASH_REDIS_REST_URL=https://your-region.upstash.io
+# UPSTASH_REDIS_REST_TOKEN=AXxx...your-upstash-token-here
+
+# =============================================================================
+# Service-Specific Configuration
+# =============================================================================
+
+# GitHub Agent
+# GITHUB_API_TOKEN=ghp_your-github-token-here
+
+# Airbnb MCP Server URL (when not using Service Bindings)
+# AIRBNB_MCP_URL=http://localhost:8788
+
+# TMDB API (for movie-agent)
+# TMDB_API_KEY=your-tmdb-api-key-here
+

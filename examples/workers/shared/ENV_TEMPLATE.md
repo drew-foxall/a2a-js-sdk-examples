@@ -3,6 +3,9 @@
 Copy these configurations to `.dev.vars` in each worker directory for local development.
 For production, set secrets via `wrangler secret put <NAME>`.
 
+> **Quick Start**: Copy `.dev.vars.example` from this directory to your worker.
+> See [LOCAL_TESTING.md](../../../LOCAL_TESTING.md) for the full local development guide.
+
 ## Required: AI Provider
 
 ```bash
@@ -35,6 +38,17 @@ Workers with Redis support automatically fall back to `InMemoryTaskStore` if the
 - `image-generator` - Long-running operations
 - `expense-agent` - Multi-step forms
 - `local-llm-chat` - Chat history
+
+### Local Development (Recommended)
+
+Start local Redis infrastructure with `pnpm local:up`, then use:
+
+```bash
+UPSTASH_REDIS_REST_URL=http://localhost:8079
+UPSTASH_REDIS_REST_TOKEN=local-dev-token
+```
+
+### Production (Upstash)
 
 Get free credentials at: https://upstash.com/redis
 

@@ -1,0 +1,57 @@
+# Local Development Infrastructure for A2A Workers
+#
+# This provides a local Upstash-compatible Redis REST API for testing workers
+# that use @upstash/redis without needing a real Upstash account.
+#
+# Usage:
+#   pnpm local:up      - Start local infrastructure
+#   pnpm local:down    - Stop local infrastructure
+#   pnpm local:logs    - View logs
+#
+# Workers that benefit from this:
+#   - travel-planner      - Multi-agent orchestration
+#   - airbnb-agent        - Part of travel system
+#   - adversarial-defender - Conversation history
+#   - image-generator     - Long-running operations
+#   - expense-agent       - Multi-step forms
+#   - local-llm-chat      - Chat history
+#
+# See: https://developers.cloudflare.com/workers/development-testing/
+
+services:
+  # Redis server for persistent storage
+  redis:
+    image: redis:7-alpine
+    container_name: a2a-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Upstash-compatible REST API adapter
+  # Allows @upstash/redis to work with local Redis
+  # Note: Uses Bun.serve() directly to avoid Elysia Docker port bug (elysia#80)
+  upstash-adapter:
+    build: https://github.com/drew-foxall/serverless-elysia-redis-http.git
+    container_name: a2a-upstash-adapter
+    ports:
+      - "8079:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - UPSTASH_TOKEN=local-dev-token
+      - PORT=8080
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Health check disabled - minimal Bun image lacks curl/wget
+    # Service health can be verified with: curl http://localhost:8079/health
+
+volumes:
+  redis-data:
+    driver: local

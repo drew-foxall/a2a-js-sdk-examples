@@ -99,10 +99,18 @@ pnpm start-testing      # Interactive mode
 ```
 
 📖 **Testing Guides**:
+- **[Local Testing](LOCAL_TESTING.md)** - Full local dev with Redis/Upstash
 - **[Inspector Setup](INSPECTOR_SETUP.md)** - Local A2A Inspector (Docker)
 - **[Test Workflow](TEST_WORKFLOW.md)** - Step-by-step: Start agents + use A2A Inspector
 - **[Quick Start (3 min)](QUICKSTART_A2A_INSPECTOR.md)** - Get testing immediately
 - **[Full Testing Guide](examples/TESTING_WITH_A2A_INSPECTOR.md)** - Comprehensive scenarios
+
+**Local Infrastructure** (for Redis-dependent workers):
+```bash
+pnpm local:up      # Start Redis + Upstash adapter
+pnpm local:down    # Stop infrastructure
+pnpm local:status  # Check service health
+```
 
 ---
 
@@ -167,6 +175,8 @@ a2a-js-sdk-examples/
 │   │
 │   └── TESTING_WITH_A2A_INSPECTOR.md  # Testing guide
 │
+├── docker-compose.local.yml      # Local Redis + Upstash adapter
+├── LOCAL_TESTING.md              # Local testing guide
 ├── turbo.json                    # Turborepo configuration
 ├── pnpm-workspace.yaml           # pnpm monorepo setup
 └── README.md                     # This file
@@ -651,4 +661,4 @@ Apache 2.0 - See [LICENSE](LICENSE) for details
 
 ---
 
-**Happy Building! 🚀**
+**Good luck 🦊**
