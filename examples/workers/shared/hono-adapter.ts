@@ -40,7 +40,7 @@
 
 import { Hono, type Context } from "hono";
 import { cors, type CorsOptions } from "hono/cors";
-import { A2AHonoApp, ConsoleLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
+import { A2AHonoApp, ConsoleLogger, NoopLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { getModelInfo } from "./utils.js";
 import {
   createA2ARequestHandler,
@@ -228,7 +228,8 @@ export function createA2AHonoWorker<TEnv extends BaseWorkerEnv = BaseWorkerEnv>(
 
     // Create A2A router using the SDK's Hono adapter
     const a2aRouter = new Hono();
-    const logger = config.createLogger?.() ?? ConsoleLogger.create();
+    // Use custom logger if provided, otherwise fall back to ConsoleLogger or NoopLogger
+    const logger = config.createLogger?.() ?? (ConsoleLogger?.create?.() ?? NoopLogger);
     const appBuilder = new A2AHonoApp(requestHandler, { logger });
     appBuilder.setupRoutes(a2aRouter);
 

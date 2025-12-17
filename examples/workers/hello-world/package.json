@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.0-beta.54",
@@ -15,11 +18,14 @@
     "@drew-foxall/a2a-ai-sdk-adapter": "^1.0.2",
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "a2a-agents": "workspace:*",
+    "a2a-workers-shared": "workspace:*",
     "ai": "6.0.0-beta.99",
     "hono": "^4.10.7"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
+    "msw": "^2.7.0",
+    "vitest": "^3.0.0",
     "wrangler": "^4.51.0"
   }
 }

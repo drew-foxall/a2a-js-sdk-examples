@@ -24,6 +24,18 @@
     "./agent-card": {
       "types": "./agent-card.ts",
       "import": "./agent-card.ts"
+    },
+    "./test-utils": {
+      "types": "./test-utils.ts",
+      "import": "./test-utils.ts"
+    },
+    "./worker-test-suite": {
+      "types": "./worker-test-suite.ts",
+      "import": "./worker-test-suite.ts"
+    },
+    "./msw-handlers": {
+      "types": "./msw-handlers.ts",
+      "import": "./msw-handlers.ts"
     }
   },
   "dependencies": {
@@ -38,6 +50,7 @@
     "hono": "^4.7.10"
   },
   "devDependencies": {
+    "msw": "^2.7.0",
     "vitest": "^3.0.0"
   }
 }
