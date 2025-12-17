@@ -82,12 +82,12 @@ jobs:
         run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter test
 
       - name: Pack adapter
-        run: pnpm --filter @drew-foxall/a2a-ai-sdk-adapter pack
+        working-directory: packages/a2a-ai-sdk-adapter
+        run: pnpm pack
         
       - name: Verify package contents
-        run: |
-          cd packages/a2a-ai-sdk-adapter
-          tar -tzf drew-foxall-a2a-ai-sdk-adapter-*.tgz
+        working-directory: packages/a2a-ai-sdk-adapter
+        run: tar -tzf drew-foxall-a2a-ai-sdk-adapter-*.tgz
           
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
