@@ -315,9 +315,48 @@ pnpm test:coverage
 
 View HTML report in `coverage/index.html`.
 
+## OpenTelemetry E2E Testing
+
+The telemetry system includes comprehensive E2E tests that verify OpenTelemetry integration works correctly using the real OTEL SDK with an in-memory exporter.
+
+### Running Telemetry Tests
+
+```bash
+# Run OpenTelemetry E2E tests
+pnpm test src/shared/telemetry/opentelemetry.e2e.test.ts
+```
+
+### What's Tested
+
+- **Span Creation & Export**: Spans are created and exported correctly
+- **Attributes & Events**: Span attributes and events are recorded
+- **Trace Context**: Parent-child relationships and async propagation
+- **Agent Workflows**: Complete message processing and multi-agent coordination
+- **Error Handling**: Exception recording and error propagation
+- **Semantic Conventions**: A2A attributes (`AgentAttributes`) and span names (`SpanNames`)
+
+### Test Dependencies
+
+The telemetry tests require OpenTelemetry packages (installed as dev dependencies):
+
+```json
+{
+  "devDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/resources": "^1.30.0",
+    "@opentelemetry/sdk-trace-base": "^1.30.0",
+    "@opentelemetry/sdk-trace-node": "^1.30.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0"
+  }
+}
+```
+
+📖 **Full Documentation**: [docs/TELEMETRY.md](../../docs/TELEMETRY.md)
+
 ## Additional Resources
 
 - [Vitest Documentation](https://vitest.dev/)
 - [AI SDK Testing Guide](https://sdk.vercel.ai/docs/ai-sdk-core/testing)
 - [A2A Protocol Specification](https://a2a.plus/docs)
+- [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 

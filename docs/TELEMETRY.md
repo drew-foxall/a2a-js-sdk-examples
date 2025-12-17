@@ -404,6 +404,134 @@ export async function travelPlannerWorkflow(messages) {
 
 ---
 
+## 🧪 Testing OpenTelemetry Integration
+
+The telemetry system includes comprehensive E2E tests that verify OpenTelemetry integration works correctly. These tests use the real OTEL SDK with an in-memory exporter to capture and verify spans.
+
+### Running Telemetry Tests
+
+```bash
+# Run OpenTelemetry E2E tests
+cd examples/agents
+pnpm test src/shared/telemetry/opentelemetry.e2e.test.ts
+```
+
+### Test Coverage
+
+The E2E tests verify:
+
+| Test Category | What It Tests |
+|--------------|---------------|
+| **Span Creation** | Spans are created and exported correctly |
+| **Attributes** | Span attributes are properly attached |
+| **Events** | Span events are recorded |
+| **Exceptions** | Errors are recorded with stack traces |
+| **Status Codes** | OK, ERROR, UNSET status codes work |
+| **Trace Context** | Parent-child span relationships |
+| **Async Context** | Trace context propagates across async operations |
+| **Agent Workflows** | Complete message processing flow |
+| **Multi-Agent** | Agent discovery and coordination tracing |
+| **Error Propagation** | Errors propagate through span hierarchy |
+| **Semantic Conventions** | A2A attributes and span names |
+
+### Example Test Output
+
+```
+✓ src/shared/telemetry/opentelemetry.e2e.test.ts (17 tests) 67ms
+  ✓ OpenTelemetry E2E > Span Creation and Export
+    ✓ should create and export spans to OTEL collector
+    ✓ should include span attributes in exported spans
+    ✓ should record span events
+    ✓ should record exceptions with stack traces
+    ✓ should set span status correctly
+  ✓ OpenTelemetry E2E > Trace Context and Hierarchy
+    ✓ should create nested spans with parent-child relationship
+    ✓ should maintain trace context across async operations
+  ✓ OpenTelemetry E2E > Agent Workflow Tracing
+    ✓ should trace complete agent message processing flow
+    ✓ should trace multi-agent coordination
+  ...
+```
+
+### Test Setup
+
+The tests use the official OpenTelemetry SDK packages:
+
+```typescript
+import { trace, SpanStatusCode, context } from "@opentelemetry/api";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { SimpleSpanProcessor, InMemorySpanExporter } from "@opentelemetry/sdk-trace-base";
+import { Resource } from "@opentelemetry/resources";
+
+// Create in-memory exporter to capture spans
+const exporter = new InMemorySpanExporter();
+const provider = new NodeTracerProvider({
+  resource: new Resource({
+    "service.name": "a2a-telemetry-test",
+  }),
+});
+provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+provider.register();
+```
+
+### Writing Your Own Telemetry Tests
+
+```typescript
+import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { createTelemetry, SpanNames, AgentAttributes } from "a2a-agents";
+
+describe("My Agent Telemetry", () => {
+  let exporter: InMemorySpanExporter;
+  let provider: NodeTracerProvider;
+
+  beforeAll(() => {
+    exporter = new InMemorySpanExporter();
+    provider = new NodeTracerProvider();
+    provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+    provider.register();
+  });
+
+  beforeEach(() => {
+    exporter.reset();
+  });
+
+  afterAll(async () => {
+    await provider.shutdown();
+  });
+
+  it("should trace tool execution", async () => {
+    const telemetry = createTelemetry({
+      provider: "opentelemetry",
+      serviceName: "my-agent",
+    });
+
+    const span = telemetry.startSpan(SpanNames.AGENT_EXECUTE_TOOL, {
+      attributes: {
+        [AgentAttributes.TOOL_NAME]: "myTool",
+      },
+    });
+
+    // Simulate tool execution
+    span.setAttributes({
+      [AgentAttributes.TOOL_SUCCESS]: true,
+      [AgentAttributes.TOOL_DURATION_MS]: 42,
+    });
+    span.setStatus("ok");
+    span.end();
+
+    await provider.forceFlush();
+
+    const spans = exporter.getFinishedSpans();
+    expect(spans.length).toBe(1);
+    expect(spans[0].attributes[AgentAttributes.TOOL_NAME]).toBe("myTool");
+  });
+});
+```
+
+---
+
 ## 🔗 References
 
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)

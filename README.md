@@ -494,6 +494,10 @@ pnpm test src/agents/analytics-agent/
   - Each agent has `agent.test.ts` (ToolLoopAgent behavior)
   - Agents with utilities have `tools.test.ts` (pure functions)
   - All tests follow [AGENT_TEST_PRINCIPLES.md](examples/agents/AGENT_TEST_PRINCIPLES.md)
+- **Telemetry**: 17 E2E tests for OpenTelemetry integration
+  - Uses real OTEL SDK with in-memory exporter
+  - Tests span creation, attributes, events, trace context
+  - Verifies A2A semantic conventions (`AgentAttributes`, `SpanNames`)
 - **Shared Workers**: Tests for `worker-config.ts` and `agent-card.ts`
 - **Test Quality**: All test files have ratio < 1.0x (test lines < source lines)
 - **Type Safety**: No `as any` or `as unknown as` casts in test files
@@ -501,6 +505,8 @@ pnpm test src/agents/analytics-agent/
 📖 **Documentation:**
 - **[Agent Test Principles](examples/agents/AGENT_TEST_PRINCIPLES.md)** - Testing standards and patterns
 - **[Full Testing Guide](examples/agents/TESTING.md)** - Comprehensive testing documentation
+- **[Telemetry Guide](docs/TELEMETRY.md)** - Pluggable telemetry with OpenTelemetry E2E tests
+- **[Worker Testing Guide](examples/workers/TESTING.md)** - Hybrid E2E testing with AI SDK and MSW mocks
 
 ### Integration Tests (A2A Inspector)
 
