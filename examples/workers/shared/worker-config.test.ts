@@ -4,6 +4,8 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { InMemoryTaskStore } from "@drew-foxall/a2a-js-sdk/server";
+import { MockLanguageModelV3 } from "ai/test";
+import { ToolLoopAgent } from "ai";
 import {
   createTaskStore,
   createA2AExecutor,
@@ -21,10 +23,22 @@ const mockEnv: BaseWorkerEnv = {
   MODEL_NAME: "gpt-4o-mini",
 };
 
-const createMockAgent = () => ({
-  generate: vi.fn(),
-  stream: vi.fn(),
+const mockModel = new MockLanguageModelV3({
+  doGenerate: async () => ({
+    finishReason: "stop",
+    usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+    content: [{ type: "text", text: "Test response" }],
+    warnings: [],
+  }),
 });
+
+function createMockAgent() {
+  return new ToolLoopAgent({
+    model: mockModel,
+    tools: {},
+    instructions: "Test agent",
+  });
+}
 
 const mockAgentCard = {
   name: "Test Agent",
@@ -68,11 +82,11 @@ describe("createA2AExecutor", () => {
   it("should create executor with public execute and cancelTask methods", () => {
     const config: A2AWorkerConfig = {
       agentName: "Test Agent",
-      createAgent: () => createMockAgent() as ReturnType<typeof import("ai").ToolLoopAgent>,
+      createAgent: () => createMockAgent(),
       createAgentCard: () => mockAgentCard,
     };
 
-    const executor = createA2AExecutor(config, { modelId: "test" } as any, mockEnv);
+    const executor = createA2AExecutor(config, mockModel, mockEnv);
 
     expect(executor).toBeDefined();
     expect(typeof executor.execute).toBe("function");
@@ -80,15 +94,15 @@ describe("createA2AExecutor", () => {
   });
 
   it("should pass environment to createAgent factory", () => {
-    const createAgentSpy = vi.fn(() => createMockAgent() as ReturnType<typeof import("ai").ToolLoopAgent>);
+    const createAgentSpy = vi.fn(() => createMockAgent());
 
     createA2AExecutor(
       { agentName: "Test", createAgent: createAgentSpy, createAgentCard: () => mockAgentCard },
-      { modelId: "test" } as any,
+      mockModel,
       mockEnv
     );
 
-    expect(createAgentSpy).toHaveBeenCalledWith({ modelId: "test" }, mockEnv);
+    expect(createAgentSpy).toHaveBeenCalledWith(mockModel, mockEnv);
   });
 });
 
@@ -99,7 +113,7 @@ describe("defineWorkerConfig", () => {
 
     const config: A2AWorkerConfig = {
       agentName: "Full Agent",
-      createAgent: () => createMockAgent() as ReturnType<typeof import("ai").ToolLoopAgent>,
+      createAgent: () => createMockAgent(),
       createAgentCard: () => mockAgentCard,
       adapterOptions: { mode: "stream", parseTaskState, generateArtifacts },
       taskStore: { type: "redis", prefix: "test:" },

@@ -7,7 +7,7 @@
 import type { Message, Task } from "@drew-foxall/a2a-js-sdk";
 import type { ExecutionEventBus, RequestContext } from "@drew-foxall/a2a-js-sdk/server";
 import type { ModelMessage } from "ai";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import { DurableA2AAdapter, type DurableWorkflowFn } from "./durable-adapter.js";
 
 // Mock workflow/api
@@ -15,9 +15,24 @@ vi.mock("workflow/api", () => ({ start: vi.fn() }));
 import { start as mockStart } from "workflow/api";
 
 // Test Fixtures
+
+/**
+ * Creates a mock workflow function with proper typing.
+ * The workflow function signature matches DurableWorkflowFn.
+ */
 function createMockWorkflow<TArgs extends unknown[] = []>(): DurableWorkflowFn<TArgs> {
-  const workflow = vi.fn() as unknown as DurableWorkflowFn<TArgs>;
+  // Create a function that matches the workflow signature
+  const workflowFn = async (
+    _messages: ModelMessage[],
+    ..._args: TArgs
+  ): Promise<{ messages: ModelMessage[] }> => {
+    return { messages: [] };
+  };
+
+  // Add the workflowId property that the SWC plugin would add
+  const workflow = workflowFn as DurableWorkflowFn<TArgs>;
   workflow.workflowId = "test-workflow-id";
+
   return workflow;
 }
 
@@ -78,7 +93,7 @@ describe("DurableA2AAdapter", () => {
       const eventBus = createMockEventBus();
       const context: RequestContext = { userMessage: createMockUserMessage() };
 
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue(createMockRun());
+      vi.mocked(mockStart).mockResolvedValue(createMockRun());
 
       await adapter.execute(context, eventBus);
 
@@ -91,7 +106,7 @@ describe("DurableA2AAdapter", () => {
       const eventBus = createMockEventBus();
       const context: RequestContext = { userMessage: createMockUserMessage() };
 
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue(createMockRun("Response"));
+      vi.mocked(mockStart).mockResolvedValue(createMockRun("Response"));
 
       await adapter.execute(context, eventBus);
 
@@ -119,7 +134,7 @@ describe("DurableA2AAdapter", () => {
       });
       const eventBus = createMockEventBus();
 
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue(createMockRun("I need more info"));
+      vi.mocked(mockStart).mockResolvedValue(createMockRun("I need more info"));
 
       await adapter.execute({ userMessage: createMockUserMessage() }, eventBus);
 
@@ -139,7 +154,7 @@ describe("DurableA2AAdapter", () => {
       const adapter = new DurableA2AAdapter(workflow, { generateArtifacts });
       const eventBus = createMockEventBus();
 
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue(createMockRun());
+      vi.mocked(mockStart).mockResolvedValue(createMockRun());
 
       await adapter.execute({ userMessage: createMockUserMessage() }, eventBus);
 
@@ -154,7 +169,7 @@ describe("DurableA2AAdapter", () => {
       const adapter = new DurableA2AAdapter(workflow);
       const eventBus = createMockEventBus();
 
-      (mockStart as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Workflow failed"));
+      vi.mocked(mockStart).mockRejectedValue(new Error("Workflow failed"));
 
       await adapter.execute({ userMessage: createMockUserMessage() }, eventBus);
 
@@ -193,11 +208,11 @@ describe("DurableA2AAdapter", () => {
         artifacts: [],
       };
 
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue(createMockRun());
+      vi.mocked(mockStart).mockResolvedValue(createMockRun());
 
       await adapter.execute({ userMessage: createMockUserMessage("New"), task: existingTask }, eventBus);
 
-      const startCall = (mockStart as ReturnType<typeof vi.fn>).mock.calls[0];
+      const startCall = vi.mocked(mockStart).mock.calls[0];
       const messages = startCall[1][0] as ModelMessage[];
       expect(messages).toHaveLength(1);
       expect(messages[0].content).toBe("New");
@@ -216,11 +231,11 @@ describe("DurableA2AAdapter", () => {
         artifacts: [],
       };
 
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue(createMockRun());
+      vi.mocked(mockStart).mockResolvedValue(createMockRun());
 
       await adapter.execute({ userMessage: createMockUserMessage("New"), task: existingTask }, eventBus);
 
-      const startCall = (mockStart as ReturnType<typeof vi.fn>).mock.calls[0];
+      const startCall = vi.mocked(mockStart).mock.calls[0];
       const messages = startCall[1][0] as ModelMessage[];
       expect(messages.length).toBeGreaterThanOrEqual(2);
     });
@@ -233,7 +248,7 @@ describe("DurableA2AAdapter", () => {
       const eventBus = createMockEventBus();
 
       // String content
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue({
+      vi.mocked(mockStart).mockResolvedValue({
         runId: "run-1",
         returnValue: Promise.resolve({
           messages: [{ role: "assistant" as const, content: "String response" }],
@@ -255,7 +270,7 @@ describe("DurableA2AAdapter", () => {
       vi.clearAllMocks();
 
       // Array content
-      (mockStart as ReturnType<typeof vi.fn>).mockResolvedValue({
+      vi.mocked(mockStart).mockResolvedValue({
         runId: "run-2",
         returnValue: Promise.resolve({
           messages: [{ role: "assistant" as const, content: [{ type: "text", text: "Part 1" }, { type: "text", text: "Part 2" }] }],
