@@ -7,8 +7,8 @@
 
 **Multi-Purpose Repository:**
 1. **[@drew-foxall/a2a-ai-sdk-adapter](packages/a2a-ai-sdk-adapter)** - NPM package for bridging Vercel AI SDK agents with the A2A protocol
-2. **[Agent Examples](examples/agents)** - 10 working A2A agent examples demonstrating the adapter in action
-3. **[Cloudflare Workers](examples/workers)** - Example workers demonstrating multi-agent orchestration via Service Bindings
+2. **[Agent Examples](examples/agents)** - 19 working A2A agent examples demonstrating the adapter in action
+3. **[Cloudflare Workers](examples/workers)** - 23 example workers demonstrating multi-agent orchestration via Service Bindings
 
 > Built with **Vercel AI SDK v6**, **Hono**, **TypeScript**, and [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)
 
@@ -120,33 +120,49 @@ a2a-js-sdk-examples/
 │       └── README.md             # API documentation
 │
 ├── examples/
-│   ├── agents/                   # 🤖 10 Working Agents (Node.js/Hono)
+│   ├── agents/                   # 🤖 19 Working Agents (Node.js/Hono)
 │   │   ├── src/agents/
 │   │   │   ├── hello-world/     # Simplest example
 │   │   │   ├── dice-agent/      # Tool usage
-│   │   │   ├── github-agent/    # External APIs
+│   │   │   ├── github-agent/    # External APIs (Octokit)
 │   │   │   ├── analytics-agent/ # Artifacts (PNG charts)
 │   │   │   ├── currency-agent/  # Real-time data
 │   │   │   ├── movie-agent/     # Multi-turn conversations
 │   │   │   ├── coder/           # Code generation
 │   │   │   ├── content-editor/  # Text processing
+│   │   │   ├── expense-agent/   # Multi-step forms
+│   │   │   ├── image-generator/ # DALL-E integration
+│   │   │   ├── adversarial/     # Security testing
+│   │   │   ├── auth-agent/      # OAuth/OIDC flows
+│   │   │   ├── code-review/     # Code analysis
+│   │   │   ├── contact-extractor/ # Data extraction
+│   │   │   ├── content-planner/ # Content outlines
+│   │   │   ├── local-llm-chat/  # Local LLM support
+│   │   │   ├── mcp-registry/    # MCP server registry
+│   │   │   ├── number-game/     # Pure logic (no LLM)
 │   │   │   └── travel-planner-multiagent/
 │   │   │       ├── weather-agent/   # Weather specialist
 │   │   │       ├── airbnb-agent/    # MCP integration
 │   │   │       └── planner/         # Multi-agent orchestrator
 │   │   └── package.json
 │   │
-│   ├── workers/                  # ☁️ Cloudflare Workers
-│   │   ├── shared/              # Shared utilities
+│   ├── workers/                  # ☁️ 23 Cloudflare Workers
+│   │   ├── shared/              # Shared utilities (a2a-workers-shared)
+│   │   │   ├── worker-config.ts # Framework-agnostic config
+│   │   │   ├── hono-adapter.ts  # createA2AHonoWorker()
+│   │   │   ├── agent-card.ts    # buildAgentCard()
 │   │   │   ├── types.ts         # Environment types
 │   │   │   └── utils.ts         # Model providers
 │   │   ├── hello-world/         # Simple agent worker
 │   │   ├── dice-agent/          # Tool-using worker
+│   │   ├── dice-agent-durable/  # Durable (Workflow DevKit)
 │   │   ├── currency-agent/      # External API worker
 │   │   ├── weather-agent/       # Specialist (Service Binding)
 │   │   ├── airbnb-agent/        # MCP-powered specialist
 │   │   ├── airbnb-mcp-server/   # MCP server worker
 │   │   ├── travel-planner/      # Orchestrator worker
+│   │   ├── travel-planner-durable/ # Durable orchestrator
+│   │   ├── image-generator-durable/ # Durable image gen
 │   │   └── README.md            # Workers documentation
 │   │
 │   └── TESTING_WITH_A2A_INSPECTOR.md  # Testing guide
@@ -162,46 +178,65 @@ a2a-js-sdk-examples/
 
 All examples demonstrate different adapter capabilities:
 
-| Agent | Port | Purpose | Mode | Key Feature |
-|-------|------|---------|------|-------------|
-| **[Hello World](examples/agents/src/agents/hello-world)** | 41244 | Simplest A2A agent | Generate | Baseline example |
-| **[Dice Agent](examples/agents/src/agents/dice-agent)** | 41245 | Simple tool usage | Stream | Tool calling |
-| **[GitHub Agent](examples/agents/src/agents/github-agent)** | 41246 | External API integration | Stream | Octokit API |
-| **[Analytics Agent](examples/agents/src/agents/analytics-agent)** | 41247 | Artifact generation | Generate | PNG charts |
-| **[Currency Agent](examples/agents/src/agents/currency-agent)** | 41248 | Real-time data | Stream | Frankfurter API |
-| **[Movie Agent](examples/agents/src/agents/movie-agent)** | 41249 | Multi-turn conversations | Generate | Custom state |
-| **[Coder](examples/agents/src/agents/coder)** | 41250 | Code generation | Stream | Real-time artifacts |
-| **[Content Editor](examples/agents/src/agents/content-editor)** | 41251 | Text processing | Generate | Simple transforms |
-| **[Weather Agent](examples/agents/src/agents/travel-planner-multiagent/weather-agent)** | 41252 | Weather data | Stream | Open-Meteo API |
-| **[Airbnb Agent](examples/agents/src/agents/travel-planner-multiagent/airbnb-agent)** | 41253 | MCP integration | Stream | Real Airbnb data |
-| **[Travel Planner](examples/agents/src/agents/travel-planner-multiagent/planner)** | 41254 | Multi-agent orchestration | Stream | Agent networks |
+### Core Examples
+
+| Agent | Purpose | Mode | Key Feature |
+|-------|---------|------|-------------|
+| **[Hello World](examples/agents/src/agents/hello-world)** | Simplest A2A agent | Generate | Baseline example |
+| **[Dice Agent](examples/agents/src/agents/dice-agent)** | Simple tool usage | Stream | Tool calling |
+| **[Currency Agent](examples/agents/src/agents/currency-agent)** | Real-time data | Stream | Frankfurter API |
+| **[Analytics Agent](examples/agents/src/agents/analytics-agent)** | Artifact generation | Generate | PNG charts |
+| **[Coder](examples/agents/src/agents/coder)** | Code generation | Stream | Real-time artifacts |
+| **[Content Editor](examples/agents/src/agents/content-editor)** | Text processing | Generate | Simple transforms |
+
+### External API Integration
+
+| Agent | Purpose | Mode | Key Feature |
+|-------|---------|------|-------------|
+| **[GitHub Agent](examples/agents/src/agents/github-agent)** | GitHub API integration | Stream | Octokit API |
+| **[Movie Agent](examples/agents/src/agents/movie-agent)** | Multi-turn conversations | Generate | TMDB API |
+| **[Image Generator](examples/agents/src/agents/image-generator)** | Image creation | Generate | DALL-E API |
+
+### Specialized Agents
+
+| Agent | Purpose | Mode | Key Feature |
+|-------|---------|------|-------------|
+| **[Expense Agent](examples/agents/src/agents/expense-agent)** | Multi-step forms | Stream | State management |
+| **[Contact Extractor](examples/agents/src/agents/contact-extractor)** | Data extraction | Generate | Structured output |
+| **[Content Planner](examples/agents/src/agents/content-planner)** | Content outlines | Generate | Planning |
+| **[Code Review](examples/agents/src/agents/code-review)** | Code analysis | Stream | Static analysis |
+| **[Adversarial](examples/agents/src/agents/adversarial)** | Security testing | Stream | Prompt injection |
+| **[Auth Agent](examples/agents/src/agents/auth-agent)** | OAuth/OIDC flows | Generate | Authentication |
+| **[Local LLM Chat](examples/agents/src/agents/local-llm-chat)** | Local LLM support | Stream | Ollama/LM Studio |
+| **[Number Game](examples/agents/src/agents/number-game)** | Pure logic agent | N/A | No LLM required |
+
+### Multi-Agent System
+
+| Agent | Purpose | Mode | Key Feature |
+|-------|---------|------|-------------|
+| **[Weather Agent](examples/agents/src/agents/travel-planner-multiagent/weather-agent)** | Weather data | Stream | Open-Meteo API |
+| **[Airbnb Agent](examples/agents/src/agents/travel-planner-multiagent/airbnb-agent)** | MCP integration | Stream | Real Airbnb data |
+| **[Travel Planner](examples/agents/src/agents/travel-planner-multiagent/planner)** | Multi-agent orchestration | Stream | Agent networks |
 
 ### Running Agents Locally
 
-Each agent runs on its own port. Start them individually:
+Start agents individually (see `package.json` for all available commands):
 
 ```bash
-# Hello World - Simplest example (port 41244)
-pnpm agent:hello-world
+# Core examples
+pnpm agent:hello-world     # Simplest example
+pnpm agent:dice            # Dice rolling with tools
+pnpm agent:coder           # Code generation (streaming)
 
-# Coder - Stream mode with real-time artifacts (port 41242)
-pnpm agent:coder
+# External APIs
+pnpm agent:github          # GitHub integration
+pnpm agent:movie           # Movie search (TMDB)
+pnpm agent:analytics       # Chart generation
 
-# Travel Planner - Multi-agent orchestration (port 41252)
-pnpm agent:planner
-
-# All available commands:
-# pnpm agent:movie           # Movie search (41241)
-# pnpm agent:coder           # Code generation (41242)
-# pnpm agent:content-editor  # Content editing (41243)
-# pnpm agent:hello-world     # Simple example (41244)
-# pnpm agent:dice            # Dice rolling (41245)
-# pnpm agent:github          # GitHub API (41246)
-# pnpm agent:analytics       # Chart generation (41247)
-# pnpm agent:currency        # Currency conversion (41248)
-# pnpm agent:weather         # Weather forecasts (41250)
-# pnpm agent:airbnb          # Airbnb search (41251)
-# pnpm agent:planner         # Travel planning (41252)
+# Multi-agent
+pnpm agent:weather         # Weather specialist
+pnpm agent:airbnb          # Airbnb specialist
+pnpm agent:planner         # Travel orchestrator
 ```
 
 **Process Management**:
@@ -443,9 +478,9 @@ pnpm test src/agents/analytics-agent/
 ```
 
 **Test Coverage**:
-- **Adapter**: 12 unit tests (configuration, loggers, modes, type safety)
-- **Durable Adapter**: Tests for `DurableA2AAdapter` with Workflow DevKit
-- **Agents**: 84 tests across 21 test files covering 11 agents
+- **Adapter**: 11 unit tests (configuration, loggers, modes, type safety)
+- **Durable Adapter**: 11 tests for `DurableA2AAdapter` with Workflow DevKit
+- **Agents**: 84 tests across 21 test files
   - Each agent has `agent.test.ts` (ToolLoopAgent behavior)
   - Agents with utilities have `tools.test.ts` (pure functions)
   - All tests follow [AGENT_TEST_PRINCIPLES.md](examples/agents/AGENT_TEST_PRINCIPLES.md)
