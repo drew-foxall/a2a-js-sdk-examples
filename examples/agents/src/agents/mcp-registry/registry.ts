@@ -53,10 +53,7 @@ export class AgentRegistry {
 
     // Extract capabilities from skills
     const skillTags =
-      agentCard.skills?.flatMap((skill) => [
-        skill.name.toLowerCase(),
-        ...(skill.tags ?? []),
-      ]) ?? [];
+      agentCard.skills?.flatMap((skill) => [skill.name.toLowerCase(), ...(skill.tags ?? [])]) ?? [];
 
     const registeredCard: RegisteredAgentCard = {
       ...agentCard,
@@ -86,10 +83,7 @@ export class AgentRegistry {
   /**
    * List all registered agents
    */
-  listAgents(options?: {
-    tags?: string[];
-    healthyOnly?: boolean;
-  }): RegisteredAgentCard[] {
+  listAgents(options?: { tags?: string[]; healthyOnly?: boolean }): RegisteredAgentCard[] {
     let agents = Array.from(this.agents.values());
 
     // Filter by health status
@@ -100,9 +94,7 @@ export class AgentRegistry {
     // Filter by tags
     if (options?.tags && options.tags.length > 0) {
       const requiredTags = new Set(options.tags.map((t) => t.toLowerCase()));
-      agents = agents.filter((a) =>
-        a.tags?.some((tag) => requiredTags.has(tag.toLowerCase()))
-      );
+      agents = agents.filter((a) => a.tags?.some((tag) => requiredTags.has(tag.toLowerCase())));
     }
 
     return agents;
@@ -141,9 +133,7 @@ export class AgentRegistry {
           ...(agent.tags ?? []),
         ]);
 
-        const hasAllRequired = requiredCapabilities.every((cap) =>
-          agentCapabilities.has(cap)
-        );
+        const hasAllRequired = requiredCapabilities.every((cap) => agentCapabilities.has(cap));
 
         if (!hasAllRequired) {
           continue;
@@ -151,11 +141,7 @@ export class AgentRegistry {
       }
 
       // Calculate match score
-      const { score, matchReason } = this.calculateScore(
-        agent,
-        queryTokens,
-        preferredTags
-      );
+      const { score, matchReason } = this.calculateScore(agent, queryTokens, preferredTags);
 
       if (score > 0) {
         scoredAgents.push({
@@ -188,10 +174,7 @@ export class AgentRegistry {
   /**
    * Update health status for an agent
    */
-  updateHealthStatus(
-    name: string,
-    status: "healthy" | "unhealthy"
-  ): void {
+  updateHealthStatus(name: string, status: "healthy" | "unhealthy"): void {
     const agent = this.agents.get(name);
     if (agent) {
       agent.healthStatus = status;
@@ -354,9 +337,7 @@ export class AgentRegistry {
     // Preferred tags bonus
     if (preferredTags && preferredTags.length > 0) {
       const agentTagSet = new Set(agent.tags?.map((t) => t.toLowerCase()) ?? []);
-      const tagMatches = preferredTags.filter((t) =>
-        agentTagSet.has(t.toLowerCase())
-      ).length;
+      const tagMatches = preferredTags.filter((t) => agentTagSet.has(t.toLowerCase())).length;
 
       if (tagMatches > 0) {
         const tagScore = tagMatches / preferredTags.length;
@@ -399,5 +380,3 @@ export function createAgentRegistry(
 
   return registry;
 }
-
-

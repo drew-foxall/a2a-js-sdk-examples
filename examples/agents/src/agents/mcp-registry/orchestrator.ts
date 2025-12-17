@@ -7,15 +7,8 @@
 
 import type { LanguageModel } from "ai";
 import { generateText } from "ai";
-import { z } from "zod";
 import type { MCPRegistryServer } from "./mcp-server.js";
-import type {
-  ExecutionPlan,
-  FindAgentResult,
-  OrchestratorConfig,
-  OrchestratorState,
-  PlanTask,
-} from "./types.js";
+import type { ExecutionPlan, OrchestratorConfig, OrchestratorState, PlanTask } from "./types.js";
 
 // ============================================================================
 // Planner Prompt
@@ -99,11 +92,7 @@ export class MCPRegistryOrchestrator {
   private config: Required<OrchestratorConfig>;
   private state: OrchestratorState;
 
-  constructor(
-    mcpServer: MCPRegistryServer,
-    model: LanguageModel,
-    config: OrchestratorConfig
-  ) {
+  constructor(mcpServer: MCPRegistryServer, model: LanguageModel, config: OrchestratorConfig) {
     this.mcpServer = mcpServer;
     this.model = model;
     this.config = {
@@ -344,7 +333,8 @@ export class MCPRegistryOrchestrator {
         limit: 1,
       });
 
-      if (agentResults.length === 0) {
+      const firstResult = agentResults[0];
+      if (!firstResult) {
         return {
           taskId: task.id,
           success: false,
@@ -352,7 +342,7 @@ export class MCPRegistryOrchestrator {
         };
       }
 
-      const agent = agentResults[0].agentCard;
+      const agent = firstResult.agentCard;
 
       // Step 2: Call the agent via A2A
       const result = await this.callAgent(agent.url, task.description || task.type);
@@ -433,10 +423,7 @@ export class MCPRegistryOrchestrator {
   /**
    * Summarize execution results for the user
    */
-  async summarizeResults(
-    userQuery: string,
-    results: Record<string, unknown>
-  ): Promise<string> {
+  async summarizeResults(userQuery: string, results: Record<string, unknown>): Promise<string> {
     const { text } = await generateText({
       model: this.model,
       system:
@@ -492,7 +479,9 @@ export class MCPRegistryOrchestrator {
   /**
    * Extract JSON from LLM response text
    */
-  private extractJsonFromText(text: string): Record<string, unknown> {
+  private extractJsonFromText(text: string): {
+    tasks?: Array<{ id: string; type: string; description?: string; dependencies?: string[] }>;
+  } {
     // Try to find JSON in the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -526,5 +515,3 @@ export function createMCPRegistryOrchestrator(
 ): MCPRegistryOrchestrator {
   return new MCPRegistryOrchestrator(mcpServer, model, config);
 }
-
-

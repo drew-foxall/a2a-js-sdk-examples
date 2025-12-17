@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { AgentRegistry } from "./registry.js";
+import type { AgentRegistry } from "./registry.js";
 import type {
   FindAgentQuery,
   FindAgentResult,
@@ -43,10 +43,7 @@ interface MCPResponse {
 
 const findAgentSchema = z.object({
   query: z.string().describe("Natural language description of the task to find an agent for"),
-  requiredCapabilities: z
-    .array(z.string())
-    .optional()
-    .describe("Capabilities the agent must have"),
+  requiredCapabilities: z.array(z.string()).optional().describe("Capabilities the agent must have"),
   preferredTags: z.array(z.string()).optional().describe("Preferred tags for ranking"),
   limit: z.number().optional().describe("Maximum number of results (default: 5)"),
 });
@@ -159,7 +156,8 @@ const TOOLS = [
   },
   {
     name: "register_agent",
-    description: "Register a new agent in the registry. Requires an Agent Card with name, description, and URL.",
+    description:
+      "Register a new agent in the registry. Requires an Agent Card with name, description, and URL.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -471,10 +469,7 @@ export class MCPRegistryServer {
     return this.registry.findAgent(query);
   }
 
-  private listAgents(options?: {
-    tags?: string[];
-    healthyOnly?: boolean;
-  }): RegisteredAgentCard[] {
+  private listAgents(options?: { tags?: string[]; healthyOnly?: boolean }): RegisteredAgentCard[] {
     return this.registry.listAgents(options);
   }
 
@@ -502,11 +497,7 @@ export class MCPRegistryServer {
   // Helpers
   // ==========================================================================
 
-  private errorResponse(
-    id: string | number,
-    code: number,
-    message: string
-  ): MCPResponse {
+  private errorResponse(id: string | number, code: number, message: string): MCPResponse {
     return {
       jsonrpc: "2.0",
       id,
@@ -546,5 +537,3 @@ export class MCPRegistryServer {
 export function createMCPRegistryServer(registry: AgentRegistry): MCPRegistryServer {
   return new MCPRegistryServer(registry);
 }
-
-

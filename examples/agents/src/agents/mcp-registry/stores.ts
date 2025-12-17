@@ -178,4 +178,3 @@ export async function createPersistentRegistry(
   await persistent.load();
   return persistent;
 }
-

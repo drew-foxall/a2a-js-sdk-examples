@@ -131,8 +131,10 @@ export interface RegistryStats {
 export interface PlanTask {
   /** Unique task ID */
   id: string;
-  /** Task type/description */
+  /** Task type (e.g., "flight_search", "hotel_search") */
   type: string;
+  /** Human-readable description of the task */
+  description?: string;
   /** Task dependencies (IDs of tasks that must complete first) */
   dependencies: string[];
   /** Task parameters */
@@ -221,5 +223,3 @@ export interface OrchestratorConfig {
   /** State TTL (seconds) */
   stateTtl?: number;
 }
-
-

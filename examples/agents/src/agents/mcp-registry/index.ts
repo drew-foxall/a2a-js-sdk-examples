@@ -40,6 +40,24 @@
  * ```
  */
 
+// MCP Server
+export { createMCPRegistryServer, MCPRegistryServer } from "./mcp-server.js";
+// Orchestrator
+export { createMCPRegistryOrchestrator, MCPRegistryOrchestrator } from "./orchestrator.js";
+// Registry
+export { AgentRegistry, createAgentRegistry } from "./registry.js";
+// Storage
+export {
+  createInMemoryRegistryStore,
+  createPersistentRegistry,
+  createRedisRegistryStore,
+  InMemoryRegistryStore,
+  PersistentRegistry,
+  type RedisLike,
+  RedisRegistryStore,
+  type RedisRegistryStoreConfig,
+  type RegistryStore,
+} from "./stores.js";
 // Types
 export type {
   ExecutionPlan,
@@ -55,26 +73,3 @@ export type {
   RegistryConfig,
   RegistryStats,
 } from "./types.js";
-
-// Registry
-export { AgentRegistry, createAgentRegistry } from "./registry.js";
-
-// MCP Server
-export { MCPRegistryServer, createMCPRegistryServer } from "./mcp-server.js";
-
-// Orchestrator
-export { MCPRegistryOrchestrator, createMCPRegistryOrchestrator } from "./orchestrator.js";
-
-// Storage
-export {
-  createInMemoryRegistryStore,
-  createPersistentRegistry,
-  createRedisRegistryStore,
-  InMemoryRegistryStore,
-  PersistentRegistry,
-  RedisRegistryStore,
-  type RedisLike,
-  type RedisRegistryStoreConfig,
-  type RegistryStore,
-} from "./stores.js";
-
