@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.0-beta.54",
@@ -20,10 +21,12 @@
     "@drew-foxall/a2a-ai-provider-v3": "workspace:*",
     "ai": "6.0.0-beta.99",
     "hono": "^4.10.7",
-    "zod": "^4.1.13"
+    "zod": "^4.1.13",
+    "a2a-workers-shared": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
-    "wrangler": "^4.51.0"
+    "wrangler": "^4.51.0",
+    "@types/node": "^24.10.1"
   }
 }

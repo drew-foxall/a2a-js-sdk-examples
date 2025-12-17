@@ -63,4 +63,3 @@ export interface GameStore {
    */
   delete(sessionId: string): Promise<void>;
 }
-

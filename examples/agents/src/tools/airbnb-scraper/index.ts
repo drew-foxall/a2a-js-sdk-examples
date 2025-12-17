@@ -19,19 +19,18 @@
 
 export {
   AirbnbScraper,
-  createAirbnbScraper,
   type AirbnbScraperConfig,
   type CheerioLoadFn,
+  createAirbnbScraper,
 } from "./scraper.js";
 
 export {
-  airbnbListingDetailsParamsSchema,
-  airbnbSearchParamsSchema,
   type AirbnbListing,
   type AirbnbListingDetails,
   type AirbnbListingDetailsParams,
   type AirbnbSearchParams,
   type AirbnbSearchResult,
+  airbnbListingDetailsParamsSchema,
+  airbnbSearchParamsSchema,
   type Fetcher,
 } from "./types.js";
-

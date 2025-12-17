@@ -151,7 +151,7 @@ class ConsoleSpan implements Span {
 
     const errorInfo =
       error instanceof Error
-        ? { type: error.name, message: error.message, stack: error.stack }
+        ? { type: error.name, message: error.message, ...(error.stack && { stack: error.stack }) }
         : { type: "unknown", message: String(error) };
 
     this.events.push({
@@ -346,4 +346,3 @@ export class ConsoleTelemetryProvider implements TelemetryProvider {
 export function createConsoleTelemetry(config: ConsoleProviderConfig): TelemetryProvider {
   return new ConsoleTelemetryProvider(config);
 }
-

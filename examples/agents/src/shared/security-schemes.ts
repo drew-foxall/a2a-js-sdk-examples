@@ -266,6 +266,3 @@ export function createApiKeyScheme(
     description: description ?? `API key in ${location}`,
   };
 }
-
-
-

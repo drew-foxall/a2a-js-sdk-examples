@@ -67,7 +67,7 @@ interface GitHubSearchRepoResponse {
 /**
  * Minimal interface for GitHub API client.
  * This allows any Octokit-compatible client to be injected.
- * 
+ *
  * Note: Parameter types use specific literals to match Octokit's expected types.
  */
 export interface GitHubClient {
@@ -533,4 +533,3 @@ export async function searchRepositories(
   const tools = createGitHubTools();
   return tools.searchRepositories(query, sort, limit);
 }
-

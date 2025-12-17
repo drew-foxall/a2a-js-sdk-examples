@@ -26,7 +26,11 @@ describe("Airbnb Agent", () => {
       }),
     });
 
-    const agent = new ToolLoopAgent({ model: mockModel, instructions: getAirbnbAgentPrompt(), tools: {} });
+    const agent = new ToolLoopAgent({
+      model: mockModel,
+      instructions: getAirbnbAgentPrompt(),
+      tools: {},
+    });
     const result = await agent.generate({ prompt: "Find a place in Paris for 2 people" });
     expect(result.text).toBeDefined();
   });

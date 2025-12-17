@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
     "typescript": "^5.9.3",
-    "wrangler": "^4.51.0"
+    "wrangler": "^4.51.0",
+    "@types/node": "^24.10.1"
   }
 }

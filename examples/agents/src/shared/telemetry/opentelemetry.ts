@@ -350,4 +350,3 @@ class NoOpOtelSpan implements Span {
 export function createOpenTelemetry(config: OpenTelemetryProviderConfig): TelemetryProvider {
   return new OpenTelemetryProvider(config);
 }
-

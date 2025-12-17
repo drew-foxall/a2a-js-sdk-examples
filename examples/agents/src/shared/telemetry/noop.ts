@@ -94,10 +94,6 @@ export class NoOpTelemetryProvider implements TelemetryProvider {
   readonly name = "noop";
   readonly enabled = false;
 
-  constructor(_config?: TelemetryConfig) {
-    // Config is ignored
-  }
-
   startSpan(_name: string, _options?: SpanOptions): Span {
     return NOOP_SPAN;
   }
@@ -125,4 +121,3 @@ export class NoOpTelemetryProvider implements TelemetryProvider {
 export function createNoOpTelemetry(_config?: TelemetryConfig): TelemetryProvider {
   return new NoOpTelemetryProvider();
 }
-

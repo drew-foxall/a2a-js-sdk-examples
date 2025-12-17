@@ -8,9 +8,9 @@
 export { createAnalyticsAgent } from "./agent.js";
 export { getAnalyticsAgentPrompt } from "./prompt.js";
 export {
+  type ChartData,
+  type ChartResult,
   generateBarChart,
   generateChartFromPrompt,
   parseChartData,
-  type ChartData,
-  type ChartResult,
 } from "./tools.js";

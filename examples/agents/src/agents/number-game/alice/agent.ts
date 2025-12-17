@@ -196,4 +196,3 @@ export class AliceAgent {
 export function createAliceAgent(config: AliceAgentConfig): AliceAgent {
   return new AliceAgent(config);
 }
-

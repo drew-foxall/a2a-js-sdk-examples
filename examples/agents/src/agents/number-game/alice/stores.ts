@@ -144,10 +144,6 @@ export function createInMemoryGameStore(): GameStore {
 /**
  * Create a Redis-backed game store
  */
-export function createRedisGameStore(
-  redis: RedisClient,
-  config?: RedisGameStoreConfig
-): GameStore {
+export function createRedisGameStore(redis: RedisClient, config?: RedisGameStoreConfig): GameStore {
   return new RedisGameStore(redis, config);
 }
-

@@ -26,7 +26,7 @@ import type { ModelMessage, UIMessageChunk } from "ai";
 import { getWritable } from "workflow";
 import { z } from "zod";
 import { getImageGeneratorPrompt } from "./prompt.js";
-import { generateImage, type GenerateImageParams, type GenerateImageResult } from "./steps.js";
+import { type GenerateImageParams, type GenerateImageResult, generateImage } from "./steps.js";
 
 /**
  * Tool Schemas
@@ -90,4 +90,3 @@ export async function imageGeneratorWorkflow(
  */
 export type ImageGeneratorWorkflowParams = Parameters<typeof imageGeneratorWorkflow>;
 export type ImageGeneratorWorkflowResult = Awaited<ReturnType<typeof imageGeneratorWorkflow>>;
-

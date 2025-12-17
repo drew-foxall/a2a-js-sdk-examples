@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getAvailableLocations, isSearchError, type SearchResult, searchAirbnbListings } from "./tools.mock";
+import {
+  getAvailableLocations,
+  isSearchError,
+  type SearchResult,
+  searchAirbnbListings,
+} from "./tools.mock";
 
 describe("searchAirbnbListings", () => {
   it("should find listings for known locations", async () => {

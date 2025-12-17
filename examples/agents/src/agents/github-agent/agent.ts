@@ -56,7 +56,12 @@ const searchRepositoriesSchema = z.object({
     .enum(["updated", "stars", "forks"])
     .default("updated")
     .describe('Sort by "updated", "stars", or "forks"'),
-  limit: z.number().int().positive().default(10).describe("Maximum results to return (default: 10)"),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .default(10)
+    .describe("Maximum results to return (default: 10)"),
 });
 
 type GetUserRepositoriesParams = z.infer<typeof getUserRepositoriesSchema>;
@@ -127,4 +132,3 @@ export function createGitHubAgent(model: LanguageModel, config?: GitHubAgentConf
     },
   });
 }
-

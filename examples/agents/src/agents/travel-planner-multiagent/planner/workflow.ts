@@ -25,7 +25,7 @@ import { DurableAgent } from "@drew-foxall/workflow-ai/agent";
 import type { ModelMessage, UIMessageChunk } from "ai";
 import { getWritable } from "workflow";
 import { z } from "zod";
-import type { SendMessageOptions, SendMessageResult, AgentContext } from "./agent.js";
+import type { AgentContext, SendMessageOptions, SendMessageResult } from "./agent.js";
 import { getTravelPlannerPrompt } from "./prompt.js";
 import { callSubAgent, discoverSubAgent } from "./steps.js";
 
@@ -234,4 +234,3 @@ export async function travelPlannerWorkflow(
  */
 export type TravelPlannerWorkflowParams = Parameters<typeof travelPlannerWorkflow>;
 export type TravelPlannerWorkflowResult = Awaited<ReturnType<typeof travelPlannerWorkflow>>;
-

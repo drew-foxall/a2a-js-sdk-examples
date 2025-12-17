@@ -101,7 +101,9 @@ describe("searchPeople", () => {
 
   it("should handle missing paths and invalid responses", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
-      mockResponse({ results: [{ id: 1, name: "Person", known_for: [{ title: "Film" }] }] }) as Response
+      mockResponse({
+        results: [{ id: 1, name: "Person", known_for: [{ title: "Film" }] }],
+      }) as Response
     );
     const result = await searchPeople("test");
     expect(result.results[0]?.profile_path).toBeUndefined();

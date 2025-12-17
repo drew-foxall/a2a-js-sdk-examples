@@ -8,8 +8,8 @@
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import {
   type AirbnbSearchParams,
-  airbnbSearchSchema,
   type AirbnbTools,
+  airbnbSearchSchema,
   createAirbnbMCPTools,
   createMCPHttpClient,
   type ListingDetailsParams,

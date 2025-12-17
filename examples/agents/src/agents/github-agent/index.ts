@@ -10,13 +10,13 @@ export { getGitHubAgentPrompt } from "./prompt.js";
 export {
   createGitHubClientFromOctokit,
   createGitHubTools,
-  getRecentCommits,
-  getUserRepositories,
-  searchRepositories,
   type GitHubApiResult,
   type GitHubClient,
   type GitHubCommit,
   type GitHubRepository,
   type GitHubTools,
+  getRecentCommits,
+  getUserRepositories,
   type OctokitLike,
+  searchRepositories,
 } from "./tools.js";

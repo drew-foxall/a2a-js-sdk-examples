@@ -6,8 +6,8 @@
  */
 
 export {
-  createAuthAgent,
   type AuthAgentConfig,
+  createAuthAgent,
 } from "./agent.js";
 export { getAuthAgentPrompt } from "./prompt.js";
 export {

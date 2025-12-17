@@ -208,4 +208,3 @@ export interface AuthenticatedOperationResult {
   /** Time spent waiting for consent (if any) */
   consentWaitMs?: number;
 }
-

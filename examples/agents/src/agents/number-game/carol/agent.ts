@@ -41,14 +41,14 @@ export class CarolAgent {
     const scale = 50 / maxGuess; // Scale to max 50 chars
 
     let viz = "📊 Guess History:\n";
-    viz += "─".repeat(55) + "\n";
+    viz += `${"─".repeat(55)}\n`;
 
     guesses.forEach((guess, i) => {
       const bar = "█".repeat(Math.max(1, Math.round(guess * scale)));
       viz += `${String(i + 1).padStart(2)}. ${String(guess).padStart(3)} |${bar}\n`;
     });
 
-    viz += "─".repeat(55) + "\n";
+    viz += `${"─".repeat(55)}\n`;
     viz += `Total guesses: ${guesses.length}\n`;
     viz += `Range: ${Math.min(...guesses)} - ${Math.max(...guesses)}\n`;
 
@@ -168,8 +168,6 @@ Example: "visualize 50, 25, 37, 31, 34"`;
           guesses: shuffled,
         };
       }
-
-      case "help":
       default:
         return {
           text: this.getHelp(),
@@ -195,4 +193,3 @@ Example: "visualize 50, 25, 37, 31, 34"`;
 export function createCarolAgent(): CarolAgent {
   return new CarolAgent();
 }
-

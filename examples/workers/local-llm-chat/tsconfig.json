@@ -1,28 +1,28 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ESNext"],
-    "types": ["@cloudflare/workers-types/2023-07-01"],
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ],
     "strict": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
-    "paths": {
-      "a2a-agents": ["../../agents/src/shared/index.ts"]
-    }
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "src",
-    "**/*.ts",
-    "**/*.tsx",
-    "../shared/types.ts",
-    "../shared/utils.ts"
+    "src/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules"
+  ]
 }
-

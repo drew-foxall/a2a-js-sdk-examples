@@ -112,9 +112,7 @@ export class MockAuthProvider implements AuthProvider {
     const willBeDenied = Math.random() < this.config.denialProbability;
 
     // Schedule approval/denial
-    const approveAt = willBeDenied
-      ? undefined
-      : now + this.config.approvalDelaySeconds * 1000;
+    const approveAt = willBeDenied ? undefined : now + this.config.approvalDelaySeconds * 1000;
 
     const pendingRequest: PendingCIBARequest = {
       authReqId,
@@ -216,11 +214,12 @@ export class MockAuthProvider implements AuthProvider {
     // Mock tokens are base64 encoded JSON
     try {
       const parts = token.split(".");
-      if (parts.length !== 3) {
+      const payloadPart = parts[1];
+      if (parts.length !== 3 || !payloadPart) {
         throw new Error("Invalid token format");
       }
 
-      const payload = JSON.parse(atob(parts[1]));
+      const payload = JSON.parse(atob(payloadPart));
 
       // Check expiration
       if (payload.exp && payload.exp < Date.now() / 1000) {
@@ -229,7 +228,9 @@ export class MockAuthProvider implements AuthProvider {
 
       return payload as TokenClaims;
     } catch (error) {
-      throw new Error(`Token verification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Token verification failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }
 
@@ -300,4 +301,3 @@ export function createDevAuthProvider(): AuthProvider {
     denialProbability: 0, // Never deny in dev
   });
 }
-

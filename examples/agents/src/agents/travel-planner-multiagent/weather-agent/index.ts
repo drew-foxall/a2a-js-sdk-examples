@@ -9,10 +9,10 @@
 export { createWeatherAgent } from "./agent.js";
 export { getWeatherAgentPrompt } from "./prompt.js";
 export {
+  type GeocodeResult,
   geocodeLocation,
   getWeatherDescription,
   getWeatherForecast,
   isWeatherError,
-  type GeocodeResult,
   type WeatherForecast,
 } from "./tools.js";

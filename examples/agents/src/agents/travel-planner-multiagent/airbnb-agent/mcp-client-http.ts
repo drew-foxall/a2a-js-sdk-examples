@@ -177,4 +177,3 @@ export function createAirbnbMCPTools(client: MCPClient): AirbnbTools {
     },
   };
 }
-

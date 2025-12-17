@@ -192,7 +192,9 @@ export async function completeCIBAFlow(
 
     // Terminal states - return immediately
     if (result.status === "approved" || result.status === "denied" || result.status === "error") {
-      console.log(`[AuthStep] CIBA completed with status: ${result.status} after ${pollCount} polls`);
+      console.log(
+        `[AuthStep] CIBA completed with status: ${result.status} after ${pollCount} polls`
+      );
       return result;
     }
 
@@ -211,4 +213,3 @@ export async function completeCIBAFlow(
     error: `Authorization request timed out after ${maxWaitSeconds} seconds`,
   };
 }
-

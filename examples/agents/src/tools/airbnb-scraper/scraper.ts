@@ -210,7 +210,8 @@ export class AirbnbScraper {
                 avgRating: listing.avgRating,
                 reviewsCount: listing.reviewsCount,
                 price:
-                  result.pricingQuote?.structuredStayDisplayPrice?.primaryLine?.accessibilityLabel ||
+                  result.pricingQuote?.structuredStayDisplayPrice?.primaryLine
+                    ?.accessibilityLabel ||
                   result?.structuredDisplayPrice?.primaryLine?.accessibilityLabel,
                 url: `${BASE_URL}/rooms/${listing.id}`,
                 images:
@@ -346,4 +347,3 @@ export class AirbnbScraper {
 export function createAirbnbScraper(config: AirbnbScraperConfig): AirbnbScraper {
   return new AirbnbScraper(config);
 }
-

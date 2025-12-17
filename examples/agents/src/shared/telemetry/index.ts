@@ -48,8 +48,8 @@
 // ============================================================================
 
 export type {
-  AttributeValue,
   Attributes,
+  AttributeValue,
   LogSeverity,
   Span,
   SpanOptions,
@@ -66,7 +66,11 @@ export { AgentAttributes, SpanNames } from "./types.js";
 // Provider Exports
 // ============================================================================
 
-export { ConsoleTelemetryProvider, createConsoleTelemetry, type ConsoleProviderConfig } from "./console.js";
+export {
+  type ConsoleProviderConfig,
+  ConsoleTelemetryProvider,
+  createConsoleTelemetry,
+} from "./console.js";
 export { createNoOpTelemetry, NoOpTelemetryProvider } from "./noop.js";
 export {
   createOpenTelemetry,
@@ -78,10 +82,10 @@ export {
 // Factory Function
 // ============================================================================
 
-import type { TelemetryConfig, TelemetryProvider, TelemetryProviderType } from "./types.js";
 import { type ConsoleProviderConfig, createConsoleTelemetry } from "./console.js";
 import { createNoOpTelemetry } from "./noop.js";
 import { createOpenTelemetry, type OpenTelemetryProviderConfig } from "./opentelemetry.js";
+import type { TelemetryConfig, TelemetryProvider } from "./types.js";
 
 /**
  * Options for creating a telemetry provider
@@ -90,7 +94,10 @@ export type CreateTelemetryOptions =
   | ({ provider: "console" } & ConsoleProviderConfig)
   | ({ provider: "noop" } & TelemetryConfig)
   | ({ provider: "opentelemetry" } & OpenTelemetryProviderConfig)
-  | ({ provider: "custom"; factory: (config: TelemetryConfig) => TelemetryProvider } & TelemetryConfig);
+  | ({
+      provider: "custom";
+      factory: (config: TelemetryConfig) => TelemetryProvider;
+    } & TelemetryConfig);
 
 /**
  * Create a telemetry provider based on configuration
@@ -145,7 +152,9 @@ export function createTelemetry(options: CreateTelemetryOptions): TelemetryProvi
 
     default: {
       const exhaustiveCheck: never = options;
-      throw new Error(`Unknown telemetry provider: ${(exhaustiveCheck as CreateTelemetryOptions).provider}`);
+      throw new Error(
+        `Unknown telemetry provider: ${(exhaustiveCheck as CreateTelemetryOptions).provider}`
+      );
     }
   }
 }
@@ -159,8 +168,7 @@ export function createTelemetry(options: CreateTelemetryOptions): TelemetryProvi
  * Override by passing explicit options to createTelemetry().
  */
 export function getDefaultTelemetry(serviceName: string): TelemetryProvider {
-  const isProduction =
-    typeof process !== "undefined" && process.env?.NODE_ENV === "production";
+  const isProduction = typeof process !== "undefined" && process.env?.NODE_ENV === "production";
 
   if (isProduction) {
     return createTelemetry({
@@ -222,4 +230,3 @@ export function instrument<TArgs extends unknown[], TResult>(
 }
 
 import type { AttributeValue } from "./types.js";
-

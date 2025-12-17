@@ -52,13 +52,8 @@ export async function callSubAgent(
 
   // Import dynamically to avoid bundling issues
   const { generateText } = await import("ai");
-  const { a2aV3 } = await import("@drew-foxall/a2a-ai-provider-v3");
-  const { toJSONObject } = await import("@drew-foxall/a2a-ai-provider-v3");
-  type A2aProviderMetadata = Awaited<
-    ReturnType<typeof import("@drew-foxall/a2a-ai-provider-v3").createA2aV3Model>
-  > extends { providerMetadata: { a2a: infer T } }
-    ? T
-    : never;
+  const { a2aV3, toJSONObject } = await import("@drew-foxall/a2a-ai-provider-v3");
+  type A2aProviderMetadata = import("@drew-foxall/a2a-ai-provider-v3").A2aProviderMetadata;
 
   try {
     const result = await generateText({
@@ -184,4 +179,3 @@ export async function discoverSubAgent(url: string): Promise<{
     };
   }
 }
-

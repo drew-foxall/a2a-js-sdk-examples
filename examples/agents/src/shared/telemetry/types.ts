@@ -291,4 +291,3 @@ export const SpanNames = {
   EXTERNAL_API_CALL: "external.api_call",
   DATABASE_QUERY: "external.database_query",
 } as const;
-

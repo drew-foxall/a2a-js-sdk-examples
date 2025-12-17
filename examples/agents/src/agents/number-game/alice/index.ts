@@ -16,13 +16,13 @@
 // Module Exports (for composability)
 // ============================================================================
 
-export { AliceAgent, createAliceAgent, type AliceAgentConfig } from "./agent.js";
+export { AliceAgent, type AliceAgentConfig, createAliceAgent } from "./agent.js";
 export {
   createInMemoryGameStore,
   createRedisGameStore,
   InMemoryGameStore,
   type RedisClient,
-  type RedisGameStoreConfig,
   RedisGameStore,
+  type RedisGameStoreConfig,
 } from "./stores.js";
 export type { GameState, GameStore, GradeResult } from "./types.js";

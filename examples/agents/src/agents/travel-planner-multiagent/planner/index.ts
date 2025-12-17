@@ -8,10 +8,10 @@
 
 // Non-durable exports (standard ToolLoopAgent)
 export {
-  createPlannerAgent,
   type AgentArtifact,
   type AgentArtifactPart,
   type AgentContext,
+  createPlannerAgent,
   type PlannerAgentConfig,
   type SendMessageFn,
   type SendMessageOptions,
@@ -30,12 +30,11 @@ export {
   getTravelPlannerPrompt,
   type PlannerPromptConfig,
 } from "./prompt.js";
-
+export { callSubAgent, discoverSubAgent } from "./steps.js";
 // Durable exports (Workflow DevKit)
 export {
-  travelPlannerWorkflow,
   type TravelPlannerWorkflowConfig,
   type TravelPlannerWorkflowParams,
   type TravelPlannerWorkflowResult,
+  travelPlannerWorkflow,
 } from "./workflow.js";
-export { callSubAgent, discoverSubAgent } from "./steps.js";

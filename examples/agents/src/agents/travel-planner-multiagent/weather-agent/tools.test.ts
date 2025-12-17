@@ -26,7 +26,15 @@ describe("geocodeLocation", () => {
 
   it("should geocode valid location", async () => {
     mockFetch.mockResolvedValueOnce(
-      mockGeoResponse([{ name: "Paris", latitude: 48.85, longitude: 2.35, country: "France", admin1: "Île-de-France" }])
+      mockGeoResponse([
+        {
+          name: "Paris",
+          latitude: 48.85,
+          longitude: 2.35,
+          country: "France",
+          admin1: "Île-de-France",
+        },
+      ])
     );
 
     const result = await geocodeLocation("Paris");
@@ -59,14 +67,20 @@ describe("getWeatherForecast", () => {
 
   it("should fetch forecast for valid location", async () => {
     mockFetch
-      .mockResolvedValueOnce(mockGeoResponse([{ name: "Paris", latitude: 48.85, longitude: 2.35, country: "France", admin1: "IDF" }]))
-      .mockResolvedValueOnce(mockWeatherResponse({
-        time: ["2025-11-23", "2025-11-24"],
-        temperature_2m_max: [60, 62],
-        temperature_2m_min: [45, 47],
-        precipitation_sum: [0.1, 0],
-        weather_code: [1, 0],
-      }));
+      .mockResolvedValueOnce(
+        mockGeoResponse([
+          { name: "Paris", latitude: 48.85, longitude: 2.35, country: "France", admin1: "IDF" },
+        ])
+      )
+      .mockResolvedValueOnce(
+        mockWeatherResponse({
+          time: ["2025-11-23", "2025-11-24"],
+          temperature_2m_max: [60, 62],
+          temperature_2m_min: [45, 47],
+          precipitation_sum: [0.1, 0],
+          weather_code: [1, 0],
+        })
+      );
 
     const result = await getWeatherForecast("Paris", 2);
 
@@ -86,21 +100,27 @@ describe("getWeatherForecast", () => {
 
     // Weather API error
     mockFetch
-      .mockResolvedValueOnce(mockGeoResponse([{ name: "London", latitude: 51.5, longitude: -0.1, country: "UK" }]))
+      .mockResolvedValueOnce(
+        mockGeoResponse([{ name: "London", latitude: 51.5, longitude: -0.1, country: "UK" }])
+      )
       .mockResolvedValueOnce({ ok: false, status: 503 });
     result = await getWeatherForecast("London");
     expect(isWeatherError(result) && result.error).toContain("Weather API error: 503");
 
     // Invalid weather response
     mockFetch
-      .mockResolvedValueOnce(mockGeoResponse([{ name: "Berlin", latitude: 52.5, longitude: 13.4, country: "Germany" }]))
+      .mockResolvedValueOnce(
+        mockGeoResponse([{ name: "Berlin", latitude: 52.5, longitude: 13.4, country: "Germany" }])
+      )
       .mockResolvedValueOnce({ ok: true, json: async () => ({ invalid: "data" }) });
     result = await getWeatherForecast("Berlin");
     expect(isWeatherError(result) && result.error).toContain("Invalid weather API response");
 
     // Network error
     mockFetch
-      .mockResolvedValueOnce(mockGeoResponse([{ name: "Rome", latitude: 41.9, longitude: 12.5, country: "Italy" }]))
+      .mockResolvedValueOnce(
+        mockGeoResponse([{ name: "Rome", latitude: 41.9, longitude: 12.5, country: "Italy" }])
+      )
       .mockRejectedValueOnce(new Error("Network timeout"));
     result = await getWeatherForecast("Rome");
     expect(isWeatherError(result) && result.error).toContain("Network timeout");
@@ -109,14 +129,18 @@ describe("getWeatherForecast", () => {
   it("should default to 7 days and cap at 16 days", async () => {
     const setupMock = () => {
       mockFetch
-        .mockResolvedValueOnce(mockGeoResponse([{ name: "Tokyo", latitude: 35.6, longitude: 139.6, country: "Japan" }]))
-        .mockResolvedValueOnce(mockWeatherResponse({
-          time: Array(16).fill("2025-11-23"),
-          temperature_2m_max: Array(16).fill(70),
-          temperature_2m_min: Array(16).fill(55),
-          precipitation_sum: Array(16).fill(0),
-          weather_code: Array(16).fill(0),
-        }));
+        .mockResolvedValueOnce(
+          mockGeoResponse([{ name: "Tokyo", latitude: 35.6, longitude: 139.6, country: "Japan" }])
+        )
+        .mockResolvedValueOnce(
+          mockWeatherResponse({
+            time: Array(16).fill("2025-11-23"),
+            temperature_2m_max: Array(16).fill(70),
+            temperature_2m_min: Array(16).fill(55),
+            precipitation_sum: Array(16).fill(0),
+            weather_code: Array(16).fill(0),
+          })
+        );
     };
 
     setupMock();
@@ -140,7 +164,9 @@ describe("getWeatherDescription", () => {
   });
 
   it("should handle all standard WMO codes", () => {
-    const validCodes = [0, 1, 2, 3, 45, 48, 51, 53, 55, 61, 63, 65, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99];
+    const validCodes = [
+      0, 1, 2, 3, 45, 48, 51, 53, 55, 61, 63, 65, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99,
+    ];
     for (const code of validCodes) {
       expect(getWeatherDescription(code)).not.toBe("Unknown");
     }

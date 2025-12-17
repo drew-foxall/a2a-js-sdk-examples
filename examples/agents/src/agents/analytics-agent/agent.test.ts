@@ -15,7 +15,9 @@ describe("Analytics Agent", () => {
       doGenerate: async () => ({
         finishReason: "stop",
         usage: { inputTokens: 20, outputTokens: 30, totalTokens: 50 },
-        content: [{ type: "text", text: "I'll create a bar chart showing your quarterly sales data." }],
+        content: [
+          { type: "text", text: "I'll create a bar chart showing your quarterly sales data." },
+        ],
         warnings: [],
       }),
     });

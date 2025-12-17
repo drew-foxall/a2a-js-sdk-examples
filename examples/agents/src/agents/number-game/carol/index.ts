@@ -16,4 +16,4 @@
 // Module Exports (for composability)
 // ============================================================================
 
-export { CarolAgent, createCarolAgent, type CarolResult } from "./agent.js";
+export { CarolAgent, type CarolResult, createCarolAgent } from "./agent.js";

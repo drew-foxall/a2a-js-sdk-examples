@@ -21,7 +21,10 @@ describe("parseChartData", () => {
   });
 
   it("should handle edge cases", () => {
-    expect(parseChartData("Generate a chart of revenue Jan:1000 Feb:2000").labels).toEqual(["Jan", "Feb"]);
+    expect(parseChartData("Generate a chart of revenue Jan:1000 Feb:2000").labels).toEqual([
+      "Jan",
+      "Feb",
+    ]);
     expect(parseChartData("Not valid data")).toEqual({ labels: [], values: [] });
   });
 });
@@ -65,7 +68,9 @@ describe("generateChartFromPrompt", () => {
   });
 
   it("should throw for unparseable data", async () => {
-    await expect(generateChartFromPrompt("No chart data")).rejects.toThrow("Could not parse chart data");
+    await expect(generateChartFromPrompt("No chart data")).rejects.toThrow(
+      "Could not parse chart data"
+    );
     await expect(generateChartFromPrompt("")).rejects.toThrow("Could not parse chart data");
   });
 });

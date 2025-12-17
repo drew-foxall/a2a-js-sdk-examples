@@ -9,8 +9,11 @@
 export { createDiceAgent } from "./agent.js";
 export { createInstrumentedDiceAgent, createInstrumentedMessageProcessor } from "./instrumented.js";
 export { getDiceAgentPrompt } from "./prompt.js";
-export { checkPrime, rollDice } from "./tools.js";
-
-// Durable exports (Workflow DevKit)
-export { diceAgentWorkflow, type DiceAgentWorkflowParams, type DiceAgentWorkflowResult } from "./workflow.js";
 export * as diceAgentSteps from "./steps.js";
+export { checkPrime, rollDice } from "./tools.js";
+// Durable exports (Workflow DevKit)
+export {
+  type DiceAgentWorkflowParams,
+  type DiceAgentWorkflowResult,
+  diceAgentWorkflow,
+} from "./workflow.js";

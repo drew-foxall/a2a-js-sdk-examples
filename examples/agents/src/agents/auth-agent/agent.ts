@@ -19,8 +19,8 @@
 
 import { type LanguageModel, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import type { AuthProvider, ProtectedResource } from "./types.js";
 import { completeCIBAFlow, getClientToken } from "./steps.js";
+import type { AuthProvider, ProtectedResource } from "./types.js";
 
 // ============================================================================
 // Tool Schemas
@@ -95,13 +95,16 @@ export function createAuthAgent(config: AuthAgentConfig) {
           "Look up public company information that doesn't require user consent. " +
           "This includes company directory, public policies, and organizational structure.",
         inputSchema: lookupPublicInfoSchema,
-        execute: async (params) => {
+        execute: async (params: z.infer<typeof lookupPublicInfoSchema>) => {
           try {
             // Get token via client credentials (agent-to-agent auth)
             const token = await getClientToken(authProvider, "read:public");
 
             // Simulate fetching public data
-            const data = await resourceFetcher(`public/${params.resourceType}/${params.query}`, token.access_token);
+            const data = await resourceFetcher(
+              `public/${params.resourceType}/${params.query}`,
+              token.access_token
+            );
 
             return {
               success: true,
@@ -129,7 +132,7 @@ export function createAuthAgent(config: AuthAgentConfig) {
           "This REQUIRES user consent via push notification approval. " +
           "The user will receive a notification and must approve the request.",
         inputSchema: accessSensitiveDataSchema,
-        execute: async (params) => {
+        execute: async (params: z.infer<typeof accessSensitiveDataSchema>) => {
           const resource: ProtectedResource = {
             type: params.resourceType as ProtectedResource["type"],
             id: params.resourceId,
@@ -138,7 +141,9 @@ export function createAuthAgent(config: AuthAgentConfig) {
           };
 
           try {
-            console.log(`[AuthAgent] Requesting consent from ${params.userEmail} for ${resource.type}`);
+            console.log(
+              `[AuthAgent] Requesting consent from ${params.userEmail} for ${resource.type}`
+            );
 
             // Initiate CIBA and wait for approval (durable polling)
             const cibaResult = await completeCIBAFlow(
@@ -195,7 +200,7 @@ export function createAuthAgent(config: AuthAgentConfig) {
           "This REQUIRES admin user consent via push notification. " +
           "The action and justification will be shown to the admin for approval.",
         inputSchema: performAdminActionSchema,
-        execute: async (params) => {
+        execute: async (params: z.infer<typeof performAdminActionSchema>) => {
           const resource: ProtectedResource = {
             type: "admin_action",
             id: `${params.action}:${params.targetId}`,
@@ -314,11 +319,11 @@ async function defaultResourceFetcher(resourcePath: string, _token: string): Pro
   // Mock data for demonstration
   const [category, type, id] = resourcePath.split("/");
 
-  if (category === "public") {
+  if (category === "public" && type && id) {
     return getMockPublicData(type, id);
   }
 
-  if (category === "sensitive") {
+  if (category === "sensitive" && type && id) {
     return getMockSensitiveData(type, id);
   }
 
@@ -382,4 +387,3 @@ function getMockSensitiveData(type: string, id: string): unknown {
       return { message: `No data for type: ${type}` };
   }
 }
-

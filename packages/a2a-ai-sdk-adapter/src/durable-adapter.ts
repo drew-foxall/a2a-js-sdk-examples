@@ -338,7 +338,7 @@ export class DurableA2AAdapter<TArgs extends unknown[] = []> implements AgentExe
 
     // Parse task state from response if configured
     const taskState = this.config.parseTaskState
-      ? this.config.parseTaskState(responseText) ?? "completed"
+      ? (this.config.parseTaskState(responseText) ?? "completed")
       : "completed";
 
     // Generate artifacts if configured

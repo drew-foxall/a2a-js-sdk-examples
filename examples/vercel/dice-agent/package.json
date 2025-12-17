@@ -7,7 +7,8 @@
     "dev": "vercel dev",
     "build": "vercel build",
     "deploy": "vercel deploy",
-    "deploy:prod": "vercel deploy --prod"
+    "deploy:prod": "vercel deploy --prod",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.0-beta.54",
@@ -28,4 +29,3 @@
     "vercel": "^41.7.5"
   }
 }
-

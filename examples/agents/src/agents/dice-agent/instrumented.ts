@@ -43,12 +43,7 @@ import { checkPrime as checkPrimePure, rollDice as rollDicePure } from "./tools.
 // ============================================================================
 
 const rollDiceSchema = z.object({
-  sides: z
-    .number()
-    .min(2)
-    .max(100)
-    .default(6)
-    .describe("Number of sides on the dice (default: 6)"),
+  sides: z.number().min(2).max(100).default(6).describe("Number of sides on the dice (default: 6)"),
 });
 
 const checkPrimeSchema = z.object({
@@ -74,10 +69,7 @@ type CheckPrimeParams = z.infer<typeof checkPrimeSchema>;
  * @param telemetry - The telemetry provider (console, otel, noop, etc.)
  * @returns A configured ToolLoopAgent with telemetry
  */
-export function createInstrumentedDiceAgent(
-  model: LanguageModel,
-  telemetry: TelemetryProvider
-) {
+export function createInstrumentedDiceAgent(model: LanguageModel, telemetry: TelemetryProvider) {
   return new ToolLoopAgent({
     model,
     instructions: getDiceAgentPrompt(),
@@ -222,10 +214,7 @@ export function createInstrumentedMessageProcessor(
   telemetry: TelemetryProvider,
   agentName: string
 ) {
-  return async (
-    message: string,
-    options?: { messageId?: string; contextId?: string }
-  ) => {
+  return async (message: string, options?: { messageId?: string; contextId?: string }) => {
     const span = telemetry.startSpan(SpanNames.PROCESS_MESSAGE, {
       attributes: {
         [AgentAttributes.AGENT_NAME]: agentName,
@@ -243,8 +232,7 @@ export function createInstrumentedMessageProcessor(
       });
 
       // Call the agent (using stream for the example)
-      const stream = await agent.run({
-        stream: true,
+      const stream = await agent.stream({
         prompt: message,
       });
 
@@ -281,4 +269,3 @@ export function createInstrumentedMessageProcessor(
     }
   };
 }
-

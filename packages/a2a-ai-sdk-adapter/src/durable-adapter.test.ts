@@ -7,12 +7,13 @@
 import type { Message, Task } from "@drew-foxall/a2a-js-sdk";
 import { type ExecutionEventBus, RequestContext } from "@drew-foxall/a2a-js-sdk/server";
 import type { ModelMessage } from "ai";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Run } from "workflow/api";
 import { DurableA2AAdapter, type DurableWorkflowFn } from "./durable-adapter.js";
 
 // Mock workflow/api
 vi.mock("workflow/api", () => ({ start: vi.fn() }));
+
 import { start as mockStart } from "workflow/api";
 
 // Test Fixtures
@@ -170,7 +171,9 @@ describe("DurableA2AAdapter", () => {
       const eventBus = createMockEventBus();
       const context = createMockRequestContext(createMockUserMessage());
 
-      vi.mocked(mockStart).mockResolvedValue(createMockRun(createMockWorkflowResult("I need more info")));
+      vi.mocked(mockStart).mockResolvedValue(
+        createMockRun(createMockWorkflowResult("I need more info"))
+      );
 
       await adapter.execute(context, eventBus);
 
@@ -182,9 +185,11 @@ describe("DurableA2AAdapter", () => {
     });
 
     it("should call generateArtifacts and publish artifact events", async () => {
-      const generateArtifacts = vi.fn().mockResolvedValue([
-        { artifactId: "artifact-1", parts: [{ kind: "text", text: "Generated" }] },
-      ]);
+      const generateArtifacts = vi
+        .fn()
+        .mockResolvedValue([
+          { artifactId: "artifact-1", parts: [{ kind: "text", text: "Generated" }] },
+        ]);
 
       const workflow = createMockWorkflow();
       const adapter = new DurableA2AAdapter(workflow, { generateArtifacts });
@@ -222,7 +227,12 @@ describe("DurableA2AAdapter", () => {
       const workflow = createMockWorkflow();
       const adapter = new DurableA2AAdapter(workflow);
       const eventBus = createMockEventBus();
-      const emptyMessage: Message = { kind: "message", role: "user", messageId: "msg-123", parts: [] };
+      const emptyMessage: Message = {
+        kind: "message",
+        role: "user",
+        messageId: "msg-123",
+        parts: [],
+      };
       const context = createMockRequestContext(emptyMessage);
 
       await adapter.execute(context, eventBus);
@@ -243,7 +253,14 @@ describe("DurableA2AAdapter", () => {
         id: "task-123",
         contextId: "ctx-123",
         status: { state: "working", timestamp: new Date().toISOString() },
-        history: [{ kind: "message", role: "user", messageId: "old", parts: [{ kind: "text", text: "Old" }] }],
+        history: [
+          {
+            kind: "message",
+            role: "user",
+            messageId: "old",
+            parts: [{ kind: "text", text: "Old" }],
+          },
+        ],
         artifacts: [],
       };
       const context = createMockRequestContext(createMockUserMessage("New"), existingTask);
@@ -270,7 +287,14 @@ describe("DurableA2AAdapter", () => {
         id: "task-123",
         contextId: "ctx-123",
         status: { state: "working", timestamp: new Date().toISOString() },
-        history: [{ kind: "message", role: "user", messageId: "old", parts: [{ kind: "text", text: "Old" }] }],
+        history: [
+          {
+            kind: "message",
+            role: "user",
+            messageId: "old",
+            parts: [{ kind: "text", text: "Old" }],
+          },
+        ],
         artifacts: [],
       };
       const context = createMockRequestContext(createMockUserMessage("New"), existingTask);
@@ -320,7 +344,15 @@ describe("DurableA2AAdapter", () => {
       const context2 = createMockRequestContext(createMockUserMessage());
       vi.mocked(mockStart).mockResolvedValue(
         createMockRun({
-          messages: [{ role: "assistant" as const, content: [{ type: "text", text: "Part 1" }, { type: "text", text: "Part 2" }] }],
+          messages: [
+            {
+              role: "assistant" as const,
+              content: [
+                { type: "text", text: "Part 1" },
+                { type: "text", text: "Part 2" },
+              ],
+            },
+          ],
         })
       );
 

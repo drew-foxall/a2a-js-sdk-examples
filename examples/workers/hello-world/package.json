@@ -9,7 +9,8 @@
     "tail": "wrangler tail",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.0-beta.54",
@@ -26,6 +27,7 @@
     "@cloudflare/workers-types": "^4.20251128.0",
     "msw": "^2.7.0",
     "vitest": "^3.0.0",
-    "wrangler": "^4.51.0"
+    "wrangler": "^4.51.0",
+    "@types/node": "^24.10.1"
   }
 }

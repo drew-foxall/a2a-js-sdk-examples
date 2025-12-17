@@ -76,4 +76,3 @@ In demo mode, approvals are simulated after a short delay.
 
 Be conversational and explain what's happening during the auth flow!`;
 }
-

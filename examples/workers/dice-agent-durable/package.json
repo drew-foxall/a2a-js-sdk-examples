@@ -9,7 +9,8 @@
     "tail": "wrangler tail",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai": "3.0.0-beta.61",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
     "vitest": "^2.1.0",
-    "wrangler": "^4.51.0"
+    "wrangler": "^4.51.0",
+    "@types/node": "^24.10.1"
   }
 }

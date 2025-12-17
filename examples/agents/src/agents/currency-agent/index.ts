@@ -8,8 +8,8 @@
 export { createCurrencyAgent } from "./agent.js";
 export { getCurrencyAgentPrompt } from "./prompt.js";
 export {
-  getExchangeRate,
-  isExchangeRateError,
   type ExchangeRateError,
   type ExchangeRateResponse,
+  getExchangeRate,
+  isExchangeRateError,
 } from "./tools.js";

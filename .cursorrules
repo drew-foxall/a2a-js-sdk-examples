@@ -1,0 +1,126 @@
+# Cursor Rules for a2a-js-sdk-examples
+
+## Critical: AI SDK Version Information
+
+This project uses **Vercel AI SDK v6 (beta)** - NOT v4 or earlier versions.
+
+### Package Versions (as of this file)
+```
+ai: 6.0.0-beta.99
+@ai-sdk/openai: 3.0.0-beta.61
+@ai-sdk/anthropic: 3.0.0-beta.54
+@ai-sdk/google: 3.0.0-beta.48
+```
+
+### ToolLoopAgent API (AI SDK v6)
+
+The `ToolLoopAgent` class in AI SDK v6 has these methods:
+- `agent.generate({ prompt })` - For non-streaming responses
+- `agent.stream({ prompt })` - For streaming responses
+
+**WRONG (does not exist):**
+```typescript
+// ❌ These methods DO NOT exist on ToolLoopAgent
+agent.run({ prompt })
+agent.execute({ prompt })
+```
+
+**CORRECT:**
+```typescript
+// ✅ Non-streaming
+const result = await agent.generate({ prompt: "Hello" });
+console.log(result.text);
+
+// ✅ Streaming
+const stream = await agent.stream({ prompt: "Hello" });
+for await (const chunk of stream.textStream) {
+  console.log(chunk);
+}
+```
+
+### Creating a ToolLoopAgent
+
+```typescript
+import { ToolLoopAgent } from "ai";
+import { z } from "zod";
+
+const agent = new ToolLoopAgent({
+  model,
+  instructions: "You are a helpful assistant",
+  tools: {
+    myTool: {
+      description: "Tool description",
+      inputSchema: z.object({ param: z.string() }),
+      execute: async (params: z.infer<typeof inputSchema>) => {
+        return { result: "value" };
+      }
+    }
+  }
+});
+```
+
+### Tool Execute Function Types
+
+Tool execute functions should have explicit parameter types using `z.infer`:
+
+```typescript
+// ✅ Correct - explicit type
+execute: async (params: z.infer<typeof mySchema>) => { ... }
+
+// ❌ Wrong - implicit any
+execute: async (params) => { ... }
+```
+
+## A2A Protocol SDK
+
+### Package: @drew-foxall/a2a-js-sdk
+
+Version: ^0.4.2
+
+Key exports:
+- `RequestContext` - Class (not interface), requires `taskId` and `contextId`
+- `ExecutionEventBus` - Uses EventEmitter pattern (`on`, `off`, `once`, `removeAllListeners`)
+
+### Package: @drew-foxall/a2a-ai-sdk-adapter
+
+Version: workspace package (1.0.2)
+
+Bridges AI SDK ToolLoopAgent with A2A protocol.
+
+## Workflow DevKit
+
+### Package: workflow
+
+Version: 4.0.1-beta.24
+
+The `Run` class from `workflow/api` has:
+- `runId: string`
+- `returnValue: Promise<T>`
+
+## Project Structure
+
+- `packages/` - Published npm packages
+- `examples/agents/` - Agent implementations (Node.js)
+- `examples/workers/` - Cloudflare Workers deployments
+- `examples/vercel/` - Vercel deployments
+
+## TypeScript Configuration
+
+Workers use `moduleResolution: "bundler"` and include both:
+- `@cloudflare/workers-types` - For Cloudflare APIs
+- `node` types - For workspace dependencies that use Node.js types
+
+## Testing
+
+- Use `vitest` for testing
+- Mock SDK types must match actual SDK interfaces
+- `RequestContext` is a class, not a plain object
+
+## Common Mistakes to Avoid
+
+1. **Don't assume old AI SDK API** - v6 is significantly different from v4
+2. **Don't use `agent.run()`** - Use `agent.generate()` or `agent.stream()`
+3. **Don't create RequestContext as plain object** - It's a class with constructor
+4. **Don't assume ExecutionEventBus has subscribe/unsubscribe** - It uses EventEmitter pattern
+5. **Always add explicit types to tool execute functions** - Prevents implicit any errors
+

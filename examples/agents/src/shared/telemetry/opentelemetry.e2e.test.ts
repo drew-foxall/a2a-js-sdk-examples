@@ -13,19 +13,19 @@
  * 5. Agent-specific semantic conventions
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import { trace, SpanStatusCode, context } from "@opentelemetry/api";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { SimpleSpanProcessor, InMemorySpanExporter } from "@opentelemetry/sdk-trace-base";
+import { context, SpanStatusCode, trace } from "@opentelemetry/api";
 import { Resource } from "@opentelemetry/resources";
+import { InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import {
-  createTelemetry,
-  OpenTelemetryProvider,
   AgentAttributes,
-  SpanNames,
+  createTelemetry,
   instrument,
+  OpenTelemetryProvider,
+  SpanNames,
 } from "./index.js";
 
 // ============================================================================
@@ -84,8 +84,8 @@ describe("OpenTelemetry E2E", () => {
 
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
-      expect(spans[0].name).toBe("test-operation");
-      expect(spans[0].status.code).toBe(SpanStatusCode.OK);
+      expect(spans[0]?.name).toBe("test-operation");
+      expect(spans[0]?.status.code).toBe(SpanStatusCode.OK);
     });
 
     it("should include span attributes in exported spans", async () => {
@@ -112,7 +112,7 @@ describe("OpenTelemetry E2E", () => {
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
 
-      const exportedSpan = spans[0];
+      const exportedSpan = spans[0]!;
       expect(exportedSpan.attributes[AgentAttributes.AGENT_NAME]).toBe("dice-agent");
       expect(exportedSpan.attributes[AgentAttributes.TASK_ID]).toBe("task-123");
       expect(exportedSpan.attributes[AgentAttributes.TOOL_NAME]).toBe("rollDice");
@@ -135,12 +135,14 @@ describe("OpenTelemetry E2E", () => {
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
 
-      const events = spans[0].events;
+      const exportedSpan = spans[0];
+      expect(exportedSpan).toBeDefined();
+      const events = exportedSpan!.events;
       expect(events.length).toBe(2);
-      expect(events[0].name).toBe("tool.started");
-      expect(events[0].attributes?.["tool.name"]).toBe("rollDice");
-      expect(events[1].name).toBe("tool.completed");
-      expect(events[1].attributes?.["tool.result"]).toBe(6);
+      expect(events[0]!.name).toBe("tool.started");
+      expect(events[0]!.attributes?.["tool.name"]).toBe("rollDice");
+      expect(events[1]!.name).toBe("tool.completed");
+      expect(events[1]!.attributes?.["tool.result"]).toBe(6);
     });
 
     it("should record exceptions with stack traces", async () => {
@@ -159,7 +161,7 @@ describe("OpenTelemetry E2E", () => {
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
 
-      const exportedSpan = spans[0];
+      const exportedSpan = spans[0]!;
       expect(exportedSpan.status.code).toBe(SpanStatusCode.ERROR);
       expect(exportedSpan.status.message).toBe("Test error for telemetry");
 
@@ -206,7 +208,7 @@ describe("OpenTelemetry E2E", () => {
 
   describe("Trace Context and Hierarchy", () => {
     it("should create nested spans with parent-child relationship", async () => {
-      const telemetry = new OpenTelemetryProvider({
+      const _telemetry = new OpenTelemetryProvider({
         serviceName: "test-agent",
       });
 
@@ -270,7 +272,7 @@ describe("OpenTelemetry E2E", () => {
 
   describe("Agent Workflow Tracing", () => {
     it("should trace complete agent message processing flow", async () => {
-      const telemetry = new OpenTelemetryProvider({
+      const _telemetry = new OpenTelemetryProvider({
         serviceName: "dice-agent",
         serviceVersion: "1.0.0",
       });
@@ -451,7 +453,7 @@ describe("OpenTelemetry E2E", () => {
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
 
-      const errorSpan = spans[0];
+      const errorSpan = spans[0]!;
       expect(errorSpan.status.code).toBe(SpanStatusCode.ERROR);
       expect(errorSpan.attributes[AgentAttributes.TOOL_SUCCESS]).toBe(false);
       expect(errorSpan.attributes[AgentAttributes.ERROR_TYPE]).toBe("RateLimitError");
@@ -508,12 +510,9 @@ describe("OpenTelemetry E2E", () => {
         return Math.floor(Math.random() * sides) + 1;
       };
 
-      const instrumentedRollDice = instrument(
-        telemetry,
-        "dice.roll",
-        rollDice,
-        (sides) => ({ "dice.sides": sides })
-      );
+      const instrumentedRollDice = instrument(telemetry, "dice.roll", rollDice, (sides) => ({
+        "dice.sides": sides,
+      }));
 
       const result = await instrumentedRollDice(20);
 
@@ -524,9 +523,9 @@ describe("OpenTelemetry E2E", () => {
 
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
-      expect(spans[0].name).toBe("dice.roll");
-      expect(spans[0].attributes["dice.sides"]).toBe(20);
-      expect(spans[0].status.code).toBe(SpanStatusCode.OK);
+      expect(spans[0]?.name).toBe("dice.roll");
+      expect(spans[0]?.attributes["dice.sides"]).toBe(20);
+      expect(spans[0]?.status.code).toBe(SpanStatusCode.OK);
     });
 
     it("should capture errors in instrumented functions", async () => {
@@ -546,8 +545,8 @@ describe("OpenTelemetry E2E", () => {
 
       const spans = exporter.getFinishedSpans();
       expect(spans.length).toBe(1);
-      expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
-      expect(spans[0].events.some((e) => e.name === "exception")).toBe(true);
+      expect(spans[0]?.status.code).toBe(SpanStatusCode.ERROR);
+      expect(spans[0]?.events.some((e) => e.name === "exception")).toBe(true);
     });
   });
 
@@ -583,7 +582,7 @@ describe("OpenTelemetry E2E", () => {
       await provider.forceFlush();
 
       const spans = exporter.getFinishedSpans();
-      const exportedSpan = spans[0];
+      const exportedSpan = spans[0]!;
 
       // Verify all semantic conventions are present
       expect(exportedSpan.attributes[AgentAttributes.AGENT_NAME]).toBe("dice-agent");
@@ -619,7 +618,7 @@ describe("OpenTelemetry E2E", () => {
       await provider.forceFlush();
 
       const spans = exporter.getFinishedSpans();
-      const toolSpan = spans[0];
+      const toolSpan = spans[0]!;
 
       expect(toolSpan.name).toBe(SpanNames.AGENT_EXECUTE_TOOL);
       expect(toolSpan.attributes[AgentAttributes.TOOL_NAME]).toBe("rollDice");
@@ -648,7 +647,7 @@ describe("OpenTelemetry E2E", () => {
       await provider.forceFlush();
 
       const spans = exporter.getFinishedSpans();
-      const modelSpan = spans[0];
+      const modelSpan = spans[0]!;
 
       expect(modelSpan.attributes[AgentAttributes.MODEL_PROVIDER]).toBe("openai");
       expect(modelSpan.attributes[AgentAttributes.MODEL_NAME]).toBe("gpt-4o-mini");
@@ -684,4 +683,3 @@ describe("OpenTelemetry Factory Integration", () => {
     expect(factorySpan?.attributes["test.key"]).toBe("test-value");
   });
 });
-

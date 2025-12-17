@@ -8,11 +8,10 @@
 // Non-durable exports (standard ToolLoopAgent)
 export { createImageGeneratorAgent } from "./agent.js";
 export { getImageGeneratorPrompt } from "./prompt.js";
-
+export { type GenerateImageParams, type GenerateImageResult, generateImage } from "./steps.js";
 // Durable exports (Workflow DevKit)
 export {
-  imageGeneratorWorkflow,
   type ImageGeneratorWorkflowParams,
   type ImageGeneratorWorkflowResult,
+  imageGeneratorWorkflow,
 } from "./workflow.js";
-export { generateImage, type GenerateImageParams, type GenerateImageResult } from "./steps.js";

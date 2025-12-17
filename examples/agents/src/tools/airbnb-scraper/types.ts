@@ -112,4 +112,3 @@ export interface AirbnbListingDetails {
 export interface Fetcher {
   fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
 }
-

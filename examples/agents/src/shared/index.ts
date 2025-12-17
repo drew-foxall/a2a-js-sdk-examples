@@ -12,6 +12,17 @@
 export { createAttackerAgent } from "../agents/adversarial/attacker.js";
 export { createDefenderAgent } from "../agents/adversarial/defender.js";
 export { createAnalyticsAgent } from "../agents/analytics-agent/agent.js";
+// Auth agent (CIBA patterns)
+export {
+  type AuthAgentConfig,
+  type AuthProvider,
+  type CIBARequest,
+  type CIBAResponse,
+  createAuthAgent,
+  createDevAuthProvider,
+  createMockAuthProvider,
+  type TokenResponse,
+} from "../agents/auth-agent/index.js";
 // Code review agent
 export { createCodeReviewAgent } from "../agents/code-review/agent.js";
 // Content agents
@@ -21,17 +32,6 @@ export { createContentEditorAgent } from "../agents/content-editor/agent.js";
 export { createContentPlannerAgent } from "../agents/content-planner/agent.js";
 export { createCurrencyAgent } from "../agents/currency-agent/agent.js";
 export { createDiceAgent } from "../agents/dice-agent/agent.js";
-// Auth agent (CIBA patterns)
-export {
-  createAuthAgent,
-  type AuthAgentConfig,
-  createDevAuthProvider,
-  createMockAuthProvider,
-  type AuthProvider,
-  type CIBARequest,
-  type CIBAResponse,
-  type TokenResponse,
-} from "../agents/auth-agent/index.js";
 export {
   createInstrumentedDiceAgent,
   createInstrumentedMessageProcessor,
@@ -60,23 +60,39 @@ export { createMovieAgent } from "../agents/movie-agent/agent.js";
 // Number game agents (no LLM required)
 export {
   AliceAgent,
-  createAliceAgent,
   type AliceAgentConfig,
+  createAliceAgent,
   createInMemoryGameStore,
   createRedisGameStore,
-  InMemoryGameStore,
-  type RedisClient,
-  type RedisGameStoreConfig,
-  RedisGameStore,
   type GameState,
   type GameStore,
   type GradeResult,
+  InMemoryGameStore,
+  type RedisClient,
+  RedisGameStore,
+  type RedisGameStoreConfig,
 } from "../agents/number-game/alice/index.js";
 export {
   CarolAgent,
-  createCarolAgent,
   type CarolResult,
+  createCarolAgent,
 } from "../agents/number-game/carol/index.js";
+// Airbnb agent (HTTP MCP for Workers)
+export {
+  type AirbnbAgentHttpConfig,
+  createAirbnbAgentHttp,
+} from "../agents/travel-planner-multiagent/airbnb-agent/agent-http.js";
+export {
+  type AirbnbSearchParams,
+  type AirbnbTools,
+  type CloudflareFetcher,
+  createAirbnbMCPTools,
+  createMCPHttpClient,
+  type ListingDetailsParams,
+  type MCPClient,
+  MCPHttpClient,
+  type MCPHttpClientConfig,
+} from "../agents/travel-planner-multiagent/airbnb-agent/mcp-client-http.js";
 export {
   type AgentArtifact,
   type AgentArtifactPart,
@@ -94,22 +110,6 @@ export {
 } from "../agents/travel-planner-multiagent/planner/agent-discovery.js";
 // Multi-agent system
 export { createWeatherAgent } from "../agents/travel-planner-multiagent/weather-agent/agent.js";
-// Airbnb agent (HTTP MCP for Workers)
-export {
-  createAirbnbAgentHttp,
-  type AirbnbAgentHttpConfig,
-} from "../agents/travel-planner-multiagent/airbnb-agent/agent-http.js";
-export {
-  createAirbnbMCPTools,
-  createMCPHttpClient,
-  MCPHttpClient,
-  type AirbnbSearchParams,
-  type AirbnbTools,
-  type CloudflareFetcher,
-  type ListingDetailsParams,
-  type MCPClient,
-  type MCPHttpClientConfig,
-} from "../agents/travel-planner-multiagent/airbnb-agent/mcp-client-http.js";
 
 // ============================================================================
 // Agent Cards (for Workers)
@@ -190,6 +190,11 @@ export {
   type APIKeySecurityScheme,
   type AuthorizationCodeOAuthFlow,
   type ClientCredentialsOAuthFlow,
+  // Helpers
+  createApiKeyScheme,
+  createBearerScheme,
+  createClientCredentialsScheme,
+  createOpenIdConnectScheme,
   type HTTPAuthSecurityScheme,
   type ImplicitOAuthFlow,
   type MutualTLSSecurityScheme,
@@ -200,11 +205,6 @@ export {
   type SecurityRequirement,
   type SecurityScheme,
   type SecuritySchemeBase,
-  // Helpers
-  createApiKeyScheme,
-  createBearerScheme,
-  createClientCredentialsScheme,
-  createOpenIdConnectScheme,
 } from "./security-schemes.js";
 
 // ============================================================================
@@ -212,32 +212,32 @@ export {
 // ============================================================================
 
 export {
+  // Semantic Conventions
+  AgentAttributes,
+  type Attributes,
+  // Types
+  type AttributeValue,
+  type ConsoleProviderConfig,
+  // Providers
+  ConsoleTelemetryProvider,
+  type CreateTelemetryOptions,
+  createConsoleTelemetry,
+  createNoOpTelemetry,
+  createOpenTelemetry,
   // Factory functions
   createTelemetry,
   getDefaultTelemetry,
   instrument,
-  // Providers
-  ConsoleTelemetryProvider,
-  createConsoleTelemetry,
-  createNoOpTelemetry,
-  createOpenTelemetry,
+  type LogSeverity,
   NoOpTelemetryProvider,
   OpenTelemetryProvider,
-  // Types
-  type AttributeValue,
-  type Attributes,
-  type ConsoleProviderConfig,
-  type CreateTelemetryOptions,
-  type LogSeverity,
   type OpenTelemetryProviderConfig,
   type Span,
+  SpanNames,
   type SpanOptions,
   type SpanStatus,
   type TelemetryConfig,
   type TelemetryProvider,
   type TelemetryProviderFactory,
   type TelemetryProviderType,
-  // Semantic Conventions
-  AgentAttributes,
-  SpanNames,
 } from "./telemetry/index.js";
