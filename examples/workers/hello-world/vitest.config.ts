@@ -8,6 +8,8 @@ export default defineConfig({
     exclude: ["test/**/*.e2e.test.ts"],
     testTimeout: 10000,
     hookTimeout: 5000,
+    // Use threads pool for better stability in parallel turbo runs
+    pool: "threads",
   },
 });
 

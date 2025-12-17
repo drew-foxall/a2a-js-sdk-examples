@@ -13,11 +13,12 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       exclude: ["node_modules/", "dist/", "**/*.test.ts", "**/*.spec.ts", "src/test-utils/"],
     },
-    // Run tests sequentially to avoid API rate limits
-    pool: "forks",
+    // Use threads pool with single thread for sequential execution
+    // This avoids API rate limits and is more stable in parallel turbo runs
+    pool: "threads",
     poolOptions: {
-      forks: {
-        singleFork: true,
+      threads: {
+        singleThread: true,
       },
     },
   },

@@ -8,6 +8,8 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "**/dist/**"],
     testTimeout: 10000,
     hookTimeout: 5000,
+    // Use threads pool for better stability in parallel turbo runs
+    pool: "threads",
   },
 });
 

@@ -1,0 +1,20 @@
+# Lefthook configuration for a2a-js-sdk-examples
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: false
+  commands:
+    lint-fix:
+      glob: "*.{ts,tsx,js,jsx,json}"
+      run: pnpm run lint:fix
+      stage_fixed: true
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: pnpm run typecheck
+
+# Optional: pre-push hook for running tests
+# pre-push:
+#   commands:
+#     test:
+#       run: pnpm run test
+

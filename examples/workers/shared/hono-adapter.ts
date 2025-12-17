@@ -39,7 +39,7 @@
  */
 
 import { Hono, type Context } from "hono";
-import { cors, type CorsOptions } from "hono/cors";
+import { cors } from "hono/cors";
 import { A2AHonoApp, ConsoleLogger, NoopLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { getModelInfo } from "./utils.js";
 import {
@@ -60,12 +60,33 @@ import {
  * These options are specific to the Hono framework adapter and control
  * HTTP-level concerns like CORS, routing, and error responses.
  */
+/**
+ * CORS configuration options
+ *
+ * Matches the CORSOptions type from hono/cors but defined locally
+ * since hono doesn't export the type.
+ */
+export interface CorsConfig {
+  origin:
+    | string
+    | string[]
+    | ((
+        origin: string,
+        c: Context
+      ) => string | undefined | null | Promise<string | undefined | null>);
+  allowMethods?: string[];
+  allowHeaders?: string[];
+  maxAge?: number;
+  credentials?: boolean;
+  exposeHeaders?: string[];
+}
+
 export interface HonoWorkerOptions<TEnv extends BaseWorkerEnv = BaseWorkerEnv> {
   /**
    * Custom CORS configuration
    * @default { origin: "*", allowMethods: ["GET", "POST", "OPTIONS"], allowHeaders: ["Content-Type", "Authorization"] }
    */
-  corsOptions?: CorsOptions;
+  corsOptions?: CorsConfig;
 
   /**
    * Additional routes to add before the A2A handler
@@ -100,7 +121,7 @@ export interface HonoWorkerOptions<TEnv extends BaseWorkerEnv = BaseWorkerEnv> {
 /**
  * Default CORS configuration for A2A workers
  */
-export const DEFAULT_CORS_OPTIONS: CorsOptions = {
+export const DEFAULT_CORS_OPTIONS: CorsConfig = {
   origin: "*",
   allowMethods: ["GET", "POST", "OPTIONS"],
   allowHeaders: ["Content-Type", "Authorization"],

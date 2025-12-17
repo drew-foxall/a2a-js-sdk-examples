@@ -42,7 +42,10 @@ import {
 import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createWorld } from "@drew-foxall/upstash-workflow-world";
 // Import the DURABLE workflow from the shared agents package
-import { travelPlannerWorkflow, type TravelPlannerWorkflowConfig } from "a2a-agents";
+import {
+  travelPlannerWorkflow,
+  type TravelPlannerWorkflowConfig,
+} from "a2a-agents/agents/travel-planner-multiagent/planner";
 import { createRedisClient, createRedisTaskStore, type RedisEnv } from "a2a-workers-shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";

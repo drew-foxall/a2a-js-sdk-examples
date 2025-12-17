@@ -7,6 +7,8 @@ export default defineConfig({
     include: ["test/**/*.test.ts"],
     testTimeout: 30000, // 30s for network requests
     hookTimeout: 10000,
+    // Use threads pool for better stability in parallel turbo runs
+    pool: "threads",
     // Load environment variables from .dev.vars for tests
     env: {
       // These will be overridden by actual env vars if set
@@ -14,7 +16,3 @@ export default defineConfig({
     },
   },
 });
-
-
-
-

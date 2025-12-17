@@ -193,40 +193,42 @@ export function createWorkerTestSuite<TEnv extends BaseWorkerEnv = BaseWorkerEnv
           expect(response.status).toBe(200);
           expect(response.headers.get("Content-Type")).toContain("application/json");
 
-          const card = await response.json();
+          const card = (await response.json()) as Record<string, unknown>;
 
           // Required fields per A2A protocol
-          expect(card.name).toBe(expectedAgentName);
-          expect(card.url).toBeDefined();
-          expect(card.protocolVersion).toBe("0.3.0");
-          expect(card.version).toBeDefined();
-          expect(card.capabilities).toBeDefined();
-          expect(card.defaultInputModes).toContain("text");
-          expect(card.defaultOutputModes).toContain("text");
+          expect(card["name"]).toBe(expectedAgentName);
+          expect(card["url"]).toBeDefined();
+          expect(card["protocolVersion"]).toBe("0.3.0");
+          expect(card["version"]).toBeDefined();
+          expect(card["capabilities"]).toBeDefined();
+          expect(card["defaultInputModes"]).toContain("text");
+          expect(card["defaultOutputModes"]).toContain("text");
         });
 
         it("should have valid capabilities", async () => {
           const app = getApp();
           const response = await app.fetch(createAgentCardRequest(), env);
-          const card = await response.json();
+          const card = (await response.json()) as Record<string, unknown>;
+          const capabilities = card["capabilities"] as Record<string, unknown> | undefined;
 
-          expect(typeof card.capabilities.streaming).toBe("boolean");
-          expect(typeof card.capabilities.pushNotifications).toBe("boolean");
+          expect(typeof capabilities?.["streaming"]).toBe("boolean");
+          expect(typeof capabilities?.["pushNotifications"]).toBe("boolean");
         });
 
         if (expectedSkillCount !== undefined) {
           it(`should have ${expectedSkillCount} skill(s)`, async () => {
             const app = getApp();
             const response = await app.fetch(createAgentCardRequest(), env);
-            const card = await response.json();
+            const card = (await response.json()) as Record<string, unknown>;
+            const skills = card["skills"] as Array<Record<string, unknown>> | undefined;
 
-            expect(card.skills).toHaveLength(expectedSkillCount);
+            expect(skills).toHaveLength(expectedSkillCount);
 
             // Validate skill structure
-            for (const skill of card.skills) {
-              expect(skill.id).toBeDefined();
-              expect(skill.name).toBeDefined();
-              expect(skill.description).toBeDefined();
+            for (const skill of skills ?? []) {
+              expect(skill["id"]).toBeDefined();
+              expect(skill["name"]).toBeDefined();
+              expect(skill["description"]).toBeDefined();
             }
           });
         }
@@ -245,19 +247,19 @@ export function createWorkerTestSuite<TEnv extends BaseWorkerEnv = BaseWorkerEnv
 
           expect(response.status).toBe(200);
 
-          const health = await response.json();
-          expect(health.status).toBe("healthy");
-          expect(health.agent).toBe(expectedAgentName);
+          const health = (await response.json()) as Record<string, unknown>;
+          expect(health["status"]).toBe("healthy");
+          expect(health["agent"]).toBe(expectedAgentName);
         });
 
         it("should include provider and model info", async () => {
           const app = getApp();
           const response = await app.fetch(createHealthCheckRequest(), env);
-          const health = await response.json();
+          const health = (await response.json()) as Record<string, unknown>;
 
-          expect(health.provider).toBeDefined();
-          expect(health.model).toBeDefined();
-          expect(health.runtime).toBeDefined();
+          expect(health["provider"]).toBeDefined();
+          expect(health["model"]).toBeDefined();
+          expect(health["runtime"]).toBeDefined();
         });
       });
     }
@@ -391,10 +393,10 @@ export function createWorkerTestSuite<TEnv extends BaseWorkerEnv = BaseWorkerEnv
         const app = getApp();
         const request = new Request("http://localhost/unknown-endpoint");
         const response = await app.fetch(request, env);
-        const body = await response.json();
+        const body = (await response.json()) as Record<string, unknown>;
 
-        expect(body.error).toBe("Not Found");
-        expect(body.endpoints).toBeDefined();
+        expect(body["error"]).toBe("Not Found");
+        expect(body["endpoints"]).toBeDefined();
       });
     });
 

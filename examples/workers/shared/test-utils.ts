@@ -147,12 +147,12 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
       doStream: async () => {
         await applyDelay();
 
-        // Build chunks for streaming
+        // Build chunks for streaming (AI SDK v6 format)
         const chunks: Array<
           | { type: "text-start"; id: string }
           | { type: "text-delta"; id: string; delta: string }
           | { type: "text-end"; id: string }
-          | { type: "tool-call"; id: string; name: string; args: string }
+          | { type: "tool-call"; toolCallId: string; toolName: string; input: string }
           | {
               type: "finish";
               finishReason: "stop" | "tool-calls";
@@ -161,14 +161,14 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
             }
         > = [];
 
-        // Add tool calls if provided
+        // Add tool calls if provided (AI SDK v6 format)
         if (toolCalls && toolCalls.length > 0) {
           for (const toolCall of toolCalls) {
             chunks.push({
               type: "tool-call",
-              id: toolCall.id,
-              name: toolCall.name,
-              args: JSON.stringify(toolCall.args),
+              toolCallId: toolCall.id,
+              toolName: toolCall.name,
+              input: JSON.stringify(toolCall.args),
             });
           }
         }
@@ -180,7 +180,7 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
         const words = response.split(" ");
         for (let i = 0; i < words.length; i++) {
           const word = i === 0 ? words[i] : ` ${words[i]}`;
-          chunks.push({ type: "text-delta", id: "text-1", delta: word });
+          chunks.push({ type: "text-delta", id: "text-1", delta: word ?? "" });
         }
 
         chunks.push({ type: "text-end", id: "text-1" });
@@ -202,24 +202,24 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
     }) as LanguageModel;
   }
 
-  // Generate mode (non-streaming)
+  // Generate mode (non-streaming) - AI SDK v6 format
   return new MockLanguageModelV3({
     doGenerate: async () => {
       await applyDelay();
 
       const content: Array<
         | { type: "text"; text: string }
-        | { type: "tool-call"; toolCallId: string; toolName: string; args: Record<string, unknown> }
+        | { type: "tool-call"; toolCallId: string; toolName: string; input: string }
       > = [];
 
-      // Add tool calls if provided
+      // Add tool calls if provided (AI SDK v6 format uses 'input' as JSON string)
       if (toolCalls && toolCalls.length > 0) {
         for (const toolCall of toolCalls) {
           content.push({
             type: "tool-call",
             toolCallId: toolCall.id,
             toolName: toolCall.name,
-            args: toolCall.args,
+            input: JSON.stringify(toolCall.args),
           });
         }
       }
@@ -293,14 +293,12 @@ export function createMockEnv(options: MockEnvOptions = {}): BaseWorkerEnv {
   const baseEnv: BaseWorkerEnv = {
     AI_PROVIDER: provider,
     AI_MODEL: model ?? getDefaultModel(provider),
+    OPENAI_API_KEY: "sk-test-mock-key-for-testing", // Always provide default
     ...extras,
   };
 
   // Add provider-specific API key
   switch (provider) {
-    case "openai":
-      baseEnv.OPENAI_API_KEY = "sk-test-mock-key-for-testing";
-      break;
     case "anthropic":
       baseEnv.ANTHROPIC_API_KEY = "sk-ant-test-mock-key-for-testing";
       break;
@@ -543,13 +541,13 @@ export async function assertA2ASuccess(response: Response): Promise<void> {
     throw new Error(`Expected success response, got ${response.status}`);
   }
 
-  const json = await response.clone().json();
+  const json = (await response.clone().json()) as Record<string, unknown>;
 
-  if (json.error) {
-    throw new Error(`Expected success, got error: ${JSON.stringify(json.error)}`);
+  if (json["error"]) {
+    throw new Error(`Expected success, got error: ${JSON.stringify(json["error"])}`);
   }
 
-  if (!json.result) {
+  if (!json["result"]) {
     throw new Error("Expected result in response");
   }
 }
@@ -565,14 +563,15 @@ export async function assertA2AError(
   response: Response,
   expectedCode?: number
 ): Promise<void> {
-  const json = await response.clone().json();
+  const json = (await response.clone().json()) as Record<string, unknown>;
+  const error = json["error"] as Record<string, unknown> | undefined;
 
-  if (!json.error) {
-    throw new Error(`Expected error response, got result: ${JSON.stringify(json.result)}`);
+  if (!error) {
+    throw new Error(`Expected error response, got result: ${JSON.stringify(json["result"])}`);
   }
 
-  if (expectedCode !== undefined && json.error.code !== expectedCode) {
-    throw new Error(`Expected error code ${expectedCode}, got ${json.error.code}`);
+  if (expectedCode !== undefined && error["code"] !== expectedCode) {
+    throw new Error(`Expected error code ${expectedCode}, got ${error["code"]}`);
   }
 }
 

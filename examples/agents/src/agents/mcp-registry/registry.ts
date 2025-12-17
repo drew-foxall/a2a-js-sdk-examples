@@ -30,15 +30,23 @@ import type {
  */
 export class AgentRegistry {
   private agents: Map<string, RegisteredAgentCard> = new Map();
-  private config: Required<RegistryConfig>;
+  private readonly _config: Required<RegistryConfig>;
 
   constructor(config: RegistryConfig = {}) {
-    this.config = {
+    this._config = {
       redisPrefix: config.redisPrefix ?? "a2a:registry:",
       registrationTtl: config.registrationTtl ?? 86400 * 7, // 7 days
       healthCheckInterval: config.healthCheckInterval ?? 300, // 5 minutes
       enableSemanticSearch: config.enableSemanticSearch ?? false,
     };
+  }
+
+  /**
+   * Get the registry configuration
+   * Used for Redis persistence and health check scheduling
+   */
+  get config(): Required<RegistryConfig> {
+    return this._config;
   }
 
   // ==========================================================================

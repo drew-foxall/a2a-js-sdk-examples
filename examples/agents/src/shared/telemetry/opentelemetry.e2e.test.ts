@@ -137,12 +137,13 @@ describe("OpenTelemetry E2E", () => {
 
       const exportedSpan = spans[0];
       expect(exportedSpan).toBeDefined();
-      const events = exportedSpan!.events;
+      if (!exportedSpan) throw new Error("Expected span to be defined");
+      const events = exportedSpan.events;
       expect(events.length).toBe(2);
-      expect(events[0]!.name).toBe("tool.started");
-      expect(events[0]!.attributes?.["tool.name"]).toBe("rollDice");
-      expect(events[1]!.name).toBe("tool.completed");
-      expect(events[1]!.attributes?.["tool.result"]).toBe(6);
+      expect(events[0]?.name).toBe("tool.started");
+      expect(events[0]?.attributes?.["tool.name"]).toBe("rollDice");
+      expect(events[1]?.name).toBe("tool.completed");
+      expect(events[1]?.attributes?.["tool.result"]).toBe(6);
     });
 
     it("should record exceptions with stack traces", async () => {

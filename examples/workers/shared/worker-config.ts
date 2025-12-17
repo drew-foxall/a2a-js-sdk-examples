@@ -148,10 +148,20 @@ export interface WorkerLogger {
  *
  * Returns a ToolLoopAgent or compatible agent instance.
  */
+/**
+ * Agent type - represents an AI SDK ToolLoopAgent or compatible agent
+ *
+ * The agent must have generate() and stream() methods for execution.
+ */
+export interface A2ACompatibleAgent {
+  generate: (params: { prompt: string }) => Promise<{ text: string }>;
+  stream: (params: { prompt: string }) => Promise<{ text: Promise<string> }>;
+}
+
 export type AgentFactory<TEnv> = (
   model: LanguageModel,
   env: TEnv
-) => ReturnType<typeof import("ai").ToolLoopAgent>;
+) => A2ACompatibleAgent;
 
 /**
  * Agent card factory function type
@@ -324,23 +334,19 @@ export function createA2AExecutor<TEnv extends BaseWorkerEnv>(
 ): AgentExecutor {
   const agent = config.createAgent(model, env);
 
-  const adapterOptions: Partial<A2AAdapterConfig> = {
-    mode: config.adapterOptions?.mode ?? DEFAULT_ADAPTER_OPTIONS.mode,
+  const adapterOptions: A2AAdapterConfig = {
+    mode: config.adapterOptions?.mode ?? DEFAULT_ADAPTER_OPTIONS.mode ?? "stream",
     workingMessage:
       config.adapterOptions?.workingMessage ?? `Processing with ${config.agentName}...`,
     debug: config.adapterOptions?.debug ?? DEFAULT_ADAPTER_OPTIONS.debug,
     includeHistory: config.adapterOptions?.includeHistory,
+    parseTaskState: config.adapterOptions?.parseTaskState,
+    generateArtifacts: config.adapterOptions?.generateArtifacts,
   };
 
-  // Add optional callbacks if provided
-  if (config.adapterOptions?.parseTaskState) {
-    adapterOptions.parseTaskState = config.adapterOptions.parseTaskState;
-  }
-  if (config.adapterOptions?.generateArtifacts) {
-    adapterOptions.generateArtifacts = config.adapterOptions.generateArtifacts;
-  }
-
-  return new A2AAdapter(agent, adapterOptions);
+  // Cast agent to any for A2AAdapter compatibility - the runtime types are compatible
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new A2AAdapter(agent as any, adapterOptions);
 }
 
 // ============================================================================
