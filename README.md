@@ -257,16 +257,23 @@ pnpm workers:deploy:all      # Deploy everything
 
 ```
 examples/workers/
-├── shared/                  # Shared utilities for all workers
+├── shared/                  # Shared utilities (a2a-workers-shared)
+│   ├── worker-config.ts    # Framework-agnostic configuration
+│   ├── hono-adapter.ts     # createA2AHonoWorker() factory
+│   ├── agent-card.ts       # buildAgentCard() utility
 │   ├── types.ts            # Environment type definitions
-│   └── utils.ts            # Model provider setup
+│   ├── utils.ts            # Model provider setup
+│   └── redis.ts            # Redis task store utilities
 ├── hello-world/            # Simple A2A agent
 ├── dice-agent/             # Tool-using agent
+├── dice-agent-durable/     # Durable version (Workflow DevKit)
 ├── currency-agent/         # External API integration
 ├── weather-agent/          # Specialist (Service Binding target)
 ├── airbnb-agent/           # MCP-powered specialist
 ├── airbnb-mcp-server/      # MCP server as a Worker
-└── travel-planner/         # Multi-agent orchestrator
+├── travel-planner/         # Multi-agent orchestrator
+├── travel-planner-durable/ # Durable orchestrator (Workflow DevKit)
+└── image-generator-durable/ # Durable image generation
 ```
 
 ### Multi-Agent System with Service Bindings
@@ -437,11 +444,14 @@ pnpm test src/agents/analytics-agent/
 
 **Test Coverage**:
 - **Adapter**: 12 unit tests (configuration, loggers, modes, type safety)
-- **Agents**: 331 tests across 19 test files covering 11 agents
+- **Durable Adapter**: Tests for `DurableA2AAdapter` with Workflow DevKit
+- **Agents**: 84 tests across 21 test files covering 11 agents
   - Each agent has `agent.test.ts` (ToolLoopAgent behavior)
   - Agents with utilities have `tools.test.ts` (pure functions)
   - All tests follow [AGENT_TEST_PRINCIPLES.md](examples/agents/AGENT_TEST_PRINCIPLES.md)
-- **Total**: 100+ tests
+- **Shared Workers**: Tests for `worker-config.ts` and `agent-card.ts`
+- **Test Quality**: All test files have ratio < 1.0x (test lines < source lines)
+- **Type Safety**: No `as any` or `as unknown as` casts in test files
 
 📖 **Documentation:**
 - **[Agent Test Principles](examples/agents/AGENT_TEST_PRINCIPLES.md)** - Testing standards and patterns

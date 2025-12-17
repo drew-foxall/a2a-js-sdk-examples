@@ -290,6 +290,8 @@ it("should create agent successfully", () => {
 
 ### ❌ DON'T: Use Type Casting
 
+**`as any` and `as unknown as` are highly discouraged.**
+
 ```typescript
 // ❌ BAD: Hiding type errors with casting
 for await (const chunk of result.fullStream) {
@@ -298,10 +300,24 @@ for await (const chunk of result.fullStream) {
   }
 }
 
+// ❌ BAD: Using `as any` to bypass type checking
+const executor = createA2AExecutor(config, { modelId: "test" } as any, mockEnv);
+
+// ❌ BAD: Using `as unknown as` for complex casts
+const workflow = vi.fn() as unknown as DurableWorkflowFn;
+
+// ✅ GOOD: Use proper mock types from AI SDK
+import { MockLanguageModelV3 } from "ai/test";
+const mockModel = new MockLanguageModelV3();
+const executor = createA2AExecutor(config, mockModel, mockEnv);
+
 // ✅ GOOD: Use the public API
 const result = await agent.stream({prompt: "test"});
 const text = await result.text; // Use Promise directly
 expect(typeof text).toBe("string");
+
+// ✅ GOOD: Use vi.mocked() for type-safe mock assertions
+vi.mocked(mockStart).mockResolvedValue(createMockRun());
 ```
 
 ### ❌ DON'T: Mix Concerns in One File
@@ -486,13 +502,33 @@ Before creating tests for a new agent:
 - [ ] Use `MockLanguageModelV3` from `ai/test`
 - [ ] Test tools directly without involving the agent
 - [ ] Avoid testing private properties (model, instructions)
-- [ ] No type casting (`as`) to fix type errors
+- [ ] No type casting (`as any` or `as unknown as`)
 - [ ] All tests run in < 1 second
 - [ ] No real API calls or API keys required
 - [ ] Use descriptive test names (behavior, not implementation)
 - [ ] Follow the analytics agent pattern
 - [ ] Tests pass with `pnpm test`
 - [ ] No TypeScript errors with `pnpm typecheck`
+- [ ] Test file is shorter than source file (ratio < 1.0x)
+
+---
+
+## Test File Verbosity
+
+**Rule:** Test files should NOT be longer than the files they test.
+
+**Target Ratio:** Test lines / Source lines < 1.0x
+
+If your test file is longer than the source file, it's likely:
+- Testing too many edge cases that don't add value
+- Duplicating test setup code
+- Testing implementation details instead of behavior
+
+**Consolidation Strategies:**
+- Group related assertions in single test cases
+- Use `it.each()` for parameterized tests
+- Extract common setup into fixtures
+- Test multiple scenarios per test when logically related
 
 ---
 
@@ -506,7 +542,8 @@ Before creating tests for a new agent:
 5. ✅ Use AI SDK test utilities
 6. 🎭 Test behavior, not implementation
 7. 📝 Clear, descriptive test names
-8. 🔒 Type-safe (no casting)
+8. 🔒 Type-safe (no `as any` or `as unknown as` casts)
+9. 📏 Keep tests lean (test lines < source lines)
 
 **Result:** Fast, reliable, maintainable tests that provide confidence without slowing down development.
 

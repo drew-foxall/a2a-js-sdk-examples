@@ -18,10 +18,14 @@ Deploy A2A protocol agents to the edge with Cloudflare Workers. This directory d
 
 ```
 workers/
-├── shared/                    # 🔧 Shared utilities
+├── shared/                    # 🔧 Shared utilities (a2a-workers-shared)
+│   ├── worker-config.ts      # Framework-agnostic worker configuration
+│   ├── hono-adapter.ts       # createA2AHonoWorker() factory
+│   ├── agent-card.ts         # buildAgentCard() utility
 │   ├── types.ts              # Environment type definitions
 │   ├── utils.ts              # Model provider setup (OpenAI, Anthropic, Google)
 │   ├── redis.ts              # Upstash Redis task store utilities
+│   ├── index.ts              # Re-exports all utilities
 │   └── package.json          # Shared dependencies
 │
 ├── hello-world/              # 👋 Simple A2A agent
@@ -705,6 +709,59 @@ Here's what happens when you ask the Travel Planner about a trip:
 4. Response: "Here's your Paris trip plan:
               Weather: Expect 45-55°F with partly cloudy skies...
               Accommodations: I found these great options..."
+```
+
+---
+
+## 🏭 Worker Factory Pattern
+
+Most workers use the shared factory pattern for consistent setup:
+
+```typescript
+// workers/hello-world/src/index.ts
+import { createA2AHonoWorker, defineWorkerConfig, buildAgentCard, createSkill } from "a2a-workers-shared";
+import { createHelloWorldAgent } from "a2a-agents";
+
+const helloWorldSkill = createSkill({
+  id: "greeting",
+  name: "Greeting",
+  description: "Responds to greetings",
+});
+
+const config = defineWorkerConfig({
+  agentName: "Hello World Agent",
+  createAgent: (model) => createHelloWorldAgent(model),
+  createAgentCard: (baseUrl) => buildAgentCard(baseUrl, {
+    name: "Hello World Agent",
+    description: "The simplest A2A agent",
+    skills: [helloWorldSkill],
+  }),
+});
+
+export default createA2AHonoWorker(config);
+```
+
+### Factory Benefits
+
+- **~90% less boilerplate** - No manual Hono setup, CORS, health checks
+- **Type-safe** - Full TypeScript inference for env and config
+- **Consistent** - All workers follow the same pattern
+- **Extensible** - Custom task stores, adapter options, health check extras
+
+### Configuration Options
+
+```typescript
+interface A2AWorkerConfig<TEnv> {
+  agentName: string;                    // For health check
+  createAgent: (model, env) => Agent;   // Agent factory
+  createAgentCard: (baseUrl) => Card;   // Agent card factory
+  
+  // Optional:
+  adapterOptions?: A2AAdapterConfig;    // parseTaskState, generateArtifacts
+  taskStore?: TaskStoreConfig;          // memory, redis, or custom
+  healthCheckExtras?: (env) => object;  // Additional health fields
+  notFoundResponse?: object;            // Custom 404 response
+}
 ```
 
 ---
