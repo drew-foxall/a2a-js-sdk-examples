@@ -2,7 +2,7 @@
   "name": "a2a-agents",
   "version": "1.0.0",
   "type": "module",
-  "description": "JavaScript/TypeScript examples for A2A protocol using AI SDK + Hono",
+  "description": "Protocol-agnostic AI agents using Vercel AI SDK v6 for A2A protocol",
   "author": "Drew Foxall",
   "license": "Apache-2.0",
   "exports": {

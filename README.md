@@ -10,7 +10,9 @@
 2. **[Agent Examples](examples/agents)** - 19 working A2A agent examples demonstrating the adapter in action
 3. **[Cloudflare Workers](examples/workers)** - 23 example workers demonstrating multi-agent orchestration via Service Bindings
 
-> Built with **Vercel AI SDK v6**, **Hono**, **TypeScript**, and [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)
+> Built with **Vercel AI SDK v6**, **TypeScript**, and [@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)
+> 
+> **Deployment Layer**: Workers use **Hono** for HTTP routing (see [Separation Patterns](docs/SEPARATION-PATTERNS.md))
 
 ---
 
@@ -128,7 +130,7 @@ a2a-js-sdk-examples/
 │       └── README.md             # API documentation
 │
 ├── examples/
-│   ├── agents/                   # 🤖 19 Working Agents (Node.js/Hono)
+│   ├── agents/                   # 🤖 19 Working Agents (Protocol-Agnostic)
 │   │   ├── src/agents/
 │   │   │   ├── hello-world/     # Simplest example
 │   │   │   ├── dice-agent/      # Tool usage
@@ -586,10 +588,19 @@ pnpm agents:coder           # Start coder agent
 
 ## 📚 Documentation
 
+### Architecture & Design
+- **[Separation Patterns](docs/SEPARATION-PATTERNS.md)** - Agent vs Worker architecture, compliance checklist
+- **[Platform Portability](docs/PLATFORM-PORTABILITY.md)** - Deploy same agent on Cloudflare, Vercel, AWS
+- **[Telemetry Guide](docs/TELEMETRY.md)** - Pluggable observability with OpenTelemetry
+
 ### Package Documentation
 - **[A2AAdapter API](packages/a2a-ai-sdk-adapter/README.md)** - Adapter class API reference
-- **[Testing Guide](examples/TESTING_WITH_A2A_INSPECTOR.md)** - Testing with a2a-inspector
-- **[Repository Refocus Plan](REPO_REFOCUS_PLAN.md)** - Architecture and design decisions
+- **[A2A AI Provider](packages/a2a-ai-provider-v3/README.md)** - Use A2A agents as AI SDK models
+
+### Testing Guides
+- **[Quick Start](QUICKSTART_A2A_INSPECTOR.md)** - Get testing in 3 minutes
+- **[Full Testing Guide](examples/TESTING_WITH_A2A_INSPECTOR.md)** - Comprehensive testing scenarios
+- **[Local Infrastructure](LOCAL_TESTING.md)** - Redis + Upstash for local development
 
 ### External Documentation
 - **[A2A Protocol](https://a2a.plus/docs)** - Official A2A protocol documentation

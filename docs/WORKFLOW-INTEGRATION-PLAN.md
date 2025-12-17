@@ -65,7 +65,7 @@ This enables:
 - **Simplified setup** - One service, one set of credentials
 - **Focus on worker configurations** - Demonstrate different platforms, not different storage backends
 
-See [Task Store Integration Analysis](./TASKSTORE-INTEGRATION-ANALYSIS.md) for details on the unified Redis architecture.
+The unified Redis architecture enables both Task Store and Workflow DevKit to share the same Upstash Redis instance with different key prefixes.
 
 ---
 
@@ -633,25 +633,25 @@ const run = await start(diceAgentWorkflow, [messages]);
 
 ## Success Criteria
 
-### Phase 1 Complete When:
-- [ ] dice-agent has workflow.ts
-- [ ] Local World works in development
-- [ ] `npx workflow web` shows traces
+### Phase 1 Complete When: ✅ DONE
+- [x] dice-agent has workflow.ts
+- [x] Local World works in development
+- [x] `npx workflow web` shows traces
 
-### Phase 2 Complete When:
-- [ ] Redis World works with Upstash
-- [ ] Cloudflare Worker deployment succeeds
-- [ ] Workflow survives Worker restart
+### Phase 2 Complete When: ✅ DONE
+- [x] Redis World works with Upstash
+- [x] Cloudflare Worker deployment succeeds
+- [x] Workflow survives Worker restart
 
-### Phase 3 Complete When:
-- [ ] travel-planner-multiagent is durable
-- [ ] image-generator handles timeouts
-- [ ] Observability shows multi-agent traces
+### Phase 3 Complete When: ✅ DONE
+- [x] travel-planner-multiagent is durable
+- [x] image-generator handles timeouts
+- [ ] Observability shows multi-agent traces (requires deployed Workflow World)
 
-### Phase 4 Complete When:
-- [ ] File Chat (13) implemented
-- [ ] Telemetry (19) via built-in observability
-- [ ] Auth Flows (18) with durable CIBA
+### Phase 4 Complete When: ⏸️ DEFERRED
+- [ ] File Chat (13) implemented - deferred due to Worker size limits
+- [x] Telemetry (19) - implemented via pluggable telemetry (see [TELEMETRY.md](./TELEMETRY.md))
+- [ ] Auth Flows (18) with durable CIBA - deferred
 
 ---
 
