@@ -1,7 +1,7 @@
 # A2A with MCP Registry Reference
 
 > **Source**: `samples/python/agents/a2a_mcp/`
-> **Our Implementation**: Partial - See `examples/workers/airbnb-mcp-server/` for MCP pattern ⚠️
+> **Our Implementation**: ✅ Complete - See `examples/agents/src/agents/mcp-registry/` and `examples/workers/mcp-registry/`
 
 ## Overview
 
@@ -416,11 +416,16 @@ class Orchestrator {
 
 - [x] MCP Server pattern (`workers/airbnb-mcp-server/`)
 - [x] A2A agents that use MCP tools (`travel-planner-multiagent/airbnb-agent/`)
-- [ ] MCP Server as agent registry (advanced)
-- [ ] `find_agent` tool with embedding-based matching
-- [ ] Orchestrator with MCP-based agent discovery
-- [ ] Re-planning on task failure
+- [x] MCP Server as agent registry (`agents/mcp-registry/`, `workers/mcp-registry/`)
+- [x] `find_agent` tool with keyword-based matching (embedding support planned)
+- [x] Orchestrator with MCP-based agent discovery (`agents/mcp-registry/orchestrator.ts`)
+- [x] Re-planning on task failure (with configurable max iterations)
+- [x] State persistence via Redis (`workers/mcp-registry/` with Upstash)
 
-**Note**: Our current implementation uses MCP for tool access (Airbnb API) rather than
-agent registry. The registry pattern is an advanced use case for larger systems.
+**Implementation**: Full MCP Registry pattern implemented with:
+- `AgentRegistry` class for agent storage and capability-based search
+- `MCPRegistryServer` implementing MCP protocol (tools + resources)
+- `MCPRegistryOrchestrator` for plan execution with re-planning
+- Cloudflare Worker with REST + MCP endpoints
+- Redis persistence for registered agents
 

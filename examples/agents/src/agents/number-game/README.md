@@ -1,6 +1,6 @@
 # Number Guessing Game
 
-A minimalist multi-agent demo with three cooperating agents playing a number guessing game. **No LLMs required** - demonstrates core A2A concepts with pure TypeScript logic.
+A minimalist multi-agent demo with two cooperating agents playing a number guessing game. **No LLMs required** - demonstrates core A2A concepts with pure TypeScript logic.
 
 ## Architecture
 
@@ -101,4 +101,56 @@ number-game/
 └── carol/
     └── index.ts       # Carol agent (visualizer)
 ```
+
+## State Persistence
+
+### Implementation
+
+| Agent | Local (Node.js) | Worker (Cloudflare) |
+|-------|-----------------|---------------------|
+| **Alice** | ✅ In-memory class | ✅ Redis (Upstash) |
+| **Carol** | ✅ Stateless | ✅ Stateless |
+
+### How It Works
+
+**Worker Alice** uses Redis to persist game state:
+
+```typescript
+interface GameState {
+  secret: number;      // The number to guess
+  attempts: number;    // Number of guesses made
+  createdAt: string;   // When game started
+  guesses: number[];   // History of guesses
+}
+```
+
+Session identification (in priority order):
+1. `contextId` from A2A request params
+2. `X-Session-ID` header
+3. Auto-generated UUID (returned in response)
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `50` | Make a guess |
+| `new` / `reset` | Start a new game |
+| `status` / `info` | Show current game status |
+
+### Configuration
+
+Without Redis, Alice still works but warns that state won't persist:
+
+```bash
+# Set Redis credentials for persistence
+wrangler secret put UPSTASH_REDIS_REST_URL
+wrangler secret put UPSTASH_REDIS_REST_TOKEN
+```
+
+### Why Custom Implementation?
+
+These agents use **custom JSON-RPC** handlers instead of the SDK's `A2AServer` and `TaskStore`:
+- Demonstrates A2A works with any implementation
+- Game state is domain-specific, not task-specific
+- Simpler for educational purposes
 

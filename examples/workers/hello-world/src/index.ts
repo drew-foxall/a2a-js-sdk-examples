@@ -5,8 +5,9 @@
  * This demonstrates the simplest possible A2A agent integration.
  *
  * KEY ARCHITECTURE:
- * - Agent logic is imported from the shared `a2a-agents` package (no duplication!)
- * - Worker only handles deployment-specific concerns (env, routing)
+ * - Agent logic is imported from the shared `a2a-agents` package
+ * - Worker configuration is framework-agnostic
+ * - Hono adapter handles HTTP concerns
  *
  * Deployment:
  *   wrangler deploy
@@ -15,24 +16,18 @@
  *   wrangler dev
  */
 
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
-import {
-  type AgentExecutor,
-  DefaultRequestHandler,
-  InMemoryTaskStore,
-  type TaskStore,
-} from "@drew-foxall/a2a-js-sdk/server";
-import { A2AHonoApp, ConsoleLogger } from "@drew-foxall/a2a-js-sdk/server/hono";
-// Import agent factory from the shared agents package (NO CODE DUPLICATION!)
+import type { LanguageModel } from "ai";
+import type { AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import { createHelloWorldAgent } from "a2a-agents";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import type { HonoEnv } from "../../shared/types.js";
-import { getModel, getModelInfo } from "../../shared/utils.js";
+import {
+  buildAgentCard,
+  createA2AHonoWorker,
+  defineWorkerConfig,
+  type BaseWorkerEnv,
+} from "a2a-workers-shared";
 
 // ============================================================================
-// Agent Card Configuration
+// Skill Definition
 // ============================================================================
 
 const helloWorldSkill: AgentSkill = {
@@ -43,108 +38,34 @@ const helloWorldSkill: AgentSkill = {
   examples: ["hi", "hello world", "greet me", "say hello"],
 };
 
-function createAgentCard(baseUrl: string): AgentCard {
-  return {
-    name: "Hello World Agent",
-    description: "The simplest possible A2A agent - responds with friendly greetings",
-    url: baseUrl,
-    protocolVersion: "0.3.0",
-    version: "1.0.0",
-    defaultInputModes: ["text"],
-    defaultOutputModes: ["text"],
-    preferredTransport: "JSONRPC",
-    preferred_transport: "JSONRPC",
-    capabilities: {
-      streaming: true,
-      pushNotifications: false,
-      stateTransitionHistory: true,
-    },
-    skills: [helloWorldSkill],
-  } as AgentCard;
-}
-
 // ============================================================================
-// Hono App Setup
+// Worker Configuration
 // ============================================================================
 
-const app = new Hono<HonoEnv>();
+const config = defineWorkerConfig<BaseWorkerEnv>({
+  agentName: "Hello World Agent",
 
-app.use(
-  "*",
-  cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-  })
-);
+  createAgent: (model: LanguageModel) => createHelloWorldAgent(model),
 
-app.get("/health", (c) => {
-  const modelInfo = getModelInfo(c.env);
-  return c.json({
-    status: "healthy",
-    agent: "Hello World Agent",
-    provider: modelInfo.provider,
-    model: modelInfo.model,
-    runtime: "Cloudflare Workers",
-  });
-});
+  createAgentCard: (baseUrl: string) =>
+    buildAgentCard(baseUrl, {
+      name: "Hello World Agent",
+      description: "The simplest possible A2A agent - responds with friendly greetings",
+      skills: [helloWorldSkill],
+      capabilities: {
+        stateTransitionHistory: true,
+      },
+    }),
 
-// ============================================================================
-// A2A Protocol Routes - Catch-all handler
-// ============================================================================
-
-app.all("/*", async (c, next) => {
-  const url = new URL(c.req.url);
-  const baseUrl = `${url.protocol}//${url.host}`;
-  const agentCard = createAgentCard(baseUrl);
-
-  // Create agent using imported factory function
-  const model = getModel(c.env);
-  const agent = createHelloWorldAgent(model);
-
-  const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
+  adapterOptions: {
     mode: "stream",
     workingMessage: "Processing your greeting...",
     includeHistory: true,
-  });
-
-  const taskStore: TaskStore = new InMemoryTaskStore();
-  const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
-
-  const a2aRouter = new Hono();
-  const logger = ConsoleLogger.create();
-  const appBuilder = new A2AHonoApp(requestHandler, { logger });
-  appBuilder.setupRoutes(a2aRouter);
-
-  // Try the A2A router first
-  const a2aResponse = await a2aRouter.fetch(c.req.raw, c.env);
-
-  // If A2A router handled it (not 404), return that response
-  if (a2aResponse.status !== 404) {
-    return a2aResponse;
-  }
-
-  // Otherwise continue to next handler (notFound)
-  return next();
-});
-
-app.notFound((c) => {
-  return c.json(
-    {
-      error: "Not Found",
-      message: "Use /.well-known/agent-card.json to discover this agent",
-      endpoints: {
-        agentCard: "/.well-known/agent-card.json",
-        sendMessage: "/message/send",
-        health: "/health",
-      },
-    },
-    404
-  );
+  },
 });
 
 // ============================================================================
-// Export for Cloudflare Workers
+// Export Hono Application
 // ============================================================================
 
-export default app;
+export default createA2AHonoWorker(config);

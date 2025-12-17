@@ -13,10 +13,16 @@
  *
  * Features:
  * - Persistent task storage via Upstash Redis ✅
- * - Durable workflow execution via @drew-foxall/upstash-workflow-world ✅
+ * - Durable workflow execution via @drew-foxall/workflow-ai ✅
  * - Automatic retry on sub-agent failures
  * - Result caching across restarts
  * - Multi-agent discovery and coordination
+ *
+ * This worker uses the DURABLE workflow (travelPlannerWorkflow) which provides:
+ * - DurableAgent from @drew-foxall/workflow-ai/agent for AI SDK integration
+ * - "use workflow" directive for workflow-level durability
+ * - "use step" directives on sub-agent calls for step-level caching
+ * - Automatic retry on transient sub-agent failures
  *
  * Deployment:
  *   wrangler deploy
@@ -25,34 +31,19 @@
  *   wrangler dev
  */
 
-import { createOpenAI } from "@ai-sdk/openai";
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import {
-  discoverAgent,
-  supportsCapability,
-  a2aV3,
-  toJSONObject,
-  type A2aProviderMetadata,
-} from "@drew-foxall/a2a-ai-provider-v3";
+import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
+  type AgentExecutor,
   DefaultRequestHandler,
   InMemoryTaskStore,
   type TaskStore,
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createWorld } from "@drew-foxall/upstash-workflow-world";
-import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
-import { Redis } from "@upstash/redis";
-import {
-  createPlannerAgent,
-  type SendMessageFn,
-  type SendMessageOptions,
-  type SendMessageResult,
-  type AgentArtifact,
-} from "a2a-agents";
+// Import the DURABLE workflow from the shared agents package
+import { travelPlannerWorkflow, type TravelPlannerWorkflowConfig } from "a2a-agents";
 import { createRedisClient, createRedisTaskStore, type RedisEnv } from "a2a-workers-shared";
-import { generateText } from "ai";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { HonoEnv } from "../../shared/types.js";
@@ -112,7 +103,7 @@ function createAgentCard(baseUrl: string): AgentCard {
   return {
     name: "Travel Planner (Durable)",
     description:
-      "A durable multi-agent travel planner that coordinates weather and accommodation agents. Features automatic retry on failures and persistent state across restarts.",
+      "A durable multi-agent travel planner that coordinates weather and accommodation agents. Uses DurableAgent from @drew-foxall/workflow-ai for workflow-level durability. Features automatic retry on failures and persistent state across restarts.",
     url: baseUrl,
     protocolVersion: "0.3.0",
     version: "1.0.0",
@@ -126,134 +117,6 @@ function createAgentCard(baseUrl: string): AgentCard {
     },
     skills: [planningSkill, weatherSkill, accommodationSkill],
   };
-}
-
-// ============================================================================
-// Agent Registry
-// ============================================================================
-
-interface RegisteredAgent {
-  name: string;
-  description: string;
-  url: string;
-  supportsStreaming: boolean;
-  card?: AgentCard;
-}
-
-class AgentRegistry {
-  private agents = new Map<string, RegisteredAgent>();
-
-  async discover(
-    url: string,
-    fallback?: { name: string; description: string }
-  ): Promise<void> {
-    try {
-      const { agentUrl, agentCard } = await discoverAgent(url);
-      const supportsStreaming = supportsCapability(agentCard, "streaming");
-
-      this.agents.set(agentCard.name, {
-        name: agentCard.name,
-        description: agentCard.description ?? `Agent at ${url}`,
-        url: agentUrl,
-        supportsStreaming,
-        card: agentCard,
-      });
-    } catch (error) {
-      if (fallback) {
-        this.agents.set(fallback.name, {
-          ...fallback,
-          url,
-          supportsStreaming: false,
-        });
-      }
-    }
-  }
-
-  getAgent(name: string): RegisteredAgent | undefined {
-    return this.agents.get(name);
-  }
-
-  getAgentNames(): string[] {
-    return Array.from(this.agents.keys());
-  }
-
-  buildAgentRoster(): string {
-    return Array.from(this.agents.values())
-      .map(
-        (agent) =>
-          `{"name": "${agent.name}", "description": "${agent.description}", "streaming": ${agent.supportsStreaming}}`
-      )
-      .join("\n");
-  }
-}
-
-// ============================================================================
-// Communication Layer
-// ============================================================================
-
-function createSendMessage(registry: AgentRegistry): SendMessageFn {
-  return async (
-    agentName: string,
-    task: string,
-    options?: SendMessageOptions
-  ): Promise<SendMessageResult> => {
-    const agent = registry.getAgent(agentName);
-    if (!agent) {
-      return {
-        text: `Error: Agent "${agentName}" not found`,
-        inputRequired: false,
-        artifacts: [],
-      };
-    }
-
-    try {
-      const result = await generateText({
-        model: a2aV3(agent.url),
-        prompt: task,
-        providerOptions: {
-          a2a: {
-            contextId: options?.contextId,
-            taskId: options?.taskId,
-            metadata: options?.metadata ? toJSONObject(options.metadata) : undefined,
-          },
-        },
-      });
-
-      const a2aMetadata = result.providerMetadata?.a2a as A2aProviderMetadata | undefined;
-
-      return {
-        text: result.text,
-        taskId: a2aMetadata?.taskId ?? undefined,
-        contextId: a2aMetadata?.contextId ?? undefined,
-        inputRequired: a2aMetadata?.inputRequired ?? false,
-        taskState: a2aMetadata?.taskState ?? undefined,
-        artifacts: extractArtifacts(a2aMetadata),
-        metadata: a2aMetadata?.metadata ?? undefined,
-      };
-    } catch (error) {
-      return {
-        text: `Error calling ${agentName}: ${error instanceof Error ? error.message : "Unknown error"}`,
-        inputRequired: false,
-        artifacts: [],
-      };
-    }
-  };
-}
-
-function extractArtifacts(metadata: A2aProviderMetadata | undefined): AgentArtifact[] {
-  if (!metadata?.artifacts) return [];
-
-  return metadata.artifacts.map((artifact) => ({
-    artifactId: artifact.artifactId ?? "",
-    name: artifact.name,
-    description: artifact.description,
-    parts: artifact.parts?.map((part) => ({
-      kind: part.kind,
-      text: part.text,
-      data: part.data,
-      file: part.file,
-    })) ?? [],
-  }));
 }
 
 // ============================================================================
@@ -295,17 +158,6 @@ function getWorkflowWorld(env: DurablePlannerEnv["Bindings"]) {
 }
 
 // ============================================================================
-// Model Configuration
-// ============================================================================
-
-function getModel(env: DurablePlannerEnv["Bindings"]) {
-  const openai = createOpenAI({
-    apiKey: env.OPENAI_API_KEY,
-  });
-  return openai.chat(env.AI_MODEL || "gpt-4o-mini");
-}
-
-// ============================================================================
 // Hono App Setup
 // ============================================================================
 
@@ -335,7 +187,9 @@ app.get("/health", (c) => {
     model: modelInfo.model,
     runtime: "Cloudflare Workers",
     features: {
-      durableWorkflow: hasWorkflowWorld,
+      // Now truly using durable workflow!
+      durableWorkflow: true,
+      workflowWorldConfigured: hasWorkflowWorld,
       persistentStorage: hasRedis,
       storageType: hasRedis ? "upstash-redis" : "in-memory",
       multiAgentCoordination: true,
@@ -387,38 +241,33 @@ app.all("/*", async (c, next) => {
   const baseUrl = `${url.protocol}//${url.host}`;
   const agentCard = createAgentCard(baseUrl);
 
-  // Build agent registry with discovery
-  const registry = new AgentRegistry();
-
-  // Discover sub-agents
+  // Build workflow configuration with sub-agent URLs
   const weatherUrl = env.WEATHER_AGENT_URL ?? "http://localhost:41252";
   const airbnbUrl = env.AIRBNB_AGENT_URL ?? "http://localhost:41253";
 
-  await Promise.all([
-    registry.discover(weatherUrl, { name: "Weather Agent", description: "Provides weather forecasts" }),
-    registry.discover(airbnbUrl, { name: "Airbnb Agent", description: "Finds accommodation listings" }),
-  ]);
-
-  // Track active agent state
-  let activeAgent: string | null = null;
-
-  // Create planner agent with durable communication
-  const plannerAgent = createPlannerAgent({
-    model: getModel(env),
-    agentRoster: registry.buildAgentRoster(),
-    activeAgent,
-    availableAgents: registry.getAgentNames(),
-    sendMessage: createSendMessage(registry),
-    onActiveAgentChange: (name) => {
-      activeAgent = name;
+  const workflowConfig: TravelPlannerWorkflowConfig = {
+    agentUrls: [weatherUrl, airbnbUrl],
+    fallbacks: {
+      [weatherUrl]: { name: "Weather Agent", description: "Provides weather forecasts" },
+      [airbnbUrl]: { name: "Airbnb Agent", description: "Finds accommodation listings" },
     },
-  });
+  };
 
-  const agentExecutor = new A2AAdapter(plannerAgent, {
-    mode: "stream",
-    workingMessage: "Planning your trip (with durability)...",
-    includeHistory: true,
-  });
+  // Use the DURABLE workflow via DurableA2AAdapter
+  // The workflow uses DurableAgent from @drew-foxall/workflow-ai/agent internally
+  // This provides:
+  // - Automatic retry on sub-agent failures (via "use step" directives)
+  // - Result caching across restarts
+  // - Observability via Workflow DevKit traces
+  const agentExecutor: AgentExecutor = new DurableA2AAdapter<[TravelPlannerWorkflowConfig]>(
+    travelPlannerWorkflow,
+    {
+      workflowArgs: [workflowConfig],
+      workingMessage: "Planning your trip (with durability)...",
+      includeHistory: true,
+      debug: false,
+    }
+  );
 
   const taskStore = getTaskStore(env);
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
@@ -456,4 +305,3 @@ app.notFound((c) => {
 // ============================================================================
 
 export default app;
-

@@ -11,6 +11,49 @@ This document outlines a comprehensive plan for integrating [Workflow DevKit](ht
 
 This separation enables the **same agent code** to run across different deployment targets (Cloudflare, Vercel, AWS, Railway) by swapping only the World configuration.
 
+## The Three-Layer Durability Stack
+
+**CRITICAL:** Durability requires THREE components working together:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DurableA2AAdapter                            │
+│  Bridges A2A protocol with Workflow DevKit via start()              │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ calls start()
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Workflow DevKit Runtime                          │
+│  - start() from workflow/api creates run in World                   │
+│  - "use workflow" and "use step" directives (SWC transform)         │
+│  - getWritable() for streaming output                               │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ persists to
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         World (Persistence)                         │
+│  - @drew-foxall/upstash-workflow-world (Cloudflare Workers)         │
+│  - @workflow/world-vercel (Vercel)                                  │
+│  - @workflow/world-local (local dev)                                │
+│  - Stores: runs, steps, events, hooks, queue, streamer              │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ uses
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      @drew-foxall/workflow-ai                       │
+│  - DurableAgent: AI SDK integration with "use step" internally      │
+│  - doStreamStep: LLM calls as durable steps                         │
+│  - Must run inside a workflow context                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Insight:** Calling a workflow function directly does NOT provide durability. The workflow MUST be invoked via `start()` from `workflow/api`, which:
+1. Creates a run record in the World
+2. Queues the workflow for execution
+3. Returns a `Run` object with `runId` and `returnValue`
+
+The `DurableA2AAdapter` in `@drew-foxall/a2a-ai-sdk-adapter/durable` handles this integration, using `start()` to invoke workflows properly.
+
 ### Design Decision: Redis-First Approach
 
 **All examples will use Upstash Redis as the unified persistence layer** for both:

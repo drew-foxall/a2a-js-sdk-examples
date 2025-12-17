@@ -37,13 +37,46 @@ export {
   createInstrumentedMessageProcessor,
 } from "../agents/dice-agent/instrumented.js";
 export { createExpenseAgent } from "../agents/expense-agent/agent.js";
-export { createGitHubAgent } from "../agents/github-agent/agent.js";
+export {
+  createGitHubAgent,
+  type GitHubAgentConfig,
+} from "../agents/github-agent/agent.js";
+export {
+  createGitHubClientFromOctokit,
+  createGitHubTools,
+  type GitHubApiResult,
+  type GitHubClient,
+  type GitHubCommit,
+  type GitHubRepository,
+  type GitHubTools,
+  type OctokitLike,
+} from "../agents/github-agent/tools.js";
 // Simple agents
 export { createHelloWorldAgent } from "../agents/hello-world/agent.js";
 export { createImageGeneratorAgent } from "../agents/image-generator/agent.js";
 export { createLocalLLMChatAgent } from "../agents/local-llm-chat/agent.js";
 // API-integrated agents
 export { createMovieAgent } from "../agents/movie-agent/agent.js";
+// Number game agents (no LLM required)
+export {
+  AliceAgent,
+  createAliceAgent,
+  type AliceAgentConfig,
+  createInMemoryGameStore,
+  createRedisGameStore,
+  InMemoryGameStore,
+  type RedisClient,
+  type RedisGameStoreConfig,
+  RedisGameStore,
+  type GameState,
+  type GameStore,
+  type GradeResult,
+} from "../agents/number-game/alice/index.js";
+export {
+  CarolAgent,
+  createCarolAgent,
+  type CarolResult,
+} from "../agents/number-game/carol/index.js";
 export {
   type AgentArtifact,
   type AgentArtifactPart,
@@ -61,6 +94,22 @@ export {
 } from "../agents/travel-planner-multiagent/planner/agent-discovery.js";
 // Multi-agent system
 export { createWeatherAgent } from "../agents/travel-planner-multiagent/weather-agent/agent.js";
+// Airbnb agent (HTTP MCP for Workers)
+export {
+  createAirbnbAgentHttp,
+  type AirbnbAgentHttpConfig,
+} from "../agents/travel-planner-multiagent/airbnb-agent/agent-http.js";
+export {
+  createAirbnbMCPTools,
+  createMCPHttpClient,
+  MCPHttpClient,
+  type AirbnbSearchParams,
+  type AirbnbTools,
+  type CloudflareFetcher,
+  type ListingDetailsParams,
+  type MCPClient,
+  type MCPHttpClientConfig,
+} from "../agents/travel-planner-multiagent/airbnb-agent/mcp-client-http.js";
 
 // ============================================================================
 // Agent Cards (for Workers)

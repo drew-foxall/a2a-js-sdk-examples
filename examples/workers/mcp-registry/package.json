@@ -1,0 +1,24 @@
+{
+  "name": "a2a-mcp-registry-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP Agent Registry - Dynamic agent discovery via Model Context Protocol",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.35.0",
+    "a2a-agents": "workspace:*",
+    "hono": "^4.10.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.21.1"
+  }
+}
+
+

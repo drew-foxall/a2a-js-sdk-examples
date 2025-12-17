@@ -9,3 +9,18 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 # No nodejs_compat needed - no LLM, pure logic
 
+# Development settings
+[dev]
+port = 41270
+
+# Environment variables (set via wrangler secret for production)
+# UPSTASH_REDIS_REST_URL - Upstash Redis REST URL (optional - enables persistence)
+# UPSTASH_REDIS_REST_TOKEN - Upstash Redis REST token (optional)
+
+# To set secrets:
+# wrangler secret put UPSTASH_REDIS_REST_URL
+# wrangler secret put UPSTASH_REDIS_REST_TOKEN
+
+# Without Redis, the game still works but each request gets a new game
+# (unless contextId is provided in the A2A request)
+

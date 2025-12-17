@@ -7,9 +7,14 @@
  * - Can shuffle/analyze guess patterns
  *
  * NO LLM REQUIRED - demonstrates A2A with pure logic on Workers.
+ *
+ * KEY ARCHITECTURE:
+ * - Agent logic is imported from the shared `a2a-agents` package (no duplication!)
+ * - Worker only handles deployment-specific concerns (env, routing)
  */
 
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
+import { createCarolAgent } from "a2a-agents";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -18,99 +23,7 @@ import { cors } from "hono/cors";
 // ============================================================================
 
 interface Env {
-  // No environment variables needed
-}
-
-// ============================================================================
-// Carol Logic (No LLM)
-// ============================================================================
-
-function visualize(guesses: number[]): string {
-  if (guesses.length === 0) {
-    return "No guesses provided! Use: visualize 50, 25, 37";
-  }
-
-  const maxGuess = Math.max(...guesses);
-  const scale = 50 / maxGuess;
-
-  let viz = "📊 Guess History:\n";
-  viz += "─".repeat(55) + "\n";
-
-  guesses.forEach((guess, i) => {
-    const bar = "█".repeat(Math.max(1, Math.round(guess * scale)));
-    viz += `${String(i + 1).padStart(2)}. ${String(guess).padStart(3)} |${bar}\n`;
-  });
-
-  viz += "─".repeat(55) + "\n";
-  viz += `Total guesses: ${guesses.length}\n`;
-  viz += `Range: ${Math.min(...guesses)} - ${Math.max(...guesses)}\n`;
-
-  return viz;
-}
-
-function analyze(guesses: number[]): string {
-  if (guesses.length < 2) {
-    return "Need at least 2 guesses to analyze pattern.";
-  }
-
-  const avg = guesses.reduce((a, b) => a + b, 0) / guesses.length;
-  const sorted = [...guesses].sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)];
-
-  let analysis = "🔍 Guess Analysis:\n";
-  analysis += `• Average: ${avg.toFixed(1)}\n`;
-  analysis += `• Median: ${median}\n`;
-  analysis += `• Lowest: ${sorted[0]}\n`;
-  analysis += `• Highest: ${sorted[sorted.length - 1]}\n`;
-
-  return analysis;
-}
-
-function shuffle(guesses: number[]): number[] {
-  const shuffled = [...guesses];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-function processCommand(input: string): string {
-  const parts = input.trim().toLowerCase().split(/\s+/);
-  const command = parts[0];
-
-  const guessText = parts.slice(1).join(" ");
-  const guesses = guessText
-    .split(/[,\s]+/)
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !Number.isNaN(n));
-
-  switch (command) {
-    case "visualize":
-    case "viz":
-    case "show":
-      return visualize(guesses);
-
-    case "analyze":
-    case "analysis":
-      return analyze(guesses);
-
-    case "shuffle":
-      if (guesses.length === 0) {
-        return "No guesses to shuffle!";
-      }
-      const shuffled = shuffle(guesses);
-      return `🔀 Shuffled: ${shuffled.join(", ")}`;
-
-    case "help":
-    default:
-      return `🎨 Carol's Commands:
-• visualize [guesses] - Show bar chart of guesses
-• analyze [guesses] - Analyze guess pattern
-• shuffle [guesses] - Randomly shuffle guesses
-
-Example: "visualize 50, 25, 37, 31, 34"`;
-  }
+  // No environment variables needed - Carol is stateless
 }
 
 // ============================================================================
@@ -184,7 +97,10 @@ app.post("/", async (c) => {
     if (body.jsonrpc === "2.0" && body.method === "message/send") {
       const message = body.params?.message;
       const text = message?.parts?.[0]?.text || message?.parts?.[0]?.content || "";
-      const result = processCommand(text);
+
+      // Create agent and process message
+      const carol = createCarolAgent();
+      const result = carol.processMessage(text);
 
       return c.json({
         jsonrpc: "2.0",
@@ -195,12 +111,20 @@ app.post("/", async (c) => {
             state: "completed",
             message: {
               role: "agent",
-              parts: [{ type: "text", text: result }],
+              parts: [{ type: "text", text: result.text }],
             },
           },
           artifacts: [
             {
-              parts: [{ type: "text", text: result }],
+              parts: [
+                {
+                  type: "data",
+                  data: {
+                    command: result.command,
+                    guesses: result.guesses,
+                  },
+                },
+              ],
             },
           ],
         },
@@ -229,4 +153,3 @@ app.notFound((c) => {
 // ============================================================================
 
 export default app;
-

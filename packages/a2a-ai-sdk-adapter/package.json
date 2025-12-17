@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./durable": {
+      "types": "./dist/durable-adapter.d.ts",
+      "import": "./dist/durable-adapter.js"
     }
   },
   "files": [
@@ -60,7 +64,13 @@
   "peerDependencies": {
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "ai": "^6.0.0",
-    "uuid": ">=11.0.0"
+    "uuid": ">=11.0.0",
+    "workflow": "4.0.1-beta.32"
+  },
+  "peerDependenciesMeta": {
+    "workflow": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
@@ -73,6 +83,7 @@
     "typescript": "^5.9.3",
     "uuid": "^13.0.0",
     "vitest": "^4.0.14",
+    "workflow": "4.0.1-beta.32",
     "zod": "^4.1.13"
   },
   "packageManager": "pnpm@10.23.0",

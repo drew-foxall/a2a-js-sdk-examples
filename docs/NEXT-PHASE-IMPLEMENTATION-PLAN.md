@@ -381,6 +381,41 @@ export async function travelPlannerWorkflow(messages: ModelMessage[], config: Tr
 - [x] `travel-planner-multiagent` has `steps.ts` and `workflow.ts`
 - [x] `travel-planner-durable` worker created
 
+#### Step 3.3: DurableA2AAdapter ✅ COMPLETE
+
+Created `DurableA2AAdapter` in `@drew-foxall/a2a-ai-sdk-adapter` to bridge durable workflows with A2A protocol:
+
+```typescript
+// packages/a2a-ai-sdk-adapter/src/durable-adapter.ts
+import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import { diceAgentWorkflow } from "a2a-agents";
+
+// Bridge durable workflow to A2A protocol
+const executor = new DurableA2AAdapter(diceAgentWorkflow, {
+  workingMessage: "Rolling dice (with durability)...",
+});
+
+// For workflows with additional arguments:
+const imageExecutor = new DurableA2AAdapter<[string]>(imageGeneratorWorkflow, {
+  workflowArgs: [env.OPENAI_API_KEY],
+  workingMessage: "Generating image...",
+});
+```
+
+The adapter:
+- Converts A2A `Message` to AI SDK `ModelMessage[]`
+- **Invokes the workflow via `start()` from `workflow/api`** - This is critical for durability!
+- Awaits `run.returnValue` to get the result (polls until workflow completes)
+- Converts workflow output back to A2A protocol events
+- Handles task lifecycle (submitted → working → completed/failed)
+
+**Key Architecture Decision:** Durability requires three layers working together:
+1. **`start()` from `workflow/api`** - Creates run in World, queues execution
+2. **World** (e.g., `@drew-foxall/upstash-workflow-world`) - Persists runs, steps, events
+3. **`DurableAgent` from `@drew-foxall/workflow-ai/agent`** - AI SDK integration with `"use step"` internally
+
+Calling a workflow function directly does NOT provide durability - the `DurableA2AAdapter` handles invoking via `start()` correctly.
+
 ---
 
 ### Phase 4: Platform Portability (Week 4) ✅ COMPLETE
@@ -533,9 +568,22 @@ const agent = createAuthAgent({
 // → Agent accesses data with token
 ```
 
-#### MCP Registry (Example 06) - Deferred
+#### MCP Registry (Example 06) ✅ COMPLETE
 
-State persistence enables re-planning patterns. Foundation is ready via Redis task stores.
+Implemented MCP-based agent registry with:
+- `AgentRegistry` class for dynamic agent registration and capability-based search
+- `MCPRegistryServer` implementing full MCP protocol (tools + resources)
+- `MCPRegistryOrchestrator` for plan execution with automatic re-planning on failure
+- Cloudflare Worker (`workers/mcp-registry/`) with REST + MCP endpoints
+- Redis persistence via Upstash for registered agents
+
+**Files Created:**
+- `examples/agents/src/agents/mcp-registry/types.ts` - Type definitions
+- `examples/agents/src/agents/mcp-registry/registry.ts` - Agent registry implementation
+- `examples/agents/src/agents/mcp-registry/mcp-server.ts` - MCP protocol server
+- `examples/agents/src/agents/mcp-registry/orchestrator.ts` - Task orchestrator with re-planning
+- `examples/agents/src/agents/mcp-registry/index.ts` - Public exports
+- `examples/workers/mcp-registry/` - Cloudflare Worker deployment
 
 **Deliverables** ✅:
 - [x] Pluggable telemetry abstraction (`TelemetryProvider` interface)
@@ -546,7 +594,7 @@ State persistence enables re-planning patterns. Foundation is ready via Redis ta
 - [x] Instrumented agent example (`dice-agent/instrumented.ts`)
 - [x] Documentation (`docs/TELEMETRY.md`)
 - [ ] Auth flow example with durable sleep (deferred)
-- [ ] MCP Registry with state persistence (deferred)
+- [x] MCP Registry with state persistence
 
 ---
 
@@ -586,7 +634,7 @@ State persistence enables re-planning patterns. Foundation is ready via Redis ta
 - [x] Create instrumented agent example (`dice-agent/instrumented.ts`)
 - [x] Document telemetry system (`docs/TELEMETRY.md`)
 - [ ] Implement auth flow with durable sleep (deferred)
-- [ ] Implement MCP registry with state persistence (deferred)
+- [x] Implement MCP registry with state persistence
 
 ---
 
@@ -623,7 +671,7 @@ State persistence enables re-planning patterns. Foundation is ready via Redis ta
 - [x] Instrumented agent example works
 - [x] Documentation complete (`docs/TELEMETRY.md`)
 - [ ] Auth flow example with CIBA (deferred)
-- [ ] MCP Registry with re-planning (deferred)
+- [x] MCP Registry with re-planning
 
 ---
 

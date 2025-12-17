@@ -11,76 +11,92 @@
  * 2. **Production Mode**: Uses real OAuth2 provider (Auth0, Okta, etc.)
  *
  * Demo mode is active when AUTH_DOMAIN is not set.
+ *
+ * NOTE: This worker uses a custom implementation instead of the factory
+ * because the agent card is dynamically generated based on auth configuration.
  */
 
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
-import {
-  DefaultRequestHandler,
-  InMemoryTaskStore,
-  type TaskStore,
-} from "@drew-foxall/a2a-js-sdk/server";
+import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
-import { UpstashRedisTaskStore } from "@drew-foxall/a2a-js-taskstore-upstash-redis";
-import { Redis } from "@upstash/redis";
+import {
+  createAuthAgent,
+  createDevAuthProvider,
+  createMockAuthProvider,
+  type AuthProvider,
+} from "a2a-agents";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { getModel, getModelInfo } from "a2a-workers-shared";
-import type { EnvWithRedis } from "a2a-workers-shared";
-import { createAuthAgent, createDevAuthProvider, createMockAuthProvider, type AuthProvider } from "a2a-agents";
+import {
+  createA2AExecutor,
+  createTaskStore,
+  getModel,
+  getModelInfo,
+  isRedisConfigured,
+  type WorkerEnvWithRedis,
+} from "a2a-workers-shared";
+import { DefaultRequestHandler } from "@drew-foxall/a2a-js-sdk/server";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-interface AuthAgentEnv extends EnvWithRedis {
-  // Auth provider configuration
+interface AuthAgentEnv extends WorkerEnvWithRedis {
   AUTH_DOMAIN?: string;
   AUTH_CLIENT_ID?: string;
   AUTH_CLIENT_SECRET?: string;
   AUTH_AUDIENCE?: string;
-  // Demo mode settings
   DEMO_APPROVAL_DELAY_SECONDS?: string;
 }
+
+// ============================================================================
+// Skills
+// ============================================================================
+
+const publicInfoSkill: AgentSkill = {
+  id: "public_info",
+  name: "Public Information",
+  description: "Look up public company information (no consent needed)",
+  tags: ["directory", "policies", "org-chart"],
+  examples: ["Who is in the engineering department?", "What is the remote work policy?"],
+};
+
+const sensitiveDataSkill: AgentSkill = {
+  id: "sensitive_data",
+  name: "Sensitive Data Access",
+  description:
+    "Access employee data, financials, or personal info (requires user consent via push notification)",
+  tags: ["employee", "financial", "personal", "consent"],
+  examples: ["What is John's salary?", "Show me the recent expense reports"],
+};
+
+const adminActionsSkill: AgentSkill = {
+  id: "admin_actions",
+  name: "Administrative Actions",
+  description:
+    "Perform admin actions like granting access or modifying permissions (requires admin consent)",
+  tags: ["admin", "access", "permissions"],
+  examples: ["Grant Alice access to the finance dashboard", "Revoke Bob's admin privileges"],
+};
 
 // ============================================================================
 // Factory Functions
 // ============================================================================
 
-function createTaskStore(env: AuthAgentEnv): TaskStore {
-  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
-    const redis = new Redis({
-      url: env.UPSTASH_REDIS_REST_URL,
-      token: env.UPSTASH_REDIS_REST_TOKEN,
-    });
-
-    return new UpstashRedisTaskStore({
-      client: redis,
-      prefix: "a2a:auth:",
-      ttlSeconds: 86400 * 7, // 7 days
-    });
-  }
-
-  console.warn("[AuthAgent] Redis not configured - using InMemoryTaskStore");
-  return new InMemoryTaskStore();
-}
-
 function createAuthProvider(env: AuthAgentEnv): AuthProvider {
-  // Check if real auth provider is configured
   if (env.AUTH_DOMAIN && env.AUTH_CLIENT_ID && env.AUTH_CLIENT_SECRET) {
-    // TODO: Implement real OAuth2 provider (Auth0, Okta, etc.)
-    // For now, fall back to mock with longer delay
-    console.log("[AuthAgent] Real auth configured but not implemented - using mock with production delays");
+    console.log(
+      "[AuthAgent] Real auth configured but not implemented - using mock with production delays"
+    );
     return createMockAuthProvider({
       domain: env.AUTH_DOMAIN,
       clientId: env.AUTH_CLIENT_ID,
       clientSecret: env.AUTH_CLIENT_SECRET,
       audience: env.AUTH_AUDIENCE,
-      approvalDelaySeconds: 15, // Simulate real user approval time
-      denialProbability: 0.1, // 10% chance of denial
+      approvalDelaySeconds: 15,
+      denialProbability: 0.1,
     });
   }
 
-  // Demo mode - fast approvals for testing
   console.log("[AuthAgent] Demo mode - using mock auth provider");
   return createDevAuthProvider();
 }
@@ -88,24 +104,17 @@ function createAuthProvider(env: AuthAgentEnv): AuthProvider {
 /**
  * Create Agent Card following A2A Protocol Specification
  *
- * Security schemes follow Section 4.5 of the spec:
- * - 4.5.3 HTTPAuthSecurityScheme (Bearer tokens)
- * - 4.5.4 OAuth2SecurityScheme (OAuth2 flows)
- * - 4.5.9 ClientCredentialsOAuthFlow
- *
- * @see https://a2a-protocol.org/latest/specification/#45-security-objects
+ * Security schemes follow Section 4.5 of the spec.
+ * Card is dynamically generated based on auth configuration.
  */
-function createAgentCard(baseUrl: string, isDemoMode: boolean, env?: AuthAgentEnv) {
-  // Build security schemes per A2A Protocol Spec Section 4.5
+function createAgentCard(baseUrl: string, isDemoMode: boolean, env?: AuthAgentEnv): AgentCard {
   const securitySchemes: Record<string, unknown> = {};
 
   if (!isDemoMode && env?.AUTH_DOMAIN) {
-    // OAuth2SecurityScheme (Section 4.5.4) with ClientCredentialsOAuthFlow (Section 4.5.9)
     securitySchemes["oauth2"] = {
       type: "oauth2",
       description: "OAuth2 authentication for agent-to-agent communication",
       flows: {
-        // ClientCredentialsOAuthFlow (Section 4.5.9)
         clientCredentials: {
           tokenUrl: `https://${env.AUTH_DOMAIN}/oauth/token`,
           scopes: {
@@ -118,7 +127,6 @@ function createAgentCard(baseUrl: string, isDemoMode: boolean, env?: AuthAgentEn
       },
     };
 
-    // HTTPAuthSecurityScheme (Section 4.5.3) for Bearer tokens
     securitySchemes["bearerAuth"] = {
       type: "http",
       scheme: "bearer",
@@ -126,7 +134,6 @@ function createAgentCard(baseUrl: string, isDemoMode: boolean, env?: AuthAgentEn
       description: "JWT Bearer token obtained via OAuth2",
     };
 
-    // OpenIdConnectSecurityScheme (Section 4.5.5) for CIBA/OIDC
     securitySchemes["openIdConnect"] = {
       type: "openIdConnect",
       openIdConnectUrl: `https://${env.AUTH_DOMAIN}/.well-known/openid-configuration`,
@@ -150,48 +157,12 @@ function createAgentCard(baseUrl: string, isDemoMode: boolean, env?: AuthAgentEn
       pushNotifications: false,
       stateTransitionHistory: true,
     },
-    // Security schemes per A2A Protocol Spec Section 4.5
     securitySchemes: Object.keys(securitySchemes).length > 0 ? securitySchemes : undefined,
-    // Security requirements - which schemes are needed for this agent
     security: !isDemoMode
-      ? [
-          { oauth2: ["read:public"] }, // Minimum: client credentials for public access
-          { bearerAuth: [] }, // Alternative: pre-obtained JWT
-        ]
+      ? [{ oauth2: ["read:public"] }, { bearerAuth: [] }]
       : undefined,
-    skills: [
-      {
-        id: "public_info",
-        name: "Public Information",
-        description: "Look up public company information (no consent needed)",
-        tags: ["directory", "policies", "org-chart"],
-        examples: [
-          "Who is in the engineering department?",
-          "What is the remote work policy?",
-        ],
-      },
-      {
-        id: "sensitive_data",
-        name: "Sensitive Data Access",
-        description: "Access employee data, financials, or personal info (requires user consent via push notification)",
-        tags: ["employee", "financial", "personal", "consent"],
-        examples: [
-          "What is John's salary?",
-          "Show me the recent expense reports",
-        ],
-      },
-      {
-        id: "admin_actions",
-        name: "Administrative Actions",
-        description: "Perform admin actions like granting access or modifying permissions (requires admin consent)",
-        tags: ["admin", "access", "permissions"],
-        examples: [
-          "Grant Alice access to the finance dashboard",
-          "Revoke Bob's admin privileges",
-        ],
-      },
-    ],
-  };
+    skills: [publicInfoSkill, sensitiveDataSkill, adminActionsSkill],
+  } as AgentCard;
 }
 
 // ============================================================================
@@ -200,7 +171,6 @@ function createAgentCard(baseUrl: string, isDemoMode: boolean, env?: AuthAgentEn
 
 const app = new Hono<{ Bindings: AuthAgentEnv }>();
 
-// CORS for A2A Inspector and external clients
 app.use(
   "*",
   cors({
@@ -210,7 +180,6 @@ app.use(
   })
 );
 
-// Health check endpoint
 app.get("/health", (c) => {
   const isDemoMode = !c.env.AUTH_DOMAIN;
   const { provider, model } = getModelInfo(c.env);
@@ -219,58 +188,63 @@ app.get("/health", (c) => {
     status: "healthy",
     agent: "Auth Agent",
     mode: isDemoMode ? "demo" : "production",
+    provider,
+    model,
+    runtime: "Cloudflare Workers",
     features: {
       ciba: true,
       clientCredentials: true,
-      persistentStorage: !!(c.env.UPSTASH_REDIS_REST_URL && c.env.UPSTASH_REDIS_REST_TOKEN),
-      storageType: c.env.UPSTASH_REDIS_REST_URL ? "upstash-redis" : "in-memory",
+      persistentStorage: isRedisConfigured(c.env),
+      storageType: isRedisConfigured(c.env) ? "upstash-redis" : "in-memory",
     },
-    model: { provider, model },
     authentication: isDemoMode ? "mock" : "oauth2",
   });
 });
 
-// A2A Protocol handler
 app.all("/*", async (c) => {
   const env = c.env;
   const url = new URL(c.req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
 
   const isDemoMode = !env.AUTH_DOMAIN;
-  const model = getModel(env);
-  const taskStore = createTaskStore(env);
+  const llmModel = getModel(env);
   const authProvider = createAuthProvider(env);
-
   const agentCard = createAgentCard(baseUrl, isDemoMode, env);
 
-  const agent = createAuthAgent({
-    model,
-    authProvider,
-  });
+  // Create agent with auth provider
+  const agent = createAuthAgent({ model: llmModel, authProvider });
 
-  const agentExecutor = new A2AAdapter(agent, {
-    mode: "stream",
-    workingMessage: isDemoMode
-      ? "Processing request (demo mode)..."
-      : "Processing request...",
-    includeHistory: true,
-    debug: isDemoMode,
-  });
+  // Use shared utilities for executor and task store
+  const agentExecutor = createA2AExecutor(
+    {
+      agentName: "Auth Agent",
+      createAgent: () => agent,
+      createAgentCard: () => agentCard,
+      adapterOptions: {
+        mode: "stream",
+        workingMessage: isDemoMode ? "Processing request (demo mode)..." : "Processing request...",
+        includeHistory: true,
+        debug: isDemoMode,
+      },
+    },
+    llmModel,
+    env
+  );
 
+  const taskStore = createTaskStore({ type: "redis", prefix: "a2a:auth:" }, env);
   const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
+
+  const a2aRouter = new Hono();
   const logger: Logger = ConsoleLogger.create();
   const a2aApp = new A2AHonoApp(requestHandler, { logger });
+  a2aApp.setupRoutes(a2aRouter);
 
-  const subApp = new Hono();
-  a2aApp.setupRoutes(subApp);
-
-  const response = await subApp.fetch(c.req.raw, c.env);
+  const response = await a2aRouter.fetch(c.req.raw, c.env);
 
   if (response.status !== 404) {
     return response;
   }
 
-  // Fallback for unhandled routes
   return c.json(
     {
       error: "Not Found",
@@ -287,4 +261,3 @@ app.all("/*", async (c) => {
 });
 
 export default app;
-

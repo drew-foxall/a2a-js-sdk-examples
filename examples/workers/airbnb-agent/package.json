@@ -15,6 +15,7 @@
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "@drew-foxall/a2a-js-taskstore-upstash-redis": "^0.1.0",
     "@upstash/redis": "^1.34.3",
+    "a2a-agents": "workspace:*",
     "a2a-workers-shared": "workspace:*",
     "ai": "6.0.0-beta.99",
     "hono": "^4.10.7",

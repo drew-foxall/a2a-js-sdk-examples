@@ -7,8 +7,10 @@
   "license": "Apache-2.0",
   "exports": {
     ".": "./src/shared/index.ts",
-    "./agents/*": "./src/agents/*/agent.ts",
-    "./shared": "./src/shared/index.ts"
+    "./agents/*": "./src/agents/*/index.ts",
+    "./shared": "./src/shared/index.ts",
+    "./tools": "./src/tools/index.ts",
+    "./tools/*": "./src/tools/*/index.ts"
   },
   "devDependencies": {
     "@total-typescript/tsconfig": "1.0.4",

@@ -8,6 +8,10 @@
 
 This package provides a robust and type-safe way to expose AI SDK agents as A2A-compliant services, supporting both simple (awaited) and streaming interactions, along with flexible artifact generation and logging.
 
+**Two Adapters Available:**
+- **`A2AAdapter`** - For standard `ToolLoopAgent` agents (non-durable)
+- **`DurableA2AAdapter`** - For durable workflows using Workflow DevKit (import from `@drew-foxall/a2a-ai-sdk-adapter/durable`)
+
 ---
 
 ## 📦 Installation
@@ -462,6 +466,88 @@ Apache 2.0 - See [LICENSE](LICENSE) for details
 - **[Vercel AI SDK](https://ai-sdk.dev/)** - Foundation for agent logic
 - **[A2A Project](https://a2a-protocol.org/)** - Agent2Agent protocol
 - **[@drew-foxall/a2a-js-sdk](https://github.com/drew-foxall/a2a-js-sdk)** - A2A JavaScript SDK
+
+---
+
+---
+
+## 🔄 Durable Workflows (DurableA2AAdapter)
+
+For agents that need durability (automatic retry, result caching, observability), use `DurableA2AAdapter`:
+
+```typescript
+import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter/durable";
+import { diceAgentWorkflow } from "a2a-agents";
+
+// Wrap a durable workflow for A2A protocol
+const executor = new DurableA2AAdapter(diceAgentWorkflow, {
+  workingMessage: "Rolling dice (with durability)...",
+});
+
+// For workflows with additional arguments:
+const imageExecutor = new DurableA2AAdapter(imageGeneratorWorkflow, {
+  workflowArgs: [env.OPENAI_API_KEY], // Additional args after messages
+  workingMessage: "Generating image...",
+});
+```
+
+### How Durability Works
+
+The durability stack consists of three layers working together:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DurableA2AAdapter                            │
+│  Bridges A2A protocol with Workflow DevKit via start()              │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ calls start()
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Workflow DevKit Runtime                          │
+│  - start() creates run in World, queues workflow execution          │
+│  - "use workflow" and "use step" directives (SWC transform)         │
+│  - getWritable() for streaming output                               │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ persists to
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         World (Persistence)                         │
+│  - @drew-foxall/upstash-workflow-world (Cloudflare Workers)         │
+│  - @workflow/world-vercel (Vercel)                                  │
+│  - @workflow/world-local (local dev)                                │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ uses
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      @drew-foxall/workflow-ai                       │
+│  - DurableAgent: AI SDK integration with "use step" internally      │
+│  - Must run inside a workflow context                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Insight:** Calling a workflow function directly does NOT provide durability. The workflow MUST be invoked via `start()` from `workflow/api`, which triggers the World's persistence mechanisms.
+
+### DurableA2AAdapter Configuration
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `workflowArgs` | `TArgs` | No | Additional arguments to pass to the workflow (after messages) |
+| `workingMessage` | `string` | No | Initial status message (default: "Processing...") |
+| `includeHistory` | `boolean` | No | Include conversation history (default: false) |
+| `parseTaskState` | `(text: string) => TaskState` | No | Custom task state parser |
+| `generateArtifacts` | `(context) => Promise<Artifact[]>` | No | Generate artifacts after completion |
+| `debug` | `boolean` | No | Enable debug logging (default: false) |
+| `logger` | `Logger` | No | Custom logger implementation |
+
+### When to Use DurableA2AAdapter
+
+| Use DurableA2AAdapter When | Use A2AAdapter When |
+|---------------------------|---------------------|
+| Operations take >30 seconds | Quick responses |
+| Expensive API calls (avoid duplicates) | Cheap/free operations |
+| Multi-step coordination | Single operation |
+| Need observability traces | Simple debugging |
+| Operations must survive restarts | Stateless operations |
 
 ---
 

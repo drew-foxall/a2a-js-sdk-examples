@@ -357,6 +357,40 @@ Some workers have **durable variants** that use [Workflow DevKit](https://usewor
 - **Observability**: View workflow traces via `npx workflow web`
 - **Fault Tolerance**: Long-running operations survive worker restarts
 
+### How Durability Works (Three-Layer Stack)
+
+Durability requires THREE components working together:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DurableA2AAdapter                            │
+│  Bridges A2A protocol with Workflow DevKit via start()              │
+│  Import: @drew-foxall/a2a-ai-sdk-adapter/durable                    │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ calls start()
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Workflow DevKit Runtime                          │
+│  - start() creates run in World, queues workflow execution          │
+│  - "use workflow" and "use step" directives (SWC transform)         │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ persists to
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         World (Persistence)                         │
+│  - @drew-foxall/upstash-workflow-world (Cloudflare Workers)         │
+│  - Stores: runs, steps, events, hooks, queue                        │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ uses
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      @drew-foxall/workflow-ai                       │
+│  - DurableAgent: AI SDK integration with "use step" internally      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Insight:** Calling a workflow function directly does NOT provide durability. The workflow MUST be invoked via `start()` from `workflow/api`, which triggers the World's persistence. The `DurableA2AAdapter` handles this automatically.
+
 ### Configuring Durable Workers
 
 Durable workers need additional Upstash Redis credentials for Workflow DevKit:

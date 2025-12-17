@@ -17,6 +17,12 @@
  * - Automatic retry on DALL-E API failures
  * - Result caching across restarts
  *
+ * This worker uses the DURABLE workflow (imageGeneratorWorkflow) which provides:
+ * - "use workflow" directive for workflow-level durability
+ * - "use step" directive on DALL-E API call for step-level caching
+ * - Automatic retry on transient API failures
+ * - Result caching if workflow restarts (no duplicate DALL-E charges!)
+ *
  * Deployment:
  *   wrangler deploy
  *
@@ -24,7 +30,7 @@
  *   wrangler dev
  */
 
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
@@ -34,12 +40,13 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createWorld } from "@drew-foxall/upstash-workflow-world";
-import { createImageGeneratorAgent } from "a2a-agents";
+// Import the DURABLE workflow from the shared agents package
+import { imageGeneratorWorkflow } from "a2a-agents";
 import { createRedisClient, createRedisTaskStore, type RedisEnv } from "a2a-workers-shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { HonoEnv } from "../../shared/types.js";
-import { getModel, getModelInfo } from "../../shared/utils.js";
+import { getModelInfo } from "../../shared/utils.js";
 
 // ============================================================================
 // Environment Types
@@ -79,7 +86,7 @@ function createAgentCard(baseUrl: string): AgentCard {
   return {
     name: "Image Generator (Durable)",
     description:
-      "A durable version of the image generator with persistent task storage and automatic retry capabilities. Generates images using DALL-E 3 with multiple size, quality, and style options.",
+      "A durable version of the image generator with persistent task storage and automatic retry capabilities. Uses Workflow DevKit for workflow-level durability. Generates images using DALL-E 3 with multiple size, quality, and style options.",
     url: baseUrl,
     protocolVersion: "0.3.0",
     version: "1.0.0",
@@ -172,7 +179,9 @@ app.get("/health", (c) => {
     model: modelInfo.model,
     runtime: "Cloudflare Workers",
     features: {
-      durableWorkflow: hasWorkflowWorld,
+      // Now truly using durable workflow!
+      durableWorkflow: true,
+      workflowWorldConfigured: hasWorkflowWorld,
       persistentStorage: hasRedis,
       storageType: hasRedis ? "upstash-redis" : "in-memory",
       dalleAccess: hasOpenAI,
@@ -221,12 +230,14 @@ app.all("/*", async (c, next) => {
   const baseUrl = `${url.protocol}//${url.host}`;
   const agentCard = createAgentCard(baseUrl);
 
-  // Create agent - pass OPENAI_API_KEY for DALL-E access
-  const model = getModel(c.env);
-  const agent = createImageGeneratorAgent(model, c.env.OPENAI_API_KEY);
-
-  const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-    mode: "stream",
+  // Use the DURABLE workflow via DurableA2AAdapter
+  // The workflow receives the OPENAI_API_KEY as an additional argument
+  // This provides:
+  // - Automatic retry on DALL-E API failures (via "use step" directive)
+  // - Result caching across restarts (no duplicate API charges!)
+  // - Observability via Workflow DevKit traces
+  const agentExecutor: AgentExecutor = new DurableA2AAdapter<[string]>(imageGeneratorWorkflow, {
+    workflowArgs: [c.env.OPENAI_API_KEY],
     workingMessage: "Generating image (with durability)...",
     debug: false,
   });
@@ -268,4 +279,3 @@ app.notFound((c) => {
 // ============================================================================
 
 export default app;
-

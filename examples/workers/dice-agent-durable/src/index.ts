@@ -12,6 +12,12 @@
  * - Automatic retry on failures
  * - Result caching across restarts
  *
+ * This worker uses the DURABLE workflow (diceAgentWorkflow) which provides:
+ * - "use workflow" directive for workflow-level durability
+ * - "use step" directives on tool calls for step-level caching
+ * - Automatic retry on transient failures
+ * - Result caching if workflow restarts
+ *
  * Deployment:
  *   wrangler deploy
  *
@@ -19,7 +25,7 @@
  *   wrangler dev
  */
 
-import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,
@@ -29,13 +35,13 @@ import {
 } from "@drew-foxall/a2a-js-sdk/server";
 import { A2AHonoApp, ConsoleLogger, type Logger } from "@drew-foxall/a2a-js-sdk/server/hono";
 import { createWorld } from "@drew-foxall/upstash-workflow-world";
-// Import agent factory from the shared agents package
-import { createDiceAgent } from "a2a-agents";
+// Import the DURABLE workflow from the shared agents package
+import { diceAgentWorkflow } from "a2a-agents";
 import { createRedisClient, createRedisTaskStore, type RedisEnv } from "a2a-workers-shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { HonoEnv } from "../../shared/types.js";
-import { getModel, getModelInfo } from "../../shared/utils.js";
+import { getModelInfo } from "../../shared/utils.js";
 
 // ============================================================================
 // Environment Types
@@ -79,7 +85,7 @@ function createAgentCard(baseUrl: string): AgentCard {
   return {
     name: "Dice Agent (Durable)",
     description:
-      "A durable version of the dice agent with persistent task storage and automatic retry capabilities. Can roll arbitrary dice and check if numbers are prime.",
+      "A durable version of the dice agent with persistent task storage and automatic retry capabilities. Uses Workflow DevKit for workflow-level durability. Can roll arbitrary dice and check if numbers are prime.",
     url: baseUrl,
     version: "1.0.0",
     protocolVersion: "0.3.0",
@@ -150,7 +156,9 @@ app.get("/health", (c) => {
     model: modelInfo.model,
     runtime: "Cloudflare Workers",
     features: {
-      durableWorkflow: hasWorkflowWorld,
+      // Now truly using durable workflow!
+      durableWorkflow: true,
+      workflowWorldConfigured: hasWorkflowWorld,
       persistentStorage: hasRedis,
       storageType: hasRedis ? "upstash-redis" : "in-memory",
     },
@@ -220,14 +228,12 @@ app.all("/*", async (c, next) => {
   const baseUrl = `${url.protocol}//${url.host}`;
   const agentCard = createAgentCard(baseUrl);
 
-  // Create agent using imported factory function
-  // Note: For now, we use the standard agent. The durable workflow
-  // will be integrated when the Workflow DevKit World is configured.
-  const model = getModel(c.env);
-  const agent = createDiceAgent(model);
-
-  const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
-    mode: "generate",
+  // Use the DURABLE workflow via DurableA2AAdapter
+  // This provides:
+  // - Automatic retry on failures (via "use step" directives)
+  // - Result caching across restarts
+  // - Observability via Workflow DevKit traces
+  const agentExecutor: AgentExecutor = new DurableA2AAdapter(diceAgentWorkflow, {
     workingMessage: "Rolling dice (with durability)...",
     debug: false,
   });
