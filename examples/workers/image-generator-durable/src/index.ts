@@ -30,7 +30,7 @@
  *   wrangler dev
  */
 
-import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter/durable";
 import type { AgentCard, AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import {
   type AgentExecutor,

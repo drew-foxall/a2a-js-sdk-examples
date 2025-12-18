@@ -98,3 +98,30 @@ export {
   // Constants
   DEFAULT_CORS_OPTIONS,
 } from "./hono-adapter.js";
+
+// ============================================================================
+// Endpoint Testing (for smoke tests and E2E)
+// ============================================================================
+
+export {
+  // Types
+  type EndpointTestConfig,
+  type EndpointTestResult,
+  type EndpointTestResults,
+  type TestTarget,
+
+  // Test functions
+  testHealthCheck,
+  testAgentCard,
+  testMessageSend,
+  testCors,
+  test404Handling,
+
+  // Test runners
+  runEndpointTests,
+  createEndpointTestSuite,
+
+  // CLI helpers
+  formatTestResults,
+  runEndpointTestsCLI,
+} from "./endpoint-tests.js";

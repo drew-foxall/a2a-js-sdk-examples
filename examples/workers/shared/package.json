@@ -37,6 +37,10 @@
     "./msw-handlers": {
       "types": "./msw-handlers.ts",
       "import": "./msw-handlers.ts"
+    },
+    "./endpoint-tests": {
+      "types": "./endpoint-tests.ts",
+      "import": "./endpoint-tests.ts"
     }
   },
   "dependencies": {

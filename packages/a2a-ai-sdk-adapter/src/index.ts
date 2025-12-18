@@ -3,6 +3,11 @@
  *
  * Unified adapter bridging Vercel AI SDK's ToolLoopAgent with the A2A protocol.
  *
+ * ## Entry Points
+ *
+ * - `@drew-foxall/a2a-ai-sdk-adapter` - Standard adapter (edge-compatible)
+ * - `@drew-foxall/a2a-ai-sdk-adapter/durable` - Durable workflow adapter (requires `workflow` package)
+ *
  * @module
  */
 
@@ -17,9 +22,6 @@ export {
   type ParsedArtifacts,
 } from "./adapter.js";
 
-// Durable workflow adapter
-export {
-  DurableA2AAdapter,
-  type DurableA2AAdapterConfig,
-  type DurableWorkflowFn,
-} from "./durable-adapter.js";
+// NOTE: DurableA2AAdapter is NOT exported from the main entry point to avoid
+// pulling in the `workflow` package which is not edge-compatible.
+// Import from "@drew-foxall/a2a-ai-sdk-adapter/durable" instead.

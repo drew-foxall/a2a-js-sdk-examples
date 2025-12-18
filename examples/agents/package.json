@@ -68,9 +68,19 @@
     "chart.js": "4.5.1",
     "hono": "^4.10.7",
     "uuid": "^13.0.0",
-    "workflow": "4.0.1-beta.24",
-    "@drew-foxall/workflow-ai": "^0.1.0",
     "zod": "^4.1.13"
+  },
+  "peerDependencies": {
+    "workflow": "4.0.1-beta.24",
+    "@drew-foxall/workflow-ai": "^0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "workflow": {
+      "optional": true
+    },
+    "@drew-foxall/workflow-ai": {
+      "optional": true
+    }
   },
   "packageManager": "pnpm@10.23.0",
   "engines": {

@@ -12,6 +12,7 @@
 name = "a2a-dice-agent-durable"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
 
 # Environment variables (non-sensitive)
 [vars]
