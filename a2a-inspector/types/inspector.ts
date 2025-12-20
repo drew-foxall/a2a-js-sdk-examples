@@ -13,13 +13,22 @@ export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "er
 
 /**
  * A2A stream event types that can be received.
+ * Union of all A2A protocol event types from @drew-foxall/a2a-js-sdk.
  */
 export type A2AStreamEvent = Message | Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent;
 
 /**
- * Event kind for A2A events - used for kind chips.
+ * Event kind for A2A events - derived from the `kind` discriminator in A2A SDK types.
+ *
+ * Source of truth: @drew-foxall/a2a-js-sdk
+ * - Task.kind = "task"
+ * - Message.kind = "message"
+ * - TaskStatusUpdateEvent.kind = "status-update"
+ * - TaskArtifactUpdateEvent.kind = "artifact-update"
+ *
+ * Plus "error" for error events (not part of SDK stream events but needed for error handling).
  */
-export type A2AEventKind = "task" | "status-update" | "artifact-update" | "message" | "error";
+export type A2AEventKind = A2AStreamEvent["kind"] | "error";
 
 /**
  * Validation error structure.

@@ -3,8 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isTextUIPart } from "ai";
-import { Bot, Loader2, MessageSquare, RotateCcw, Send, User } from "lucide-react";
-import type { FormEvent } from "react";
+import { Info, List, Loader2, MessageSquare, RotateCcw, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Conversation,
@@ -13,25 +12,71 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputFooter,
+  type PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
+import { JsonViewerButton } from "@/components/debug/JsonViewerModal";
+import { KindChip, ValidationStatus } from "@/components/message";
+import { SessionDetailsPanel } from "@/components/session";
+import { Button } from "@/components/ui/button";
 import { useConnection, useInspector } from "@/context";
 import { cn } from "@/lib/utils";
+import { type A2AEventData, a2aDataPartSchemas } from "@/schemas/a2a-events";
+import type { MessageDisplayMode, RawA2AEvent, ValidationError } from "@/types";
 
 interface AISDKViewProps {
   readonly className?: string;
 }
 
 /**
+ * Convert A2A event data from the stream to RawA2AEvent format.
+ */
+function toRawA2AEvent(data: A2AEventData, index: number): RawA2AEvent {
+  const result: RawA2AEvent = {
+    id: `a2a-event-${index}-${data.timestamp}`,
+    timestamp: new Date(data.timestamp),
+    kind: data.kind,
+    event: data.event as RawA2AEvent["event"],
+    validationErrors: [], // TODO: Add validation
+  };
+  // Only add textContent if it exists
+  if (data.textContent !== undefined) {
+    result.textContent = data.textContent;
+  }
+  return result;
+}
+
+/**
  * AI SDK View component that uses the useChat hook with the A2A provider.
+ *
  * This demonstrates the abstracted approach where AI SDK handles
- * the message state and streaming.
+ * the message state and streaming, while also exposing raw A2A events
+ * for the Raw/Pretty display modes.
+ *
+ * Uses AI Elements components following the chatbot pattern from:
+ * https://sdk.vercel.ai/elements/examples/chatbot
  */
 export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
-  const { agentUrl, status: connectionStatus } = useConnection();
+  const { agentUrl, status: connectionStatus, agentCard } = useConnection();
   const { log } = useInspector();
   const contextIdRef = useRef<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const [displayMode, setDisplayMode] = useState<MessageDisplayMode>("pretty");
+  const [showSessionDetails, setShowSessionDetails] = useState(false);
+
+  // Store raw A2A events received via data parts
+  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>([]);
+  const eventCountRef = useRef(0);
 
   // Create a transport with the API endpoint and dynamic body
+  // Enable smoothStream for a better streaming UX - this is processed server-side
+  // by AI SDK's smoothStream transform which chunks the response into words/lines
+  // with a small delay between each chunk for a typing effect.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -39,6 +84,12 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
         body: () => ({
           agentUrl,
           contextId: contextIdRef.current,
+          includeRawEvents: true,
+          smoothStream: {
+            enabled: true,
+            delayInMs: 10,
+            chunking: "word" as const,
+          },
         }),
       }),
     [agentUrl]
@@ -46,8 +97,26 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
     transport,
+    // Register the A2A event data part schema
+    dataPartSchemas: a2aDataPartSchemas,
     onError: (err: Error) => {
       log("error", `AI SDK error: ${err.message}`, err);
+    },
+    // Receive raw A2A events via onData callback
+    onData: (dataPart) => {
+      if (dataPart.type === "data-a2a-event") {
+        const eventData = dataPart.data as A2AEventData;
+        const rawEvent = toRawA2AEvent(eventData, eventCountRef.current++);
+
+        log("event", `A2A Event: ${eventData.kind}`, eventData.event, "inbound");
+
+        setRawEvents((prev: RawA2AEvent[]) => [...prev, rawEvent]);
+
+        // Extract context/task IDs from events
+        if (eventData.contextId && !contextIdRef.current) {
+          contextIdRef.current = eventData.contextId;
+        }
+      }
     },
     onFinish: ({ message }: { message: UIMessage }) => {
       // =========================================================================
@@ -73,22 +142,7 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
       // When multiple text parts exist, use only the LAST one (the completed
       // content) and discard earlier parts (accumulated working deltas).
       //
-      // ## Why This Works
-      //
-      // The A2A provider uses taskId to group related events. When "completed"
-      // arrives after streaming, it emits the content with a different stream ID
-      // (taskId-completed), creating a new text part. This last part contains
-      // the authoritative response.
-      //
-      // ## Debugging Tips
-      //
-      // If you see duplicated/concatenated content:
-      // 1. Check textPartsCount in the log - should be > 1 for streaming agents
-      // 2. Verify the provider is emitting completed content as a new stream
-      // 3. Check that lastTextPart contains the expected authoritative content
-      //
       // See also: packages/a2a-ai-provider-v3/src/model.ts handleStatusUpdate()
-      //
       // =========================================================================
       const textParts = (message.parts ?? []).filter(isTextUIPart);
       const lastTextPart = textParts[textParts.length - 1];
@@ -118,33 +172,56 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
           )
         );
       }
-      // Single text part = non-streaming agent OR already deduplicated
-      // No action needed - content is already correct
     },
   });
 
   const handleClear = useCallback(() => {
     setMessages([]);
+    setRawEvents([]);
     contextIdRef.current = null;
+    eventCountRef.current = 0;
     setInputValue("");
     log("info", "AI SDK messages cleared, context reset");
   }, [setMessages, log]);
 
   const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-      if (!inputValue.trim() || status !== "ready") return;
+    (message: PromptInputMessage) => {
+      const hasText = Boolean(message.text?.trim());
 
-      const text = inputValue.trim();
+      if (!hasText || status !== "ready") {
+        return;
+      }
+
+      log("info", `Sending message via AI SDK: ${message.text}`, undefined, "outbound");
+      sendMessage({ text: message.text });
       setInputValue("");
-      log("info", `Sending message via AI SDK: ${text}`, undefined, "outbound");
-      await sendMessage({ text });
     },
-    [inputValue, status, sendMessage, log]
+    [status, sendMessage, log]
   );
 
   const isConnected = connectionStatus === "connected";
   const isLoading = status === "submitted" || status === "streaming";
+
+  // Build session details from raw events
+  const session = useMemo(
+    () => ({
+      contextId: contextIdRef.current,
+      taskId: rawEvents.find((e: RawA2AEvent) => e.kind === "task")?.event
+        ? ((rawEvents.find((e: RawA2AEvent) => e.kind === "task")?.event as { id?: string })?.id ??
+          null)
+        : null,
+      transport: "http" as const,
+      capabilities: {
+        streaming: agentCard?.capabilities?.streaming ?? false,
+        pushNotifications: agentCard?.capabilities?.pushNotifications ?? false,
+        stateTransitionHistory: agentCard?.capabilities?.stateTransitionHistory ?? false,
+      },
+      startedAt: rawEvents.length > 0 ? (rawEvents[0]?.timestamp ?? null) : null,
+      messageCount: messages.length,
+      eventCount: rawEvents.length,
+    }),
+    [rawEvents, messages.length, agentCard]
+  );
 
   if (!isConnected) {
     return (
@@ -176,43 +253,60 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
             <p className="text-xs text-zinc-500">Using useChat hook</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={messages.length === 0}
-          className={cn(
-            "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-            messages.length > 0
-              ? "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-              : "cursor-not-allowed text-zinc-600"
-          )}
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Clear
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/* Display Mode Toggle */}
+          <DisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
+
+          {/* Session Details Toggle */}
+          <Button
+            variant={showSessionDetails ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowSessionDetails(!showSessionDetails)}
+          >
+            <Info className="mr-2 h-4 w-4" />
+            Session
+          </Button>
+
+          {/* Clear Button */}
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={messages.length === 0}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+              messages.length > 0
+                ? "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                : "cursor-not-allowed text-zinc-600"
+            )}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Clear
+          </button>
+        </div>
       </div>
 
-      {/* Messages - Scrollable area that fills remaining space */}
+      {/* Session Details Panel (collapsible) */}
+      {showSessionDetails && (
+        <div className="shrink-0 border-b border-border px-4 py-3">
+          <SessionDetailsPanel session={session} />
+        </div>
+      )}
+
+      {/* Messages - Using AI Elements Conversation pattern */}
       <Conversation className="min-h-0 flex-1">
-        {messages.length === 0 ? (
-          <ConversationEmptyState
-            icon={<MessageSquare className="h-8 w-8" />}
-            title="AI SDK Chat"
-            description="Send a message to communicate via the AI SDK abstraction layer."
-          />
-        ) : (
-          <ConversationContent>
-            {messages.map((message) => (
-              <AISDKMessage key={message.id} message={message} />
-            ))}
-            {isLoading && (
-              <div className="flex items-center gap-2 text-sm text-zinc-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Agent is responding...</span>
-              </div>
-            )}
-          </ConversationContent>
-        )}
+        <ConversationContent>
+          {displayMode === "pretty" ? (
+            <PrettyMessages
+              messages={messages}
+              rawEvents={rawEvents}
+              agentName={agentCard?.name}
+              isLoading={isLoading}
+            />
+          ) : (
+            <RawEventsMessages messages={messages} rawEvents={rawEvents} />
+          )}
+        </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
 
@@ -223,83 +317,270 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
         </div>
       )}
 
-      {/* Input - Fixed at bottom */}
+      {/* Input - Using AI Elements PromptInput pattern */}
       <div className="shrink-0 border-t border-border bg-background p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type a message..."
+        <PromptInput onSubmit={handleSubmit}>
+          <PromptInputTextarea
+            placeholder={`Message ${agentCard?.name ?? "the agent"}...`}
             disabled={isLoading}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            value={inputValue}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInputValue(e.target.value)}
           />
-          <button
-            type="submit"
-            disabled={isLoading || !inputValue.trim()}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-              isLoading || !inputValue.trim()
-                ? "cursor-not-allowed bg-zinc-700 text-zinc-500"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            )}
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            Send
-          </button>
-        </form>
+          <PromptInputFooter>
+            <PromptInputTools />
+            <PromptInputSubmit disabled={isLoading} status={status} />
+          </PromptInputFooter>
+        </PromptInput>
       </div>
     </div>
   );
 }
 
 // =============================================================================
-// Helper Functions
+// Display Mode Toggle
 // =============================================================================
 
-/**
- * Extract text content from a UIMessage.
- */
-function getMessageText(message: UIMessage): string {
-  if (message.parts) {
-    return message.parts
-      .filter(isTextUIPart)
-      .map((part) => part.text)
-      .join("");
-  }
-  return "";
+function DisplayModeToggle({
+  mode,
+  onChange,
+}: {
+  readonly mode: MessageDisplayMode;
+  readonly onChange: (mode: MessageDisplayMode) => void;
+}): React.JSX.Element {
+  return (
+    <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1">
+      <button
+        type="button"
+        onClick={() => onChange("pretty")}
+        className={cn(
+          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          mode === "pretty"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        Pretty
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("raw")}
+        className={cn(
+          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          mode === "raw"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <List className="h-3.5 w-3.5" />
+        Raw Events
+      </button>
+    </div>
+  );
 }
 
-/**
- * Message component for AI SDK messages.
- */
-function AISDKMessage({ message }: { readonly message: UIMessage }): React.JSX.Element {
-  const isUser = message.role === "user";
-  const textContent = getMessageText(message);
+// =============================================================================
+// Pretty Messages Mode
+// =============================================================================
+
+function PrettyMessages({
+  messages,
+  rawEvents,
+  agentName,
+  isLoading,
+}: {
+  readonly messages: UIMessage[];
+  readonly rawEvents: RawA2AEvent[];
+  readonly agentName?: string | undefined;
+  readonly isLoading: boolean;
+}): React.JSX.Element {
+  if (messages.length === 0 && !isLoading) {
+    return (
+      <ConversationEmptyState
+        icon={<MessageSquare className="h-8 w-8" />}
+        title="AI SDK Chat"
+        description={`Send a message to ${agentName ?? "the agent"} via the AI SDK.`}
+      />
+    );
+  }
+
+  // Get the most recent kind from raw events for the current message
+  const getMessageKind = (messageIndex: number) => {
+    // Find events that correspond to this message (rough heuristic)
+    const agentMessageCount = messages.filter((m: UIMessage) => m.role === "assistant").length;
+    if (messageIndex < agentMessageCount && rawEvents.length > 0) {
+      // Get the last event for this message
+      const eventsPerMessage = Math.ceil(rawEvents.length / Math.max(agentMessageCount, 1));
+      const startIdx = messageIndex * eventsPerMessage;
+      const endIdx = Math.min(startIdx + eventsPerMessage, rawEvents.length);
+      const relevantEvents = rawEvents.slice(startIdx, endIdx);
+      return relevantEvents[relevantEvents.length - 1]?.kind;
+    }
+    return undefined;
+  };
+
+  // Get validation errors from raw events
+  const getValidationErrors = (messageIndex: number): ValidationError[] => {
+    const agentMessageCount = messages.filter((m: UIMessage) => m.role === "assistant").length;
+    if (messageIndex < agentMessageCount && rawEvents.length > 0) {
+      const eventsPerMessage = Math.ceil(rawEvents.length / Math.max(agentMessageCount, 1));
+      const startIdx = messageIndex * eventsPerMessage;
+      const endIdx = Math.min(startIdx + eventsPerMessage, rawEvents.length);
+      const relevantEvents = rawEvents.slice(startIdx, endIdx);
+      return relevantEvents.flatMap((e) => e.validationErrors);
+    }
+    return [];
+  };
+
+  let agentMessageIndex = 0;
 
   return (
-    <Message from={message.role}>
-      <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-            isUser ? "bg-zinc-700" : "bg-blue-500/10"
-          )}
-        >
-          {isUser ? (
-            <User className="h-4 w-4 text-zinc-300" />
-          ) : (
-            <Bot className="h-4 w-4 text-blue-500" />
-          )}
+    <>
+      {messages.map((message) => {
+        const isAssistant = message.role === "assistant";
+        const currentAgentIndex = isAssistant ? agentMessageIndex++ : -1;
+        const kind = isAssistant ? getMessageKind(currentAgentIndex) : undefined;
+        const validationErrors = isAssistant ? getValidationErrors(currentAgentIndex) : [];
+
+        return (
+          <div key={message.id}>
+            {message.parts.map((part, i) => {
+              switch (part.type) {
+                case "text":
+                  return (
+                    <Message key={`${message.id}-${i}`} from={message.role}>
+                      <MessageContent>
+                        {isAssistant ? (
+                          <div className="space-y-2">
+                            {/* Header with kind chip and validation status */}
+                            <div className="flex items-center gap-2">
+                              {kind && <KindChip kind={kind} showIcon />}
+                              {validationErrors.length > 0 && (
+                                <ValidationStatus errors={validationErrors} />
+                              )}
+                            </div>
+                            <MessageResponse>{part.text}</MessageResponse>
+                          </div>
+                        ) : (
+                          <MessageResponse>{part.text}</MessageResponse>
+                        )}
+                      </MessageContent>
+                    </Message>
+                  );
+                default:
+                  return null;
+              }
+            })}
+          </div>
+        );
+      })}
+      {/* Loading indicator while streaming */}
+      {isLoading && messages.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Agent is responding...</span>
         </div>
-        <MessageContent>
-          <MessageResponse>{textContent}</MessageResponse>
-        </MessageContent>
-      </div>
-    </Message>
+      )}
+    </>
+  );
+}
+
+// =============================================================================
+// Raw Events Mode
+// =============================================================================
+
+function RawEventsMessages({
+  messages,
+  rawEvents,
+}: {
+  readonly messages: UIMessage[];
+  readonly rawEvents: RawA2AEvent[];
+}): React.JSX.Element {
+  // Combine user messages with raw events for display
+  const allItems: Array<
+    { type: "user"; message: UIMessage; timestamp: Date } | { type: "event"; event: RawA2AEvent }
+  > = [];
+
+  // Add user messages with timestamps
+  for (const msg of messages) {
+    if (msg.role === "user") {
+      // Use current time as fallback since UIMessage doesn't have timestamp
+      allItems.push({
+        type: "user",
+        message: msg,
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  // Add raw events
+  for (const event of rawEvents) {
+    allItems.push({ type: "event", event });
+  }
+
+  // Sort by timestamp (events have timestamps, user messages use insertion order)
+  // Since user messages don't have reliable timestamps, we keep them in order
+  // and interleave events based on their timestamps
+
+  if (allItems.length === 0) {
+    return (
+      <ConversationEmptyState
+        title="Start a conversation"
+        description="Send a message to see raw A2A events."
+        icon={<List className="h-8 w-8" />}
+      />
+    );
+  }
+
+  return (
+    <>
+      {allItems.map((item) => {
+        if (item.type === "user") {
+          const textContent = item.message.parts
+            .filter(isTextUIPart)
+            .map((p) => p.text)
+            .join("");
+
+          return (
+            <Message key={`user-${item.message.id}`} from="user">
+              <MessageContent>
+                <MessageResponse>{textContent}</MessageResponse>
+              </MessageContent>
+            </Message>
+          );
+        }
+
+        // Raw event
+        const { event } = item;
+        return (
+          <Message key={event.id} from="assistant">
+            <MessageContent>
+              <div className="space-y-2">
+                {/* Header with kind chip, validation, and JSON viewer */}
+                <div className="flex items-center gap-2">
+                  <KindChip kind={event.kind} showIcon />
+                  <ValidationStatus errors={event.validationErrors} />
+                  <JsonViewerButton data={event.event} title={`${event.kind} Event`} />
+                </div>
+
+                {/* Event content */}
+                {event.textContent ? (
+                  <MessageResponse>{event.textContent}</MessageResponse>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    No text content in this event
+                  </span>
+                )}
+
+                {/* Timestamp */}
+                <span className="text-xs text-muted-foreground">
+                  {event.timestamp.toLocaleTimeString()}
+                </span>
+              </div>
+            </MessageContent>
+          </Message>
+        );
+      })}
+    </>
   );
 }

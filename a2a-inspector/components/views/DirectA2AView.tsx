@@ -9,7 +9,7 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { Message, MessageContent, SmoothMessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputFooter,
@@ -227,8 +227,11 @@ function PrettyMessages({
                   )}
                 </div>
 
-                {/* Message content */}
-                <MessageResponse>{message.content || "..."}</MessageResponse>
+                {/* Message content with smooth streaming effect */}
+                <SmoothMessageResponse
+                  text={message.content || "..."}
+                  smooth={{ enabled: true, delayInMs: 15, chunking: "word" }}
+                />
 
                 {/* Events dropdown */}
                 {message.rawEvents && message.rawEvents.length > 0 && (
@@ -328,9 +331,12 @@ function RawEventsMessages({
                   <ValidationStatus errors={event.validationErrors} />
                 </div>
 
-                {/* Event content */}
+                {/* Event content with smooth streaming effect */}
                 {event.textContent ? (
-                  <MessageResponse>{event.textContent}</MessageResponse>
+                  <SmoothMessageResponse
+                    text={event.textContent}
+                    smooth={{ enabled: true, delayInMs: 15, chunking: "word" }}
+                  />
                 ) : (
                   <span className="text-xs italic text-muted-foreground">
                     {event.kind === "task" && "Task created"}
