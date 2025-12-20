@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Nunito_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { DebugConsole } from "@/components/debug";
 import { InspectorProvider, ThemeProvider } from "@/context";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const nunitoSans = Nunito_Sans({
+  variable: "--font-nunito-sans",
   subsets: ["latin"],
 });
 
@@ -27,7 +27,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps): React.JSX.Element {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${nunitoSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ThemeProvider>
           <InspectorProvider>
             {children}

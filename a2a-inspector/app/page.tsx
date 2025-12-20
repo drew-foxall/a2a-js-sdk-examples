@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Code2, MessageSquare, Settings, Zap } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import {
   AgentCardDisplay,
   AuthConfigPanel,
@@ -16,7 +16,31 @@ import { useAuthConfig, useConnection } from "@/context";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "@/types";
 
+/**
+ * Loading fallback for Suspense boundaries that use URL search params.
+ */
+function LoadingFallback(): React.JSX.Element {
+  return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+          <Zap className="h-6 w-6 animate-pulse text-primary" />
+        </div>
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage(): React.JSX.Element {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+
+function HomePageContent(): React.JSX.Element {
   const connection = useConnection();
   const authConfig = useAuthConfig();
   const [viewMode, setViewMode] = useState<ViewMode>("direct");
