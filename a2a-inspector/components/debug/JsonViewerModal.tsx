@@ -107,12 +107,12 @@ export function JsonViewerModal({
             variant="ghost"
             size="sm"
             onClick={handleCopy}
-            className="absolute right-2 top-2 z-10 gap-1.5 bg-zinc-800/80 hover:bg-zinc-700"
+            className="absolute right-2 top-2 z-10 gap-1.5 bg-card/80 hover:bg-card"
           >
             {copied ? (
               <>
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Copied!</span>
+                <Check className="h-3.5 w-3.5 text-primary" />
+                <span className="text-primary">Copied!</span>
               </>
             ) : (
               <>
@@ -123,7 +123,7 @@ export function JsonViewerModal({
           </Button>
 
           {/* JSON content - scrollable both horizontally and vertically */}
-          <div className="max-h-[60vh] overflow-auto rounded-lg border border-zinc-700 bg-zinc-900">
+          <div className="max-h-[60vh] overflow-auto rounded-lg border border-border bg-card">
             {highlightedHtml ? (
               <div
                 className="min-w-max p-4 text-sm [&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-0 [&_pre]:!whitespace-pre"

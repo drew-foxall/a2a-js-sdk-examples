@@ -161,7 +161,7 @@ function HeaderRow({
         checked={header.enabled}
         onChange={onToggle}
         disabled={disabled}
-        className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-emerald-500"
+        className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary"
         aria-label={`Enable header ${header.name || "unnamed"}`}
       />
 

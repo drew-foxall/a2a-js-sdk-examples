@@ -33,25 +33,25 @@ export function AgentCardDisplay({
   className,
 }: AgentCardDisplayProps): React.JSX.Element {
   return (
-    <div
-      className={cn("rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden", className)}
-    >
+    <div className={cn("rounded-xl border border-border bg-card/50 overflow-hidden", className)}>
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-zinc-900/80 px-5 py-4">
+      <div className="border-b border-border bg-card/80 px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-              <Bot className="h-5 w-5 text-emerald-500" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Bot className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">{card.name}</h3>
+              <h3 className="font-semibold text-foreground">{card.name}</h3>
               {card.description && (
-                <p className="mt-0.5 text-sm text-zinc-400 line-clamp-1">{card.description}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
+                  {card.description}
+                </p>
               )}
             </div>
           </div>
           {card.version && (
-            <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-400">
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
               v{card.version}
             </span>
           )}
@@ -62,12 +62,12 @@ export function AgentCardDisplay({
       <div className="p-5 space-y-5">
         {/* Service URL */}
         <div className="flex items-center gap-2 text-sm">
-          <Globe className="h-4 w-4 text-zinc-500" />
+          <Globe className="h-4 w-4 text-muted-foreground" />
           <a
             href={card.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-zinc-300 hover:text-white transition-colors flex items-center gap-1"
+            className="text-foreground/80 hover:text-foreground transition-colors flex items-center gap-1"
           >
             {card.url}
             <ExternalLink className="h-3 w-3" />
@@ -77,15 +77,15 @@ export function AgentCardDisplay({
         {/* Provider */}
         {card.provider && (
           <div className="flex items-center gap-2 text-sm">
-            <Building2 className="h-4 w-4 text-zinc-500" />
-            <span className="text-zinc-300">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-foreground/80">
               {card.provider.organization}
               {card.provider.url && (
                 <a
                   href={card.provider.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ExternalLink className="inline h-3 w-3" />
                 </a>
@@ -97,7 +97,7 @@ export function AgentCardDisplay({
         {/* Capabilities */}
         {card.capabilities && (
           <div className="space-y-2">
-            <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <Zap className="h-3.5 w-3.5" />
               Capabilities
             </h4>
@@ -116,7 +116,7 @@ export function AgentCardDisplay({
         {/* Skills */}
         {card.skills && card.skills.length > 0 && (
           <div className="space-y-2">
-            <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5" />
               Skills ({card.skills.length})
             </h4>
@@ -124,19 +124,21 @@ export function AgentCardDisplay({
               {card.skills.slice(0, 5).map((skill) => (
                 <div
                   key={skill.id}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-2"
+                  className="rounded-lg border border-border bg-card/30 px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
-                    <Hash className="h-3.5 w-3.5 text-zinc-500" />
-                    <span className="text-sm font-medium text-zinc-300">{skill.name}</span>
+                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground/80">{skill.name}</span>
                   </div>
                   {skill.description && (
-                    <p className="mt-1 text-xs text-zinc-500 line-clamp-2">{skill.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                      {skill.description}
+                    </p>
                   )}
                 </div>
               ))}
               {card.skills.length > 5 && (
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-muted-foreground">
                   +{card.skills.length - 5} more skill{card.skills.length - 5 !== 1 && "s"}
                 </p>
               )}
@@ -164,7 +166,7 @@ function CapabilityBadge({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-        enabled ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-800 text-zinc-500"
+        enabled ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
       )}
     >
       {enabled && <CheckCircle2 className="h-3 w-3" />}

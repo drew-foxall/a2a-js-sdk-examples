@@ -35,7 +35,7 @@ export function ValidationStatus({
           <TooltipTrigger asChild>
             <span
               className={cn(
-                "inline-flex items-center text-emerald-500",
+                "inline-flex items-center text-primary",
                 compact ? "text-sm" : "text-base",
                 className
               )}
@@ -43,7 +43,7 @@ export function ValidationStatus({
               <CheckCircle2 className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
             </span>
           </TooltipTrigger>
-          <TooltipContent side="top" className="bg-zinc-900 text-white">
+          <TooltipContent side="top" className="bg-popover text-popover-foreground">
             <p className="text-xs">A2A compliant</p>
           </TooltipContent>
         </Tooltip>
@@ -65,7 +65,7 @@ export function ValidationStatus({
             <AlertTriangle className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs bg-zinc-900 text-white">
+        <TooltipContent side="top" className="max-w-xs bg-popover text-popover-foreground">
           <div className="space-y-1">
             <p className="text-xs font-medium">
               {errorCount > 0 && `${errorCount} error${errorCount > 1 ? "s" : ""}`}
@@ -78,14 +78,14 @@ export function ValidationStatus({
                   key={`${error.field}-${index}`}
                   className={cn(
                     "text-xs",
-                    error.severity === "error" ? "text-red-300" : "text-amber-300"
+                    error.severity === "error" ? "text-destructive" : "text-amber-400"
                   )}
                 >
                   <span className="font-medium">{error.field}:</span> {error.message}
                 </li>
               ))}
               {errors.length > 5 && (
-                <li className="text-xs text-zinc-400">...and {errors.length - 5} more</li>
+                <li className="text-xs text-muted-foreground">...and {errors.length - 5} more</li>
               )}
             </ul>
           </div>

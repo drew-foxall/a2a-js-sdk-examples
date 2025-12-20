@@ -14,8 +14,8 @@ export function ConnectionStatus(): React.JSX.Element {
     disconnected: {
       icon: WifiOff,
       label: "Disconnected",
-      color: "text-zinc-500",
-      bgColor: "bg-zinc-500/10",
+      color: "text-muted-foreground",
+      bgColor: "bg-muted",
     },
     connecting: {
       icon: Loader2,
@@ -26,14 +26,14 @@ export function ConnectionStatus(): React.JSX.Element {
     connected: {
       icon: CheckCircle2,
       label: "Connected",
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-500/10",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
     error: {
       icon: AlertCircle,
       label: "Error",
-      color: "text-red-500",
-      bgColor: "bg-red-500/10",
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
     },
   };
 

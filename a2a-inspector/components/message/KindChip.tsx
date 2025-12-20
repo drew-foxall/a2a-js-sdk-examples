@@ -35,9 +35,9 @@ const kindConfig: Record<
   "artifact-update": {
     label: "artifact",
     icon: FileText,
-    bgColor: "bg-emerald-100 dark:bg-emerald-500/20",
-    borderColor: "border-emerald-300 dark:border-emerald-500/50",
-    textColor: "text-emerald-700 dark:text-emerald-300",
+    bgColor: "bg-teal-100 dark:bg-teal-500/20",
+    borderColor: "border-teal-300 dark:border-teal-500/50",
+    textColor: "text-teal-700 dark:text-teal-300",
   },
   message: {
     label: "message",

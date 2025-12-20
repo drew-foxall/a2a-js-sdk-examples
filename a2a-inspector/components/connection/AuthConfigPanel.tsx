@@ -151,9 +151,9 @@ export function AuthConfigPanel({
               {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Will be sent as:{" "}
-            <code className="text-emerald-400">Authorization: Bearer &lt;token&gt;</code>
+            <code className="text-primary">Authorization: Bearer &lt;token&gt;</code>
           </p>
         </div>
       )}
@@ -198,9 +198,9 @@ export function AuthConfigPanel({
                 {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted-foreground">
               Will be sent as:{" "}
-              <code className="text-emerald-400">
+              <code className="text-primary">
                 {authConfig.apiKeyHeader || "X-API-Key"}: &lt;key&gt;
               </code>
             </p>
@@ -248,9 +248,9 @@ export function AuthConfigPanel({
                 {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted-foreground">
               Will be sent as:{" "}
-              <code className="text-emerald-400">Authorization: Basic &lt;base64&gt;</code>
+              <code className="text-primary">Authorization: Basic &lt;base64&gt;</code>
             </p>
           </div>
         </>

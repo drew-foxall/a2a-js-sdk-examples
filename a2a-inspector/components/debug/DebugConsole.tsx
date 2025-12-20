@@ -221,7 +221,7 @@ function LogEntry({ entry }: { readonly entry: DebugLogEntry }): React.JSX.Eleme
     info: { icon: Info, color: "text-blue-400", bg: "bg-blue-500/10" },
     error: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10" },
     warning: { icon: AlertCircle, color: "text-amber-400", bg: "bg-amber-500/10" },
-    request: { icon: ArrowUpRight, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    request: { icon: ArrowUpRight, color: "text-primary", bg: "bg-primary/10" },
     response: { icon: ArrowDownLeft, color: "text-purple-400", bg: "bg-purple-500/10" },
     event: { icon: Bug, color: "text-cyan-400", bg: "bg-cyan-500/10" },
   };
@@ -254,7 +254,7 @@ function LogEntry({ entry }: { readonly entry: DebugLogEntry }): React.JSX.Eleme
                 className={cn(
                   "shrink-0 rounded px-1 py-0.5 text-[10px] font-medium uppercase",
                   entry.direction === "inbound"
-                    ? "bg-emerald-500/20 text-emerald-400"
+                    ? "bg-primary/20 text-primary"
                     : "bg-blue-500/20 text-blue-400"
                 )}
               >

@@ -83,10 +83,10 @@ export function SessionDetailsPanel({
                   className={cn(
                     "h-2 w-2 rounded-full",
                     session.transport === "sse"
-                      ? "bg-emerald-500"
+                      ? "bg-primary"
                       : session.transport === "http"
                         ? "bg-sky-500"
-                        : "bg-zinc-500"
+                        : "bg-muted-foreground"
                   )}
                 />
                 {session.transport?.toUpperCase() ?? "Not connected"}
@@ -218,7 +218,7 @@ function CapabilityBadge({
     <div
       className={cn(
         "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs",
-        enabled ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-500/10 text-zinc-500"
+        enabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
       )}
     >
       {enabled ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}

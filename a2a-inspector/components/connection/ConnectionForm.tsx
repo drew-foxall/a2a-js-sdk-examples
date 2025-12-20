@@ -80,16 +80,16 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
           placeholder="Enter agent URL (e.g., http://localhost:8787)"
           disabled={isDisabled || isConnected}
           className={cn(
-            "h-11 w-full rounded-lg border bg-zinc-900/50 px-4 text-sm text-white",
-            "placeholder:text-zinc-500",
-            "focus:outline-none focus:ring-2 focus:ring-emerald-500/50",
+            "h-11 w-full rounded-lg border bg-card px-4 text-sm text-foreground",
+            "placeholder:text-muted-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-primary/50",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            isConnected ? "border-emerald-500/30" : "border-zinc-700",
-            connection.status === "error" && "border-red-500/50"
+            isConnected ? "border-primary/30" : "border-border",
+            connection.status === "error" && "border-destructive/50"
           )}
         />
         {connection.status === "error" && connection.error && (
-          <p className="absolute -bottom-5 left-0 text-xs text-red-400">{connection.error}</p>
+          <p className="absolute -bottom-5 left-0 text-xs text-destructive">{connection.error}</p>
         )}
       </div>
 
@@ -98,11 +98,11 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
         disabled={isDisabled}
         className={cn(
           "flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-medium transition-all",
-          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background",
           "disabled:cursor-not-allowed disabled:opacity-50",
           isConnected
-            ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 focus:ring-zinc-500"
-            : "bg-emerald-600 text-white hover:bg-emerald-500 focus:ring-emerald-500"
+            ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary"
+            : "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary"
         )}
       >
         {isConnecting ? (
