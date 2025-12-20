@@ -64,11 +64,20 @@ const config = defineWorkerConfig<BaseWorkerEnv>({
       name: "Dice Agent",
       description: "An agent that can roll arbitrary dice and answer if numbers are prime",
       skills: [rollDiceSkill, checkPrimeSkill],
+      capabilities: {
+        // This agent is designed for immediate, self-contained responses.
+        // It returns A2A `Message` responses by default (no task lifecycle / streaming).
+        streaming: false,
+        stateTransitionHistory: false,
+      },
     }),
 
   adapterOptions: {
     mode: "generate",
     workingMessage: "Rolling dice...",
+    // Dice rolls and primality checks are immediate and self-contained.
+    // Prefer stateless Message responses (agent can still choose Task for continuations if needed).
+    selectResponseType: () => "message",
   },
 });
 

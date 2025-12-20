@@ -186,7 +186,9 @@ function createAgentCard(baseUrl: string): AgentCard {
     defaultInputModes: ["text"],
     defaultOutputModes: ["text"],
     capabilities: {
-      streaming: true,
+      // This agent is designed for immediate, self-contained responses.
+      // It prefers stateless A2A `Message` responses.
+      streaming: false,
       pushNotifications: false,
       stateTransitionHistory: false,
     },
@@ -241,8 +243,12 @@ app.all("/*", async (c, next) => {
 
   const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
     mode: "generate",
-    workingMessage: "Rolling dice...",
+    // NOTE: workingMessage is deprecated - status messages should not be
+    // included as TextParts. See docs/A2A_PROTOCOL_UNDERSTANDING.md
     debug: false,
+    // TODO: When selectResponseType is implemented, this agent should use
+    // "message" mode since dice rolls are immediate and self-contained.
+    // See docs/prompts/ADD_MESSAGE_MODE_TO_ADAPTER.md
   });
 
   const taskStore = createTaskStore(env);

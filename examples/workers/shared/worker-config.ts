@@ -55,7 +55,7 @@
  */
 
 import type { LanguageModel } from "ai";
-import type { Artifact, AgentCard, TaskState } from "@drew-foxall/a2a-js-sdk";
+import type { Artifact, AgentCard, Message, Task, TaskState } from "@drew-foxall/a2a-js-sdk";
 import {
   DefaultRequestHandler,
   InMemoryTaskStore,
@@ -104,6 +104,16 @@ export interface ArtifactGenerationContext {
 }
 
 /**
+ * Context provided to selectResponseType hook
+ */
+export interface ResponseTypeSelectionContext {
+  /** The incoming user message */
+  userMessage: Message;
+  /** Existing task if this is a continuation, undefined for new requests */
+  existingTask?: Task;
+}
+
+/**
  * A2A Adapter configuration options (subset exposed to worker config)
  */
 export interface WorkerAdapterOptions {
@@ -119,6 +129,85 @@ export interface WorkerAdapterOptions {
   parseTaskState?: (response: string) => TaskState;
   /** Custom artifact generator */
   generateArtifacts?: (context: ArtifactGenerationContext) => Promise<Artifact[]>;
+  /**
+   * Determine response type for each request.
+   *
+   * IMPORTANT (AI SDK workflow alignment):
+   * This is intended to be an **agent-owned routing step**, not a client instruction.
+   * In A2A, the server must choose whether to return a stateless `Message` or
+   * initiate a stateful `Task` **before** it emits any task lifecycle events (and before
+   * starting SSE streaming). The most reliable way to do that while keeping the decision
+   * "owned by the agent" is to implement a small *routing/classification* step here
+   * (AI SDK “Routing” pattern) using a cheap model call or deterministic policy.
+   *
+   * Continuations:
+   * If `existingTask` is present, you should almost always return `"task"` to continue
+   * the task lifecycle rather than switching to a stateless message mid-context.
+   *
+   * A2A protocol allows agents to respond with either:
+   * - "message": Stateless, immediate response (no task tracking)
+   * - "task": Stateful, tracked operation with lifecycle
+   *
+   * Use "message" for:
+   * - Simple queries with immediate answers
+   * - Trivial interactions (greetings, quick Q&A)
+   * - Operations that don't need progress tracking or cancellation
+   *
+   * Use "task" for:
+   * - Long-running operations
+   * - Multi-step workflows
+   * - Operations that benefit from progress tracking
+   * - Operations that may need cancellation
+   *
+   * @param context - Request context with user message and existing task
+   * @returns "message" or "task" (sync or async)
+   * @default Always returns "task" (backward compatible)
+   *
+   * @example Always use message (for simple agents like Hello World)
+   * ```typescript
+   * selectResponseType: () => "message"
+   * ```
+   *
+   * @example Agent-owned routing (AI SDK “Routing” pattern)
+   * ```typescript
+   * selectResponseType: async ({ userMessage, existingTask }) => {
+   *   if (existingTask) return "task";
+   *   const { responseType } = await classifyRequest(userMessage);
+   *   return responseType; // "message" | "task"
+   * }
+   * ```
+   */
+  selectResponseType?: (
+    context: ResponseTypeSelectionContext
+  ) => "message" | "task" | Promise<"message" | "task">;
+
+  /**
+   * Factory for creating `selectResponseType` with access to the runtime model/env.
+   *
+   * Why this exists:
+   * - In Workers, `adapterOptions` is defined at module load time (no access to `env`)
+   * - Agent-owned routing (AI SDK “Routing” pattern) often needs a model to run a cheap
+   *   classification step (e.g. `generateObject`)
+   *
+   * If provided, this takes precedence over `selectResponseType`.
+   *
+   * @example Use the same model as the agent for routing (cheap model recommended)
+   * ```ts
+   * import { createLLMResponseTypeRouter } from "@drew-foxall/a2a-ai-sdk-adapter";
+   *
+   * adapterOptions: {
+   *   mode: "stream",
+   *   selectResponseTypeFactory: ({ model }) =>
+   *     createLLMResponseTypeRouter({ model }),
+   * }
+   * ```
+   */
+  selectResponseTypeFactory?: (deps: {
+    model: LanguageModel;
+    env: BaseWorkerEnv;
+  }) => (
+    context: ResponseTypeSelectionContext
+  ) => "message" | "task" | Promise<"message" | "task">;
 }
 
 /**
@@ -334,6 +423,12 @@ export function createA2AExecutor<TEnv extends BaseWorkerEnv>(
 ): AgentExecutor {
   const agent = config.createAgent(model, env);
 
+  const selectResponseType =
+    config.adapterOptions?.selectResponseTypeFactory?.({
+      model,
+      env: env as BaseWorkerEnv,
+    }) ?? config.adapterOptions?.selectResponseType;
+
   const adapterOptions: A2AAdapterConfig = {
     mode: config.adapterOptions?.mode ?? DEFAULT_ADAPTER_OPTIONS.mode ?? "stream",
     workingMessage:
@@ -342,6 +437,7 @@ export function createA2AExecutor<TEnv extends BaseWorkerEnv>(
     includeHistory: config.adapterOptions?.includeHistory,
     parseTaskState: config.adapterOptions?.parseTaskState,
     generateArtifacts: config.adapterOptions?.generateArtifacts,
+    selectResponseType,
   };
 
   // Cast agent to any for A2AAdapter compatibility - the runtime types are compatible

@@ -20,7 +20,19 @@ export {
   NoOpLogger,
   type ParsedArtifact,
   type ParsedArtifacts,
+  type ResponseTypeSelectionContext,
 } from "./adapter.js";
+
+export {
+  type A2AResponseType,
+  createLLMResponseTypeRouter,
+  extractTextFromA2AMessage,
+  isTaskContinuation,
+  type LLMResponseTypeRouterOptions,
+  messageUnlessContinuation,
+  preferTaskForContinuations,
+  type SelectResponseType,
+} from "./routing.js";
 
 // NOTE: DurableA2AAdapter is NOT exported from the main entry point to avoid
 // pulling in the `workflow` package which is not edge-compatible.

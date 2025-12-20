@@ -4,7 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "build/**"],
-      "inputs": ["src/**", "package.json", "tsconfig.json"]
+      "inputs": ["src/**", "app/**", "package.json", "tsconfig.json"]
     },
     "dev": {
       "cache": false,
@@ -23,7 +23,7 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "inputs": ["src/**", "**/*.test.ts", "**/*.spec.ts"]
+      "inputs": ["src/**", "app/**", "**/*.test.ts", "**/*.spec.ts"]
     },
     "test:watch": {
       "cache": false,
@@ -31,16 +31,16 @@
     },
     "lint": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+      "inputs": ["src/**", "app/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
     },
     "lint:fix": {
       "cache": false,
-      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+      "inputs": ["src/**", "app/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
     },
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": [],
-      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "tsconfig.json"]
+      "inputs": ["src/**", "app/**", "**/*.ts", "**/*.tsx", "tsconfig.json"]
     },
     "format": {
       "outputs": [],
@@ -50,6 +50,25 @@
       "cache": false,
       "outputs": [],
       "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+    },
+    "a2a-inspector#dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build"]
+    },
+    "a2a-inspector#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**"]
+    },
+    "a2a-inspector#typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "a2a-inspector#lint": {
+      "dependsOn": ["^build"]
+    },
+    "a2a-inspector#test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
     }
   }
 }

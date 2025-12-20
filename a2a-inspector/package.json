@@ -1,0 +1,81 @@
+{
+  "name": "a2a-inspector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A2A Protocol Inspector - Debug and validate A2A agents",
+  "scripts": {
+    "dev": "next dev --port 3002",
+    "build": "next build",
+    "start": "next start --port 3002",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format .",
+    "format:write": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ai-sdk/provider": "3.0.0-beta.23",
+    "@ai-sdk/react": "3.0.0-beta.132",
+    "@drew-foxall/a2a-ai-provider-v3": "workspace:*",
+    "@drew-foxall/a2a-js-sdk": "^0.4.2",
+    "@elysiajs/eden": "^1.4.5",
+    "@radix-ui/react-collapsible": "1.1.12",
+    "@radix-ui/react-dialog": "1.1.15",
+    "@radix-ui/react-dropdown-menu": "2.1.16",
+    "@radix-ui/react-hover-card": "1.1.15",
+    "@radix-ui/react-select": "2.2.6",
+    "@radix-ui/react-separator": "1.1.8",
+    "@radix-ui/react-slot": "1.2.4",
+    "@radix-ui/react-tooltip": "1.2.8",
+    "@sinclair/typebox": "^0.34.41",
+    "@valibot/to-json-schema": "^1.0.0",
+    "ai": "6.0.0-beta.99",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "1.1.1",
+    "effect": "^3.16.0",
+    "elysia": "^1.4.19",
+    "isomorphic-dompurify": "^2.34.0",
+    "lucide-react": "^0.562.0",
+    "marked": "^17.0.1",
+    "nanoid": "5.1.6",
+    "next": "16.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "shiki": "^3.20.0",
+    "streamdown": "1.6.10",
+    "tailwind-merge": "^3.4.0",
+    "use-stick-to-bottom": "1.1.1",
+    "uuid": "^13.0.0",
+    "vaul": "1.1.2",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/react": "^16.3.1",
+    "@types/node": "^25.0.3",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "jsdom": "^27.3.0",
+    "shadcn": "3.6.2",
+    "tailwindcss": "^4.1.18",
+    "tw-animate-css": "1.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.7",
+      "@types/react-dom": "19.2.3"
+    }
+  }
+}

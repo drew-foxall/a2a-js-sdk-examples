@@ -65,10 +65,14 @@
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "ai": "^6.0.0",
     "uuid": ">=11.0.0",
-    "workflow": "4.0.1-beta.32"
+    "workflow": "4.0.1-beta.32",
+    "zod": ">=4.0.0"
   },
   "peerDependenciesMeta": {
     "workflow": {
+      "optional": true
+    },
+    "zod": {
       "optional": true
     }
   },

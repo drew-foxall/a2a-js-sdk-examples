@@ -189,14 +189,23 @@ execute: async (params: RollDiceParams) => {
 
 Uses the unified `A2AAdapter` pattern:
 ```typescript
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+
+// Dice is typically immediate + self-contained, so Message responses work well:
+const adapter = new A2AAdapter(agent, {
+  mode: "generate",
+  selectResponseType: () => "message",
 });
 ```
 
-No special configuration needed - adapter auto-detects this is a simple agent (no artifacts).
+If you prefer “true streaming” UX, use Task mode instead:
+
+```typescript
+const adapter = new A2AAdapter(agent, {
+  mode: "stream",
+  selectResponseType: () => "task",
+});
+```
 
 ## Comparison to Hello World
 
