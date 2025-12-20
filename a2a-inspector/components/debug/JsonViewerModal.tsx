@@ -92,7 +92,7 @@ export function JsonViewerModal({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-hidden">
+      <DialogContent className="max-h-[85vh] w-[90vw] max-w-4xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Code2 className="h-5 w-5" />
@@ -101,7 +101,7 @@ export function JsonViewerModal({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <div className="relative">
+        <div className="relative min-w-0">
           {/* Copy button */}
           <Button
             variant="ghost"
@@ -122,16 +122,16 @@ export function JsonViewerModal({
             )}
           </Button>
 
-          {/* JSON content */}
+          {/* JSON content - scrollable both horizontally and vertically */}
           <div className="max-h-[60vh] overflow-auto rounded-lg border border-zinc-700 bg-zinc-900">
             {highlightedHtml ? (
               <div
-                className="p-4 text-sm [&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-0"
+                className="min-w-max p-4 text-sm [&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-0 [&_pre]:!whitespace-pre"
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is trusted
                 dangerouslySetInnerHTML={{ __html: highlightedHtml }}
               />
             ) : (
-              <pre className="p-4 text-sm text-zinc-300">
+              <pre className="min-w-max whitespace-pre p-4 text-sm text-zinc-300">
                 <code>{jsonString}</code>
               </pre>
             )}
