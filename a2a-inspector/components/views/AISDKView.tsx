@@ -3,7 +3,15 @@
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isTextUIPart } from "ai";
-import { Info, List, Loader2, MessageSquare, RotateCcw, Sparkles } from "lucide-react";
+import {
+  Info,
+  List,
+  Loader2,
+  MessageCircle,
+  MessageSquare,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Conversation,
@@ -21,7 +29,7 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { JsonViewerButton } from "@/components/debug/JsonViewerModal";
-import { KindChip, ValidationStatus } from "@/components/message";
+import { EventsDropdown, KindChip, ValidationStatus } from "@/components/message";
 import { SessionDetailsPanel } from "@/components/session";
 import { Button } from "@/components/ui/button";
 import { useConnection, useInspector } from "@/context";
@@ -225,17 +233,14 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
 
   if (!isConnected) {
     return (
-      <div
-        className={cn(
-          "flex min-h-0 flex-1 flex-col items-center justify-center p-8 text-center",
-          className
-        )}
-      >
-        <MessageSquare className="h-12 w-12 text-zinc-600" />
-        <h3 className="mt-4 text-lg font-medium text-zinc-300">Not Connected</h3>
-        <p className="mt-2 text-sm text-zinc-500">
-          Connect to an A2A agent to start chatting via AI SDK.
-        </p>
+      <div className={cn("flex h-full flex-col items-center justify-center p-8", className)}>
+        <div className="text-center">
+          <MessageCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">No Agent Connected</h3>
+          <p className="text-sm text-muted-foreground">
+            Connect to an A2A agent to start chatting via AI SDK.
+          </p>
+        </div>
       </div>
     );
   }
@@ -245,12 +250,12 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-border bg-background px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-            <MessageSquare className="h-4 w-4 text-blue-500" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+            <MessageSquare className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h3 className="font-medium text-white">AI SDK View</h3>
-            <p className="text-xs text-zinc-500">Using useChat hook</p>
+            <h2 className="text-sm font-semibold">AI SDK (useChat)</h2>
+            <p className="text-xs text-muted-foreground">{agentCard?.name ?? "Connected Agent"}</p>
           </div>
         </div>
 
@@ -269,20 +274,10 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
           </Button>
 
           {/* Clear Button */}
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={messages.length === 0}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-              messages.length > 0
-                ? "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                : "cursor-not-allowed text-zinc-600"
-            )}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
+          <Button variant="ghost" size="sm" onClick={handleClear} disabled={isLoading}>
+            <RotateCcw className="mr-2 h-4 w-4" />
             Clear
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -397,9 +392,9 @@ function PrettyMessages({
   if (messages.length === 0 && !isLoading) {
     return (
       <ConversationEmptyState
-        icon={<MessageSquare className="h-8 w-8" />}
-        title="AI SDK Chat"
-        description={`Send a message to ${agentName ?? "the agent"} via the AI SDK.`}
+        icon={<MessageCircle className="h-8 w-8" />}
+        title="Start a conversation"
+        description={`Send a message to ${agentName ?? "the agent"} to begin.`}
       />
     );
   }
@@ -432,6 +427,18 @@ function PrettyMessages({
     return [];
   };
 
+  // Get the raw events that belong to a specific message
+  const getMessageEvents = (messageIndex: number): RawA2AEvent[] => {
+    const agentMessageCount = messages.filter((m: UIMessage) => m.role === "assistant").length;
+    if (messageIndex < agentMessageCount && rawEvents.length > 0) {
+      const eventsPerMessage = Math.ceil(rawEvents.length / Math.max(agentMessageCount, 1));
+      const startIdx = messageIndex * eventsPerMessage;
+      const endIdx = Math.min(startIdx + eventsPerMessage, rawEvents.length);
+      return rawEvents.slice(startIdx, endIdx);
+    }
+    return [];
+  };
+
   let agentMessageIndex = 0;
 
   return (
@@ -441,6 +448,7 @@ function PrettyMessages({
         const currentAgentIndex = isAssistant ? agentMessageIndex++ : -1;
         const kind = isAssistant ? getMessageKind(currentAgentIndex) : undefined;
         const validationErrors = isAssistant ? getValidationErrors(currentAgentIndex) : [];
+        const messageEvents = isAssistant ? getMessageEvents(currentAgentIndex) : [];
 
         return (
           <div key={message.id}>
@@ -459,10 +467,15 @@ function PrettyMessages({
                                 <ValidationStatus errors={validationErrors} />
                               )}
                             </div>
+
+                            {/* Message content */}
                             <MessageResponse>{part.text}</MessageResponse>
+
+                            {/* Events dropdown - shows constituent A2A events */}
+                            {messageEvents.length > 0 && <EventsDropdown events={messageEvents} />}
                           </div>
                         ) : (
-                          <MessageResponse>{part.text}</MessageResponse>
+                          <span>{part.text}</span>
                         )}
                       </MessageContent>
                     </Message>
@@ -476,7 +489,7 @@ function PrettyMessages({
       })}
       {/* Loading indicator while streaming */}
       {isLoading && messages.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-500">
+        <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Agent is responding...</span>
         </div>
@@ -544,38 +557,50 @@ function RawEventsMessages({
           return (
             <Message key={`user-${item.message.id}`} from="user">
               <MessageContent>
-                <MessageResponse>{textContent}</MessageResponse>
+                <span>{textContent}</span>
               </MessageContent>
             </Message>
           );
         }
 
-        // Raw event
+        // Raw event - matches DirectA2AView RawEventsMessages layout
         const { event } = item;
         return (
           <Message key={event.id} from="assistant">
             <MessageContent>
-              <div className="space-y-2">
-                {/* Header with kind chip, validation, and JSON viewer */}
+              <div className="space-y-1">
+                {/* Header with kind chip, timestamp, JSON button, and validation status */}
                 <div className="flex items-center gap-2">
                   <KindChip kind={event.kind} showIcon />
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {event.timestamp.toLocaleTimeString("en-US", {
+                      hour12: false,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      fractionalSecondDigits: 3,
+                    })}
+                  </span>
+                  <JsonViewerButton
+                    data={event.event}
+                    title={`${event.kind} Event`}
+                    description={`Raw A2A ${event.kind} event data`}
+                  />
                   <ValidationStatus errors={event.validationErrors} />
-                  <JsonViewerButton data={event.event} title={`${event.kind} Event`} />
                 </div>
 
                 {/* Event content */}
                 {event.textContent ? (
                   <MessageResponse>{event.textContent}</MessageResponse>
                 ) : (
-                  <span className="text-xs text-muted-foreground italic">
-                    No text content in this event
+                  <span className="text-xs italic text-muted-foreground">
+                    {event.kind === "task" && "Task created"}
+                    {event.kind === "status-update" && "Status update (no text)"}
+                    {event.kind === "artifact-update" && "Artifact update"}
+                    {event.kind === "message" && "Message (no text)"}
+                    {event.kind === "error" && "Error event"}
                   </span>
                 )}
-
-                {/* Timestamp */}
-                <span className="text-xs text-muted-foreground">
-                  {event.timestamp.toLocaleTimeString()}
-                </span>
               </div>
             </MessageContent>
           </Message>
