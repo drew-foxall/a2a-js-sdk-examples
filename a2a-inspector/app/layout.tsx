@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A2A Inspector",
-  description: "Inspect and debug A2A protocol agents",
+  title: "A2A Inspector (Beta)",
+  description: "Inspect and debug A2A protocol agents - Beta release",
 };
 
 interface RootLayoutProps {

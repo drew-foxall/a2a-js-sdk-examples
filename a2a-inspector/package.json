@@ -1,8 +1,8 @@
 {
   "name": "a2a-inspector",
-  "version": "1.0.0",
+  "version": "0.1.0-beta.1",
   "private": true,
-  "description": "A2A Protocol Inspector - Debug and validate A2A agents",
+  "description": "A2A Protocol Inspector - Debug and validate A2A agents (Beta)",
   "scripts": {
     "dev": "next dev --port 3002",
     "build": "next build",

@@ -60,7 +60,12 @@ function HomePageContent(): React.JSX.Element {
             <div className="flex h-9 w-9 items-center justify-center bg-primary/10">
               <Lightning className="h-5 w-5 text-primary" weight="fill" />
             </div>
-            <h1 className="text-xl font-semibold">A2A Inspector</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold">A2A Inspector</h1>
+              <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                Beta
+              </span>
+            </div>
           </div>
           <ConnectionStatus />
         </div>
