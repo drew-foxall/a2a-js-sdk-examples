@@ -31,6 +31,50 @@ The release workflow requires an npm authentication token to publish packages.
    - Value: Paste the token from step 2
    - Click **"Add secret"**
 
+### Vercel Deployment Secrets (Required for A2A Inspector)
+
+The deploy-inspector workflow requires Vercel authentication to deploy the a2a-inspector.
+
+#### Required Secrets:
+
+| Secret | Description |
+|--------|-------------|
+| `VERCEL_TOKEN` | Vercel API token for deployments |
+| `VERCEL_ORG_ID` | Your Vercel organization/team ID |
+| `VERCEL_INSPECTOR_PROJECT_ID` | Project ID for a2a-inspector |
+
+#### Steps to Configure:
+
+1. **Get your Vercel Token**:
+   - Go to https://vercel.com/account/tokens
+   - Click "Create Token"
+   - Name: "GitHub Actions - A2A Inspector Deploy"
+   - Scope: Full Account (or specific team)
+   - Click "Create"
+   - **Copy the token**
+
+2. **Get your Org ID and Project ID**:
+   
+   Option A - Link the project locally:
+   ```bash
+   cd a2a-inspector
+   pnpm add -g vercel
+   vercel link
+   # This creates .vercel/project.json with orgId and projectId
+   cat .vercel/project.json
+   ```
+   
+   Option B - From Vercel Dashboard:
+   - **Org ID**: Found in team settings URL `vercel.com/teams/TEAM_SLUG/settings` → General → "Team ID"
+   - **Project ID**: Found in project settings → General → "Project ID"
+
+3. **Add Secrets to GitHub**:
+   - Go to: Repository **Settings** → **Secrets and variables** → **Actions**
+   - Add these secrets:
+     - `VERCEL_TOKEN`: Your Vercel token from step 1
+     - `VERCEL_ORG_ID`: Your organization/team ID from step 2
+     - `VERCEL_INSPECTOR_PROJECT_ID`: The project ID for a2a-inspector
+
 ### TURBO_TOKEN & TURBO_TEAM (Required for Remote Caching)
 
 Turborepo remote caching dramatically speeds up CI by sharing build artifacts across runs.
@@ -98,6 +142,47 @@ Turborepo remote caching dramatically speeds up CI by sharing build artifacts ac
 - ✅ Turbo remote cache for instant rebuilds
 - ✅ Fast feedback on failures (parallel jobs fail fast)
 - ✅ Clear pipeline visualization in GitHub Actions UI
+
+### Deploy Inspector Workflow (`.github/workflows/deploy-inspector.yml`)
+
+**Triggers**: 
+- Push to `main` branch (changes to `a2a-inspector/**` or `packages/a2a-ai-provider-v3/**`)
+- Pull Request to `main` branch (same paths)
+- Manual dispatch (workflow_dispatch)
+
+**Pipeline Architecture**:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Deploy Job                        │
+├─────────────────────────────────────────────────────┤
+│  1. Checkout repository                              │
+│  2. Setup pnpm + Node.js + Bun                      │
+│  3. Install dependencies                             │
+│  4. Build workspace dependencies (Turbo)            │
+│  5. Pull Vercel environment                          │
+│  6. Build with Vercel CLI                           │
+│  7. Deploy with --prebuilt flag                     │
+└────────────────────┬────────────────────────────────┘
+                     │
+                     ▼ (PR only)
+┌─────────────────────────────────────────────────────┐
+│                  Comment Job                         │
+├─────────────────────────────────────────────────────┤
+│  Post/update PR comment with deployment URL         │
+└─────────────────────────────────────────────────────┘
+```
+
+**Environments**:
+- **Preview**: Pull requests and manual triggers (default)
+- **Production**: Push to `main` branch or manual trigger with `production`
+
+**Key Features**:
+- ✅ Uses Bun runtime for Next.js build
+- ✅ Builds locally, uploads prebuilt to Vercel (faster, no source exposure)
+- ✅ Automatic PR comments with deployment URL
+- ✅ Path-filtered triggers (only runs when inspector changes)
+- ✅ Supports manual production deploys
 
 ### Release Workflow (`.github/workflows/release.yml`)
 
@@ -234,6 +319,8 @@ Add these badges to your README:
 
 ```markdown
 [![CI](https://github.com/drew-foxall/a2a-js-sdk-examples/actions/workflows/ci.yml/badge.svg)](https://github.com/drew-foxall/a2a-js-sdk-examples/actions/workflows/ci.yml)
+
+[![Deploy Inspector](https://github.com/drew-foxall/a2a-js-sdk-examples/actions/workflows/deploy-inspector.yml/badge.svg)](https://github.com/drew-foxall/a2a-js-sdk-examples/actions/workflows/deploy-inspector.yml)
 
 [![Release](https://github.com/drew-foxall/a2a-js-sdk-examples/actions/workflows/release.yml/badge.svg)](https://github.com/drew-foxall/a2a-js-sdk-examples/actions/workflows/release.yml)
 

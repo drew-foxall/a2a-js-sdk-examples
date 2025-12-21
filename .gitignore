@@ -23,6 +23,10 @@ workers/**/.dev.vars
 .wrangler/
 **/.wrangler/
 
+# Vercel local state
+.vercel/
+**/.vercel/
+
 # IDE
 .vscode/
 .idea/
