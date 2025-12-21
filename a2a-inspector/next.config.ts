@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
-// Workspace root for monorepo builds
-// process.cwd() is the a2a-inspector directory, so parent is workspace root
-const workspaceRoot = path.resolve(process.cwd(), "..");
+// Detect if we're in the a2a-inspector directory or workspace root
+// Vercel builds from workspace root, local dev from a2a-inspector
+const cwd = process.cwd();
+const isInInspectorDir = cwd.endsWith("a2a-inspector");
+const workspaceRoot = isInInspectorDir ? path.resolve(cwd, "..") : cwd;
 
 const nextConfig: NextConfig = {
   // Both must be set to the same value for monorepo builds
