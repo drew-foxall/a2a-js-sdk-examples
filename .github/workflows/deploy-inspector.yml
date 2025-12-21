@@ -148,18 +148,18 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add -g vercel@latest
 
-      # Run all vercel commands from workspace root with --cwd flag
-      # This avoids the path duplication bug when running from subdirectory
+      # Run vercel commands from workspace root where .vercel/project.json is located
+      # The project's root directory setting in Vercel dashboard points to a2a-inspector
       - name: Pull Vercel Environment
-        run: vercel pull --yes --cwd=a2a-inspector --environment=${{ steps.set-env.outputs.environment }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=${{ steps.set-env.outputs.environment }} --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build with Vercel
-        run: vercel build --cwd=a2a-inspector ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel
         id: deploy
         run: |
-          URL=$(vercel deploy --cwd=a2a-inspector --prebuilt ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }})
+          URL=$(vercel deploy --prebuilt ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "### 🚀 Deployment URL" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
