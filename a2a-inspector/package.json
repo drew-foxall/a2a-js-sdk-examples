@@ -4,9 +4,9 @@
   "private": true,
   "description": "A2A Protocol Inspector - Debug and validate A2A agents (Beta)",
   "scripts": {
-    "dev": "next dev --port 3002",
-    "build": "next build",
-    "start": "next start --port 3002",
+    "dev": "bun scripts/dev.ts",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start --port 3002",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format .",

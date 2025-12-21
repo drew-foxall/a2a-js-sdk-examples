@@ -8,9 +8,13 @@ import { validateAgentCard } from "../services/validators";
 
 /**
  * Creates a custom fetch function that includes auth headers.
+ * Preserves all static properties from the original fetch to satisfy typeof fetch.
  */
 function createAuthFetch(authHeaders: Record<string, string>): typeof fetch {
-  return async (input: RequestInfo | URL, init?: RequestInit) => {
+  const authFetch = async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
     const mergedHeaders = {
       ...authHeaders,
       ...(init?.headers || {}),
@@ -20,6 +24,9 @@ function createAuthFetch(authHeaders: Record<string, string>): typeof fetch {
       headers: mergedHeaders,
     });
   };
+
+  // Copy all static properties from the original fetch
+  return Object.assign(authFetch, fetch);
 }
 
 /**

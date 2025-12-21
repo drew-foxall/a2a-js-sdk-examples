@@ -1,0 +1,209 @@
+name: Deploy A2A Inspector
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'a2a-inspector/**'
+      - 'packages/a2a-ai-provider-v3/**'
+      - '.github/workflows/deploy-inspector.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'a2a-inspector/**'
+      - 'packages/a2a-ai-provider-v3/**'
+      - '.github/workflows/deploy-inspector.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+
+# Cancel in-progress runs when a new workflow with the same group name starts
+concurrency:
+  group: deploy-inspector-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_INSPECTOR_PROJECT_ID }}
+
+jobs:
+  # Stage 1: Build workspace dependencies (can reuse CI cache if available)
+  build:
+    name: Build Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Try to restore CI build artifacts first (if CI ran on same commit)
+      - name: Restore CI build artifacts
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
+
+      # Only build if cache miss - Turbo will handle incremental builds
+      - name: Build workspace dependencies
+        run: pnpm turbo run build --filter=a2a-inspector^...
+
+      # Save build artifacts for deploy job
+      - name: Cache inspector build artifacts
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            packages/*/dist
+            node_modules/.cache/turbo
+          key: inspector-build-${{ github.sha }}
+
+  # Stage 2: Deploy to Vercel (after build completes)
+  deploy:
+    name: Deploy to Vercel
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    # Set environment based on branch/event
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'production' || inputs.environment || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+      environment: ${{ steps.set-env.outputs.environment }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
+          elif [[ "${{ inputs.environment }}" == "production" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "vercel_args=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Restore build artifacts from build job
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            node_modules/.cache/turbo
+          key: inspector-build-${{ github.sha }}
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: |
+          cd a2a-inspector
+          vercel pull --yes --environment=${{ steps.set-env.outputs.environment }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build with Vercel
+        run: |
+          cd a2a-inspector
+          vercel build ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          cd a2a-inspector
+          URL=$(vercel deploy --prebuilt ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "### 🚀 Deployment URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ steps.set-env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** $URL" >> $GITHUB_STEP_SUMMARY
+
+  # Stage 3: Comment on PR with deployment URL (parallel to nothing, just depends on deploy)
+  comment:
+    name: Comment on PR
+    needs: deploy
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: A2A Inspector Preview
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## 🔍 A2A Inspector Preview
+
+            | Name | Status | URL |
+            |------|--------|-----|
+            | **a2a-inspector** | ✅ Ready | [${{ needs.deploy.outputs.url }}](${{ needs.deploy.outputs.url }}) |
+
+            ---
+            
+            **Commit:** ${{ github.sha }}
+            **Branch:** `${{ github.head_ref }}`
+            
+            > Built with Bun runtime 🥟
