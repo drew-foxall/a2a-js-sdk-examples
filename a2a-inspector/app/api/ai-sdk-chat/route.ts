@@ -9,7 +9,8 @@ import {
 } from "ai";
 import type { NextRequest } from "next/server";
 
-export const runtime = "edge";
+// Node.js runtime required for AI SDK streaming
+export const runtime = "nodejs";
 
 // Import A2AEventData type from schema (which derives from A2A SDK types)
 import type { A2AEventData } from "@/schemas/a2a-events";

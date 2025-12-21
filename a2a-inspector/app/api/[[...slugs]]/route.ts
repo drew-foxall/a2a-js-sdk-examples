@@ -1,6 +1,8 @@
 import { app } from "@/server";
 
-export const runtime = "edge";
+// Node.js runtime required - Elysia uses dynamic code generation
+// which is not allowed in Edge runtime
+export const runtime = "nodejs";
 
 /**
  * Next.js catch-all API route that forwards all requests to the Elysia app.
