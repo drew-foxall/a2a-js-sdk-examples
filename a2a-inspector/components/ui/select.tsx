@@ -1,7 +1,11 @@
 "use client";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { Check as CheckIcon, CaretDown as ChevronDownIcon, CaretUp as ChevronUpIcon } from "@phosphor-icons/react";
+import {
+  Check as CheckIcon,
+  CaretDown as ChevronDownIcon,
+  CaretUp as ChevronUpIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
@@ -42,7 +46,7 @@ function SelectValue({
   className,
   placeholder,
   ...props
-}: Omit<SelectPrimitive.Value.Props, "className"> & { 
+}: Omit<SelectPrimitive.Value.Props, "className"> & {
   className?: string;
   placeholder?: string;
 }) {

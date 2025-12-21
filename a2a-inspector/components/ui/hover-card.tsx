@@ -4,10 +4,10 @@ import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card
 
 import { cn } from "@/lib/utils";
 
-function HoverCard({ 
+function HoverCard({
   openDelay,
   closeDelay,
-  ...props 
+  ...props
 }: PreviewCardPrimitive.Root.Props & {
   openDelay?: number;
   closeDelay?: number;
@@ -47,7 +47,10 @@ function HoverCardContent({
 }) {
   return (
     <PreviewCardPrimitive.Portal data-slot="hover-card-portal">
-      <PreviewCardPrimitive.Positioner sideOffset={sideOffset} {...(align !== undefined && { align })}>
+      <PreviewCardPrimitive.Positioner
+        sideOffset={sideOffset}
+        {...(align !== undefined && { align })}
+      >
         <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"
           className={cn(
