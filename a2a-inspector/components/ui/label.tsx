@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: Reusable Label component - htmlFor passed via props at usage site
     <label
       data-slot="label"
       className={cn(

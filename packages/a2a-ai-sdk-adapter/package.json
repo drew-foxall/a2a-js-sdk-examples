@@ -77,7 +77,7 @@
     }
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
+    "@biomejs/biome": "2.3.10",
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "@total-typescript/tsconfig": "1.0.4",
     "@types/node": "^24.10.1",

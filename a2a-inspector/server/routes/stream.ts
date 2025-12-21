@@ -12,10 +12,7 @@ import { validateA2AEvent } from "../services/validators";
  * Preserves all static properties from the original fetch to satisfy typeof fetch.
  */
 function createAuthFetch(authHeaders: Record<string, string>): typeof fetch {
-  const authFetch = async (
-    input: RequestInfo | URL,
-    init?: RequestInit,
-  ): Promise<Response> => {
+  const authFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const mergedHeaders = {
       ...authHeaders,
       ...(init?.headers || {}),

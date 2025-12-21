@@ -1,5 +1,7 @@
 import { app } from "@/server";
 
+export const runtime = "edge";
+
 /**
  * Next.js catch-all API route that forwards all requests to the Elysia app.
  *

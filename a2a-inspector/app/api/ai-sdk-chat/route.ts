@@ -9,7 +9,7 @@ import {
 } from "ai";
 import type { NextRequest } from "next/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 // Import A2AEventData type from schema (which derives from A2A SDK types)
 import type { A2AEventData } from "@/schemas/a2a-events";
