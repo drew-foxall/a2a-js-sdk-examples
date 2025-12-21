@@ -2,7 +2,6 @@ name: Deploy A2A Inspector
 
 on:
   push:
-    branches: [main]
     paths:
       - 'a2a-inspector/**'
       - 'packages/a2a-ai-provider-v3/**'
