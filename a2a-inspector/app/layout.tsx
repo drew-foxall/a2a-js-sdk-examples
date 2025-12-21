@@ -26,7 +26,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps): React.JSX.Element {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={nunitoSans.variable}>
       <body className={`${nunitoSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ThemeProvider>
           <InspectorProvider>

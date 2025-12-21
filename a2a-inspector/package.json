@@ -19,6 +19,7 @@
   "dependencies": {
     "@ai-sdk/provider": "3.0.0-beta.23",
     "@ai-sdk/react": "3.0.0-beta.132",
+    "@base-ui/react": "1.0.0",
     "@drew-foxall/a2a-ai-provider-v3": "workspace:*",
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "@elysiajs/eden": "^1.4.5",

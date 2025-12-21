@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, List, MessageCircle, RotateCcw, Sparkles, Zap } from "lucide-react";
+import { ChatCircle, Info, Lightning, List, ArrowCounterClockwise, Sparkle } from "@phosphor-icons/react";
 import type React from "react";
 import { useCallback, useState } from "react";
 import {
@@ -65,7 +65,7 @@ export function DirectA2AView({ className }: DirectA2AViewProps): React.JSX.Elem
     return (
       <div className={cn("flex h-full flex-col items-center justify-center p-8", className)}>
         <div className="text-center">
-          <MessageCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <ChatCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="mb-2 text-lg font-semibold">No Agent Connected</h3>
           <p className="text-sm text-muted-foreground">
             Connect to an A2A agent to start chatting directly.
@@ -80,8 +80,8 @@ export function DirectA2AView({ className }: DirectA2AViewProps): React.JSX.Elem
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-border bg-background px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-            <Zap className="h-4 w-4 text-primary" />
+          <div className="flex h-8 w-8 items-center justify-center bg-primary/10">
+            <Lightning className="h-4 w-4 text-primary" weight="fill" />
           </div>
           <div>
             <h2 className="text-sm font-semibold">Direct A2A</h2>
@@ -99,13 +99,13 @@ export function DirectA2AView({ className }: DirectA2AViewProps): React.JSX.Elem
             size="sm"
             onClick={() => setShowSessionDetails(!showSessionDetails)}
           >
-            <Info className="mr-2 h-4 w-4" />
+            <Info className="h-4 w-4" />
             Session
           </Button>
 
           {/* Clear Button */}
           <Button variant="ghost" size="sm" onClick={clearMessages} disabled={isStreaming}>
-            <RotateCcw className="mr-2 h-4 w-4" />
+            <ArrowCounterClockwise className="h-4 w-4" />
             Clear
           </Button>
         </div>
@@ -161,25 +161,25 @@ function DisplayModeToggle({
   readonly onChange: (mode: MessageDisplayMode) => void;
 }): React.JSX.Element {
   return (
-    <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1">
+    <div className="flex items-center border border-border bg-muted/50 p-1">
       <button
         type="button"
         onClick={() => onChange("pretty")}
         className={cn(
-          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium transition-colors",
           mode === "pretty"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
-        <Sparkles className="h-3.5 w-3.5" />
+        <Sparkle className="h-3.5 w-3.5" />
         Pretty
       </button>
       <button
         type="button"
         onClick={() => onChange("raw")}
         className={cn(
-          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium transition-colors",
           mode === "raw"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
@@ -207,7 +207,7 @@ function PrettyMessages({
       <ConversationEmptyState
         title="Start a conversation"
         description={`Send a message to ${agentName ?? "the agent"} to begin.`}
-        icon={<MessageCircle className="h-8 w-8" />}
+        icon={<ChatCircle className="h-8 w-8" />}
       />
     );
   }

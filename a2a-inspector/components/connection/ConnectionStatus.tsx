@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Loader2, WifiOff } from "lucide-react";
+import { CheckCircle, Warning, WifiSlash, CircleNotch } from "@phosphor-icons/react";
 import { useConnection } from "@/context";
 import { cn } from "@/lib/utils";
 
@@ -12,25 +12,25 @@ export function ConnectionStatus(): React.JSX.Element {
 
   const statusConfig = {
     disconnected: {
-      icon: WifiOff,
+      icon: WifiSlash,
       label: "Disconnected",
       color: "text-muted-foreground",
       bgColor: "bg-muted",
     },
     connecting: {
-      icon: Loader2,
+      icon: CircleNotch,
       label: "Connecting...",
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
     },
     connected: {
-      icon: CheckCircle2,
+      icon: CheckCircle,
       label: "Connected",
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     error: {
-      icon: AlertCircle,
+      icon: Warning,
       label: "Error",
       color: "text-destructive",
       bgColor: "bg-destructive/10",
@@ -41,13 +41,14 @@ export function ConnectionStatus(): React.JSX.Element {
   const Icon = config.icon;
 
   return (
-    <div className={cn("flex items-center gap-2 rounded-full px-3 py-1.5", config.bgColor)}>
+    <div className={cn("flex items-center gap-2 px-3 py-1.5", config.bgColor)}>
       <Icon
         className={cn(
           "h-4 w-4",
           config.color,
           connection.status === "connecting" && "animate-spin"
         )}
+        weight="fill"
       />
       <span className={cn("text-sm font-medium", config.color)}>{config.label}</span>
     </div>

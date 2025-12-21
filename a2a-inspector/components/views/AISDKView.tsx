@@ -4,14 +4,14 @@ import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isTextUIPart } from "ai";
 import {
+  ChatCircle,
+  ChatText,
   Info,
   List,
-  Loader2,
-  MessageCircle,
-  MessageSquare,
-  RotateCcw,
-  Sparkles,
-} from "lucide-react";
+  ArrowCounterClockwise,
+  Sparkle,
+} from "@phosphor-icons/react";
+import { CircleNotch } from "@phosphor-icons/react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Conversation,
@@ -235,7 +235,7 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
     return (
       <div className={cn("flex h-full flex-col items-center justify-center p-8", className)}>
         <div className="text-center">
-          <MessageCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <ChatCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="mb-2 text-lg font-semibold">No Agent Connected</h3>
           <p className="text-sm text-muted-foreground">
             Connect to an A2A agent to start chatting via AI SDK.
@@ -250,8 +250,8 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-border bg-background px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-            <MessageSquare className="h-4 w-4 text-primary" />
+          <div className="flex h-8 w-8 items-center justify-center bg-primary/10">
+            <ChatText className="h-4 w-4 text-primary" weight="fill" />
           </div>
           <div>
             <h2 className="text-sm font-semibold">AI SDK (useChat)</h2>
@@ -269,13 +269,13 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
             size="sm"
             onClick={() => setShowSessionDetails(!showSessionDetails)}
           >
-            <Info className="mr-2 h-4 w-4" />
+            <Info className="h-4 w-4" />
             Session
           </Button>
 
           {/* Clear Button */}
           <Button variant="ghost" size="sm" onClick={handleClear} disabled={isLoading}>
-            <RotateCcw className="mr-2 h-4 w-4" />
+            <ArrowCounterClockwise className="h-4 w-4" />
             Clear
           </Button>
         </div>
@@ -343,25 +343,25 @@ function DisplayModeToggle({
   readonly onChange: (mode: MessageDisplayMode) => void;
 }): React.JSX.Element {
   return (
-    <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1">
+    <div className="flex items-center border border-border bg-muted/50 p-1">
       <button
         type="button"
         onClick={() => onChange("pretty")}
         className={cn(
-          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium transition-colors",
           mode === "pretty"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
         )}
       >
-        <Sparkles className="h-3.5 w-3.5" />
+        <Sparkle className="h-3.5 w-3.5" />
         Pretty
       </button>
       <button
         type="button"
         onClick={() => onChange("raw")}
         className={cn(
-          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium transition-colors",
           mode === "raw"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
@@ -392,7 +392,7 @@ function PrettyMessages({
   if (messages.length === 0 && !isLoading) {
     return (
       <ConversationEmptyState
-        icon={<MessageCircle className="h-8 w-8" />}
+        icon={<ChatCircle className="h-8 w-8" />}
         title="Start a conversation"
         description={`Send a message to ${agentName ?? "the agent"} to begin.`}
       />
@@ -490,7 +490,7 @@ function PrettyMessages({
       {/* Loading indicator while streaming */}
       {isLoading && messages.length > 0 && (
         <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <CircleNotch className="h-4 w-4 animate-spin" />
           <span>Agent is responding...</span>
         </div>
       )}

@@ -2,15 +2,15 @@
 
 import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
-  Bot,
-  Building2,
-  CheckCircle2,
-  ExternalLink,
+  Robot,
+  Buildings,
+  CheckCircle,
+  ArrowSquareOut,
   Globe,
   Hash,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+  Sparkle,
+  Lightning,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { ValidationErrors } from "./ValidationErrors";
 
@@ -33,13 +33,13 @@ export function AgentCardDisplay({
   className,
 }: AgentCardDisplayProps): React.JSX.Element {
   return (
-    <div className={cn("rounded-xl border border-border bg-card/50 overflow-hidden", className)}>
+    <div className={cn("border border-border bg-card/50 overflow-hidden", className)}>
       {/* Header */}
       <div className="border-b border-border bg-card/80 px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Bot className="h-5 w-5 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center bg-primary/10">
+              <Robot className="h-5 w-5 text-primary" weight="fill" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">{card.name}</h3>
@@ -51,7 +51,7 @@ export function AgentCardDisplay({
             </div>
           </div>
           {card.version && (
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <span className="bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
               v{card.version}
             </span>
           )}
@@ -70,14 +70,14 @@ export function AgentCardDisplay({
             className="text-foreground/80 hover:text-foreground transition-colors flex items-center gap-1"
           >
             {card.url}
-            <ExternalLink className="h-3 w-3" />
+            <ArrowSquareOut className="h-3 w-3" />
           </a>
         </div>
 
         {/* Provider */}
         {card.provider && (
           <div className="flex items-center gap-2 text-sm">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <Buildings className="h-4 w-4 text-muted-foreground" />
             <span className="text-foreground/80">
               {card.provider.organization}
               {card.provider.url && (
@@ -87,7 +87,7 @@ export function AgentCardDisplay({
                   rel="noopener noreferrer"
                   className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <ExternalLink className="inline h-3 w-3" />
+                  <ArrowSquareOut className="inline h-3 w-3" />
                 </a>
               )}
             </span>
@@ -98,7 +98,7 @@ export function AgentCardDisplay({
         {card.capabilities && (
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <Zap className="h-3.5 w-3.5" />
+              <Lightning className="h-3.5 w-3.5" />
               Capabilities
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -117,14 +117,14 @@ export function AgentCardDisplay({
         {card.skills && card.skills.length > 0 && (
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Sparkle className="h-3.5 w-3.5" />
               Skills ({card.skills.length})
             </h4>
             <div className="space-y-2">
               {card.skills.slice(0, 5).map((skill) => (
                 <div
                   key={skill.id}
-                  className="rounded-lg border border-border bg-card/30 px-3 py-2"
+                  className="border border-border bg-card/30 px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
                     <Hash className="h-3.5 w-3.5 text-muted-foreground" />
@@ -165,11 +165,11 @@ function CapabilityBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium",
         enabled ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
       )}
     >
-      {enabled && <CheckCircle2 className="h-3 w-3" />}
+      {enabled && <CheckCircle className="h-3 w-3" weight="fill" />}
       {label}
     </span>
   );

@@ -1,11 +1,13 @@
 "use client";
 
-import { Loader2, Plug, Unplug } from "lucide-react";
+import { Plug, PlugsConnected, CircleNotch } from "@phosphor-icons/react";
 import { type FormEvent, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { useConnection } from "@/context";
 import { useAgentConnection } from "@/hooks/useAgentConnection";
 import { useAutoConnectFromUrl, useUrlState } from "@/hooks/useUrlState";
-import { cn } from "@/lib/utils";
 
 interface ConnectionFormProps {
   /** Compact mode for sidebar display */
@@ -53,66 +55,53 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
         <p className="truncate text-xs text-muted-foreground" title={url}>
           {url}
         </p>
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={disconnect}
           disabled={isDisabled}
-          className={cn(
-            "flex h-8 w-full items-center justify-center gap-2 rounded-md text-xs font-medium transition-all",
-            "bg-zinc-800 text-zinc-300 hover:bg-zinc-700",
-            "disabled:cursor-not-allowed disabled:opacity-50"
-          )}
+          className="w-full"
         >
-          <Unplug className="h-3 w-3" />
+          <PlugsConnected className="h-3 w-3" />
           <span>Disconnect</span>
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full gap-3">
-      <div className="relative flex-1">
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter agent URL (e.g., http://localhost:8787)"
-          disabled={isDisabled || isConnected}
-          className={cn(
-            "h-11 w-full rounded-lg border bg-card px-4 text-sm text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-primary/50",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            isConnected ? "border-primary/30" : "border-border",
-            connection.status === "error" && "border-destructive/50"
+      <FieldGroup className="flex-1">
+        <Field data-invalid={connection.status === "error"}>
+          <Input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Enter agent URL (e.g., http://localhost:8787)"
+            disabled={isDisabled || isConnected}
+            aria-invalid={connection.status === "error"}
+            className="h-9"
+          />
+          {connection.status === "error" && connection.error && (
+            <FieldError>{connection.error}</FieldError>
           )}
-        />
-        {connection.status === "error" && connection.error && (
-          <p className="absolute -bottom-5 left-0 text-xs text-destructive">{connection.error}</p>
-        )}
-      </div>
+        </Field>
+      </FieldGroup>
 
-      <button
+      <Button
         type="submit"
         disabled={isDisabled}
-        className={cn(
-          "flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-medium transition-all",
-          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          isConnected
-            ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary"
-            : "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary"
-        )}
+        variant={isConnected ? "outline" : "default"}
+        size="lg"
       >
         {isConnecting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <CircleNotch className="h-4 w-4 animate-spin" />
             <span>Connecting...</span>
           </>
         ) : isConnected ? (
           <>
-            <Unplug className="h-4 w-4" />
+            <PlugsConnected className="h-4 w-4" />
             <span>Disconnect</span>
           </>
         ) : (
@@ -121,7 +110,7 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
             <span>Connect</span>
           </>
         )}
-      </button>
+      </Button>
     </form>
   );
 }

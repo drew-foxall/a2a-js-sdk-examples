@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Code2, MessageSquare, Settings, Zap } from "lucide-react";
+import { CaretDown, Code, ChatCircle, Gear, Lightning } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";
 import {
   AgentCardDisplay,
@@ -10,6 +10,7 @@ import {
   CustomHeadersPanel,
 } from "@/components/connection";
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AISDKView, DirectA2AView } from "@/components/views";
 import { useAuthConfig, useConnection } from "@/context";
@@ -23,8 +24,8 @@ function LoadingFallback(): React.JSX.Element {
   return (
     <div className="flex h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-          <Zap className="h-6 w-6 animate-pulse text-primary" />
+        <div className="flex h-12 w-12 items-center justify-center bg-primary/10">
+          <Lightning className="h-6 w-6 animate-pulse text-primary" weight="fill" />
         </div>
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
@@ -56,8 +57,8 @@ function HomePageContent(): React.JSX.Element {
       <header className="shrink-0 border-b border-border bg-card/50 px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <Zap className="h-5 w-5 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center bg-primary/10">
+              <Lightning className="h-5 w-5 text-primary" weight="fill" />
             </div>
             <h1 className="text-xl font-semibold">A2A Inspector</h1>
           </div>
@@ -84,18 +85,18 @@ function HomePageContent(): React.JSX.Element {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
+                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
                     >
                       <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <Gear className="h-4 w-4 text-muted-foreground" />
                         <span className="text-xs font-medium">Auth</span>
                         {authConfig.type !== "none" && (
-                          <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                             {authConfig.type}
                           </span>
                         )}
                       </div>
-                      <ChevronDown
+                      <CaretDown
                         className={cn(
                           "h-3 w-3 text-muted-foreground transition-transform duration-200",
                           authOpen && "rotate-180"
@@ -104,7 +105,7 @@ function HomePageContent(): React.JSX.Element {
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
-                    <div className="rounded-lg border border-border bg-card/50 p-3">
+                    <div className="border border-border bg-card/50 p-3">
                       <AuthConfigPanel disabled className="text-xs" />
                     </div>
                   </CollapsibleContent>
@@ -115,18 +116,18 @@ function HomePageContent(): React.JSX.Element {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
+                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
                     >
                       <div className="flex items-center gap-2">
-                        <Code2 className="h-4 w-4 text-muted-foreground" />
+                        <Code className="h-4 w-4 text-muted-foreground" />
                         <span className="text-xs font-medium">Headers</span>
                         {customHeaderCount > 0 && (
-                          <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                             {customHeaderCount}
                           </span>
                         )}
                       </div>
-                      <ChevronDown
+                      <CaretDown
                         className={cn(
                           "h-3 w-3 text-muted-foreground transition-transform duration-200",
                           headersOpen && "rotate-180"
@@ -135,7 +136,7 @@ function HomePageContent(): React.JSX.Element {
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
-                    <div className="rounded-lg border border-border bg-card/50 p-3">
+                    <div className="border border-border bg-card/50 p-3">
                       <CustomHeadersPanel disabled className="text-xs" />
                     </div>
                   </CollapsibleContent>
@@ -159,14 +160,14 @@ function HomePageContent(): React.JSX.Element {
                   <ViewTab
                     active={viewMode === "direct"}
                     onClick={() => setViewMode("direct")}
-                    icon={<Code2 className="h-4 w-4" />}
+                    icon={<Code className="h-4 w-4" />}
                     label="Direct A2A"
                     description="Raw protocol"
                   />
                   <ViewTab
                     active={viewMode === "ai-sdk"}
                     onClick={() => setViewMode("ai-sdk")}
-                    icon={<MessageSquare className="h-4 w-4" />}
+                    icon={<ChatCircle className="h-4 w-4" />}
                     label="AI SDK"
                     description="useChat hook"
                   />
@@ -197,18 +198,18 @@ function HomePageContent(): React.JSX.Element {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
+                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
                     >
                       <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <Gear className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Authentication</span>
                         {authConfig.type !== "none" && (
-                          <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
+                          <span className="bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
                             {authConfig.type}
                           </span>
                         )}
                       </div>
-                      <ChevronDown
+                      <CaretDown
                         className={cn(
                           "h-4 w-4 text-muted-foreground transition-transform duration-200",
                           authOpen && "rotate-180"
@@ -217,7 +218,7 @@ function HomePageContent(): React.JSX.Element {
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-4">
-                    <div className="rounded-lg border border-border bg-card/30 p-4">
+                    <div className="border border-border bg-card/30 p-4">
                       <AuthConfigPanel disabled={connection.status === "connected"} />
                     </div>
                   </CollapsibleContent>
@@ -229,18 +230,18 @@ function HomePageContent(): React.JSX.Element {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
+                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
                     >
                       <div className="flex items-center gap-2">
-                        <Code2 className="h-4 w-4 text-muted-foreground" />
+                        <Code className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Custom Headers</span>
                         {customHeaderCount > 0 && (
-                          <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
+                          <span className="bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
                             {customHeaderCount}
                           </span>
                         )}
                       </div>
-                      <ChevronDown
+                      <CaretDown
                         className={cn(
                           "h-4 w-4 text-muted-foreground transition-transform duration-200",
                           headersOpen && "rotate-180"
@@ -249,7 +250,7 @@ function HomePageContent(): React.JSX.Element {
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-4">
-                    <div className="rounded-lg border border-border bg-card/30 p-4">
+                    <div className="border border-border bg-card/30 p-4">
                       <CustomHeadersPanel disabled={connection.status === "connected"} />
                     </div>
                   </CollapsibleContent>
@@ -259,8 +260,8 @@ function HomePageContent(): React.JSX.Element {
               {/* Welcome State */}
               <div className="flex flex-col items-center justify-center py-8">
                 <div className="flex flex-col items-center gap-6 text-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                    <Zap className="h-10 w-10 text-muted-foreground" />
+                  <div className="flex h-20 w-20 items-center justify-center bg-muted">
+                    <Lightning className="h-10 w-10 text-muted-foreground" weight="fill" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <h2 className="text-2xl font-semibold">Connect to an Agent</h2>
@@ -269,19 +270,23 @@ function HomePageContent(): React.JSX.Element {
                       capabilities and sending messages.
                     </p>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-4 text-left text-sm">
-                    <div className="rounded-lg border border-border bg-card/30 p-4">
-                      <p className="font-medium">Direct A2A View</p>
-                      <p className="mt-1 text-muted-foreground">
-                        Raw protocol interaction with full control over messages and streaming.
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-card/30 p-4">
-                      <p className="font-medium">AI SDK View</p>
-                      <p className="mt-1 text-muted-foreground">
-                        Abstracted experience using Vercel AI SDK's chat primitives.
-                      </p>
-                    </div>
+                  <div className="mt-4 grid w-full max-w-lg grid-cols-2 gap-4 text-left text-sm">
+                    <Card size="sm" className="min-w-0">
+                      <CardHeader>
+                        <CardTitle>Direct A2A View</CardTitle>
+                        <CardDescription>
+                          Raw protocol interaction with full control over messages and streaming.
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                    <Card size="sm" className="min-w-0">
+                      <CardHeader>
+                        <CardTitle>AI SDK View</CardTitle>
+                        <CardDescription>
+                          Abstracted experience using Vercel AI SDK's chat primitives.
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
                   </div>
                 </div>
               </div>
@@ -314,7 +319,7 @@ function ViewTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-all",
+        "flex items-center gap-3 border px-4 py-2.5 text-left transition-all",
         active
           ? "border-primary bg-primary/10 text-primary"
           : "border-border bg-card/30 text-muted-foreground hover:border-border hover:bg-card/50"
@@ -322,7 +327,7 @@ function ViewTab({
     >
       <div
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-md",
+          "flex h-7 w-7 items-center justify-center",
           active ? "bg-primary/20" : "bg-muted"
         )}
       >
