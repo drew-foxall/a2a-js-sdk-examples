@@ -32,17 +32,19 @@ export function ValidationStatus({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <span
-              className={cn(
-                "inline-flex items-center text-primary",
-                compact ? "text-sm" : "text-base",
-                className
-              )}
-            >
-              <CheckCircle2 className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
-            </span>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <span
+                className={cn(
+                  "inline-flex items-center text-primary",
+                  compact ? "text-sm" : "text-base",
+                  className
+                )}
+              >
+                <CheckCircle2 className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+              </span>
+            }
+          />
           <TooltipContent side="top" className="bg-popover text-popover-foreground">
             <p className="text-xs">A2A compliant</p>
           </TooltipContent>
@@ -54,17 +56,19 @@ export function ValidationStatus({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className={cn(
-              "inline-flex items-center text-amber-500",
-              compact ? "text-sm" : "text-base",
-              className
-            )}
-          >
-            <AlertTriangle className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
-          </span>
-        </TooltipTrigger>
+        <TooltipTrigger
+          render={
+            <span
+              className={cn(
+                "inline-flex items-center text-amber-500",
+                compact ? "text-sm" : "text-base",
+                className
+              )}
+            >
+              <AlertTriangle className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+            </span>
+          }
+        />
         <TooltipContent side="top" className="max-w-xs bg-popover text-popover-foreground">
           <div className="space-y-1">
             <p className="text-xs font-medium">

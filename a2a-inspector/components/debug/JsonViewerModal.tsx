@@ -18,7 +18,7 @@ interface JsonViewerModalProps {
   readonly data: unknown;
   readonly title?: string | undefined;
   readonly description?: string | undefined;
-  readonly trigger?: React.ReactNode | undefined;
+  readonly trigger?: React.ReactElement | undefined;
   readonly className?: string | undefined;
 }
 
@@ -84,14 +84,16 @@ export function JsonViewerModal({
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant="ghost" size="sm" className={cn("gap-1.5", className)}>
-            <Code2 className="h-3.5 w-3.5" />
-            <span>View JSON</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          trigger ?? (
+            <Button variant="ghost" size="sm" className={cn("gap-1.5", className)}>
+              <Code2 className="h-3.5 w-3.5" />
+              <span>View JSON</span>
+            </Button>
+          )
+        }
+      />
       <DialogContent className="max-h-[85vh] w-[90vw] max-w-4xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

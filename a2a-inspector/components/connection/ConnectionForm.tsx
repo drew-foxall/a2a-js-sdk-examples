@@ -1,6 +1,6 @@
 "use client";
 
-import { Plug, PlugsConnected, CircleNotch } from "@phosphor-icons/react";
+import { CircleNotch, Plug, PlugsConnected } from "@phosphor-icons/react";
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";

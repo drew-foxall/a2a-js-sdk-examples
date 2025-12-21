@@ -9,6 +9,18 @@ Base UI provides high-quality, unstyled React components that are:
 - **Styling Agnostic**: Works with any CSS approach (we use Tailwind CSS)
 - **Accessible**: Built-in ARIA attributes and keyboard navigation
 
+## shadcn/ui Integration
+
+**shadcn/ui now supports Base UI** as a component base. This means:
+- Components can be added/updated via `pnpm dlx shadcn@latest add <component>`
+- When re-initializing or adding components, shadcn will use Base UI primitives
+- The `components.json` is configured with `"style": "lyra"` which uses Base UI
+
+To add or update a component:
+```bash
+pnpm dlx shadcn@latest add button --overwrite
+```
+
 ## Installation
 
 Base UI is already installed in the a2a-inspector package:
@@ -128,15 +140,18 @@ Reference the full component list at: https://base-ui.com/react/components
 
 Currently used in a2a-inspector:
 - **AlertDialog** - Modal dialogs requiring user action
+- **Button** - Interactive buttons
+- **Collapsible** - Expandable content sections
+- **Dialog** - General modal dialogs
+- **Menu** - Dropdown action menus (for DropdownMenu)
+- **PreviewCard** - Hover preview cards (for HoverCard)
+- **Select** - Dropdown selection
 - **Separator** - Visual dividers between content
+- **Tooltip** - Accessible hover hints
 
 Recommended for future use:
-- **Dialog** - General modal dialogs
 - **Popover** - Floating content anchored to triggers
-- **Tooltip** - Accessible hover hints
-- **Menu** - Dropdown action menus
 - **Tabs** - Tab navigation panels
-- **Collapsible** - Expandable content sections
 - **Toast** - Notification messages
 - **Field/Form** - Form controls with validation
 
@@ -153,10 +168,16 @@ Recommended for future use:
 
 ## Migration from Radix UI
 
-The project also uses Radix UI components. When adding new components, prefer Base UI for:
-- Better React 19 compatibility
-- Simpler API surface
-- Consistent data-attribute patterns
+The project has been migrated from Radix UI to Base UI. All UI components in `components/ui/` now use Base UI primitives.
+
+**Key API differences from Radix:**
+- `asChild` prop → `render` prop for composition
+- `data-[state=open]` → `data-[starting-style]`/`data-[ending-style]` for animations
+- `onValueChange(value: string)` → `onValueChange(value: string | null)` for Select
+
+When updating components, you can either:
+1. Use `pnpm dlx shadcn@latest add <component> --overwrite` to get the latest Base UI version
+2. Manually update following the patterns in this file
 
 Base UI is the successor to Radix UI primitives with a more modern API.
 

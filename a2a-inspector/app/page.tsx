@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown, Code, ChatCircle, Gear, Lightning } from "@phosphor-icons/react";
+import { CaretDown, ChatCircle, Code, Gear, Lightning } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";
 import {
   AgentCardDisplay,
@@ -81,28 +81,30 @@ function HomePageContent(): React.JSX.Element {
               {/* Auth & Headers - Collapsible */}
               <div className="mb-6 space-y-2">
                 <Collapsible open={authOpen} onOpenChange={setAuthOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Gear className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs font-medium">Auth</span>
-                        {authConfig.type !== "none" && (
-                          <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                            {authConfig.type}
-                          </span>
-                        )}
-                      </div>
-                      <CaretDown
-                        className={cn(
-                          "h-3 w-3 text-muted-foreground transition-transform duration-200",
-                          authOpen && "rotate-180"
-                        )}
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
                       />
-                    </Button>
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <Gear className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs font-medium">Auth</span>
+                      {authConfig.type !== "none" && (
+                        <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          {authConfig.type}
+                        </span>
+                      )}
+                    </div>
+                    <CaretDown
+                      className={cn(
+                        "h-3 w-3 text-muted-foreground transition-transform duration-200",
+                        authOpen && "rotate-180"
+                      )}
+                    />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="border border-border bg-card/50 p-3">
@@ -112,28 +114,30 @@ function HomePageContent(): React.JSX.Element {
                 </Collapsible>
 
                 <Collapsible open={headersOpen} onOpenChange={setHeadersOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Code className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs font-medium">Headers</span>
-                        {customHeaderCount > 0 && (
-                          <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                            {customHeaderCount}
-                          </span>
-                        )}
-                      </div>
-                      <CaretDown
-                        className={cn(
-                          "h-3 w-3 text-muted-foreground transition-transform duration-200",
-                          headersOpen && "rotate-180"
-                        )}
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-3 py-2 text-left hover:bg-card/50"
                       />
-                    </Button>
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs font-medium">Headers</span>
+                      {customHeaderCount > 0 && (
+                        <span className="bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          {customHeaderCount}
+                        </span>
+                      )}
+                    </div>
+                    <CaretDown
+                      className={cn(
+                        "h-3 w-3 text-muted-foreground transition-transform duration-200",
+                        headersOpen && "rotate-180"
+                      )}
+                    />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="border border-border bg-card/50 p-3">
@@ -194,28 +198,30 @@ function HomePageContent(): React.JSX.Element {
 
                 {/* Auth Configuration - Collapsible */}
                 <Collapsible open={authOpen} onOpenChange={setAuthOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Gear className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Authentication</span>
-                        {authConfig.type !== "none" && (
-                          <span className="bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
-                            {authConfig.type}
-                          </span>
-                        )}
-                      </div>
-                      <CaretDown
-                        className={cn(
-                          "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                          authOpen && "rotate-180"
-                        )}
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
                       />
-                    </Button>
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <Gear className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Authentication</span>
+                      {authConfig.type !== "none" && (
+                        <span className="bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
+                          {authConfig.type}
+                        </span>
+                      )}
+                    </div>
+                    <CaretDown
+                      className={cn(
+                        "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                        authOpen && "rotate-180"
+                      )}
+                    />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-4">
                     <div className="border border-border bg-card/30 p-4">
@@ -226,28 +232,30 @@ function HomePageContent(): React.JSX.Element {
 
                 {/* Custom Headers - Collapsible */}
                 <Collapsible open={headersOpen} onOpenChange={setHeadersOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Code className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Custom Headers</span>
-                        {customHeaderCount > 0 && (
-                          <span className="bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
-                            {customHeaderCount}
-                          </span>
-                        )}
-                      </div>
-                      <CaretDown
-                        className={cn(
-                          "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                          headersOpen && "rotate-180"
-                        )}
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex w-full items-center justify-between gap-2 border border-border bg-card/30 px-4 py-3 text-left hover:bg-card/50"
                       />
-                    </Button>
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Custom Headers</span>
+                      {customHeaderCount > 0 && (
+                        <span className="bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
+                          {customHeaderCount}
+                        </span>
+                      )}
+                    </div>
+                    <CaretDown
+                      className={cn(
+                        "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                        headersOpen && "rotate-180"
+                      )}
+                    />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-4">
                     <div className="border border-border bg-card/30 p-4">

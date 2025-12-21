@@ -86,7 +86,8 @@ export function AuthConfigPanel({
   );
 
   const handleTypeChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
+      if (value === null) return;
       const newType = value as AuthType;
       // Reset all auth fields when changing type
       const newConfig: AuthConfig = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, Warning, WifiSlash, CircleNotch } from "@phosphor-icons/react";
+import { CheckCircle, CircleNotch, Warning, WifiSlash } from "@phosphor-icons/react";
 import { useConnection } from "@/context";
 import { cn } from "@/lib/utils";
 

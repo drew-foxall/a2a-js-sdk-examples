@@ -1,17 +1,17 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import type { UIMessage } from "ai";
-import { DefaultChatTransport, isTextUIPart } from "ai";
 import {
+  ArrowCounterClockwise,
   ChatCircle,
   ChatText,
+  CircleNotch,
   Info,
   List,
-  ArrowCounterClockwise,
   Sparkle,
 } from "@phosphor-icons/react";
-import { CircleNotch } from "@phosphor-icons/react";
+import type { UIMessage } from "ai";
+import { DefaultChatTransport, isTextUIPart } from "ai";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Conversation,

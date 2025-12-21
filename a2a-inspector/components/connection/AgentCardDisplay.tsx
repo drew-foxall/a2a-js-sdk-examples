@@ -2,14 +2,14 @@
 
 import type { AgentCard } from "@drew-foxall/a2a-js-sdk";
 import {
-  Robot,
+  ArrowSquareOut,
   Buildings,
   CheckCircle,
-  ArrowSquareOut,
   Globe,
   Hash,
-  Sparkle,
   Lightning,
+  Robot,
+  Sparkle,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { ValidationErrors } from "./ValidationErrors";
@@ -122,10 +122,7 @@ export function AgentCardDisplay({
             </h4>
             <div className="space-y-2">
               {card.skills.slice(0, 5).map((skill) => (
-                <div
-                  key={skill.id}
-                  className="border border-border bg-card/30 px-3 py-2"
-                >
+                <div key={skill.id} className="border border-border bg-card/30 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground/80">{skill.name}</span>
