@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-// Workspace root for monorepo builds
-const workspaceRoot = path.join(__dirname, "..");
+// Get the directory of this config file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Workspace root for monorepo builds (parent of a2a-inspector)
+const workspaceRoot = path.resolve(__dirname, "..");
 
 const nextConfig: NextConfig = {
   // Both must be set to the same value for monorepo builds
