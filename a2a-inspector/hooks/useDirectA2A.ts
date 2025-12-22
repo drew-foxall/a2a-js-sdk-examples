@@ -1,11 +1,16 @@
 "use client";
 
-import type { Task, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from "@drew-foxall/a2a-js-sdk";
+import type { Message, Task } from "@drew-foxall/a2a-js-sdk";
 import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { authConfigToHeaders } from "@/components/connection/AuthConfigPanel";
 import { getEventKind } from "@/components/message";
 import { useAuthConfig, useInspector } from "@/context";
+import {
+  extractTextFromEvent,
+  isTaskArtifactUpdateEvent,
+  isTaskStatusUpdateEvent,
+} from "@/lib/a2a-type-guards";
 import { client } from "@/lib/eden";
 import type { ValidationError } from "@/server/services/validators";
 import type {
@@ -34,59 +39,31 @@ interface SSEChunk {
 }
 
 /**
- * Extract text content from an A2A event.
+ * Type guard to check if a chunk is in SSE format.
  */
-function extractTextFromEvent(event: A2AStreamEvent): string {
-  switch (event.kind) {
-    case "message": {
-      return event.parts
-        .filter((part): part is { kind: "text"; text: string } => part.kind === "text")
-        .map((part) => part.text)
-        .join("");
-    }
-    case "status-update": {
-      const statusEvent = event as TaskStatusUpdateEvent;
-      if (statusEvent.status.message && typeof statusEvent.status.message === "object") {
-        const msg = statusEvent.status.message as {
-          parts?: Array<{ kind: string; text?: string }>;
-        };
-        if (msg.parts) {
-          return msg.parts
-            .filter((part): part is { kind: "text"; text: string } => part.kind === "text")
-            .map((part) => part.text)
-            .join("");
-        }
-      }
-      return "";
-    }
-    case "task": {
-      // Extract from history if available
-      const task = event as Task;
-      if (task.history) {
-        return task.history
-          .filter((msg) => msg.role === "agent")
-          .flatMap((msg) =>
-            msg.parts
-              .filter((part): part is { kind: "text"; text: string } => part.kind === "text")
-              .map((part) => part.text)
-          )
-          .join("");
-      }
-      return "";
-    }
-    case "artifact-update": {
-      const artifactEvent = event as TaskArtifactUpdateEvent;
-      if (artifactEvent.artifact?.parts) {
-        return artifactEvent.artifact.parts
-          .filter((part): part is { kind: "text"; text: string } => part.kind === "text")
-          .map((part) => part.text)
-          .join("");
-      }
-      return "";
-    }
-    default:
-      return "";
-  }
+function isSSEChunk(chunk: unknown): chunk is SSEChunk {
+  return (
+    chunk !== null &&
+    typeof chunk === "object" &&
+    "event" in chunk &&
+    typeof chunk.event === "string" &&
+    "data" in chunk
+  );
+}
+
+/**
+ * Type guard to check if event data contains an error.
+ */
+function isErrorEventData(data: StreamedA2AEvent | { error: string }): data is { error: string } {
+  return "error" in data;
+}
+
+/**
+ * Type guard to check if a value is an AsyncIterable.
+ * Eden Treaty returns SSE streams as AsyncIterable at runtime.
+ */
+function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
+  return value !== null && typeof value === "object" && Symbol.asyncIterator in value;
 }
 
 /**
@@ -213,33 +190,41 @@ export function useDirectA2A(agentUrl: string | null): {
           throw new Error("No response data");
         }
 
-        // Eden Treaty returns SSE stream as AsyncGenerator
-        for await (const chunk of data as AsyncIterable<
-          SSEChunk | StreamedA2AEvent | { error: string }
-        >) {
+        // Eden Treaty returns SSE stream as AsyncIterable at runtime
+        if (!isAsyncIterable<SSEChunk | StreamedA2AEvent | { error: string }>(data)) {
+          throw new Error("Expected async iterable stream from Eden Treaty");
+        }
+
+        for await (const chunk of data) {
           log("event", "Received stream chunk", chunk, "inbound");
 
           // Handle SSE format (from sse() helper)
           let eventData: StreamedA2AEvent | { error: string };
-          if ("event" in chunk && "data" in chunk && typeof chunk.event === "string") {
-            eventData = chunk.data as StreamedA2AEvent | { error: string };
+          if (isSSEChunk(chunk)) {
+            eventData = chunk.data;
           } else {
-            eventData = chunk as StreamedA2AEvent | { error: string };
+            eventData = chunk;
           }
 
           // Handle error events
-          if ("error" in eventData) {
+          if (isErrorEventData(eventData)) {
             log("error", `Stream error: ${eventData.error}`);
+
+            const errorId = uuidv4();
+
+            // Create a proper Message object for the error
+            const errorMessage: Message = {
+              kind: "message",
+              messageId: errorId,
+              role: "agent",
+              parts: [{ kind: "text", text: eventData.error }],
+            };
 
             const errorEvent: RawA2AEvent = {
               id: uuidv4(),
               timestamp: new Date(),
               kind: "error",
-              event: {
-                kind: "message",
-                role: "agent",
-                parts: [{ kind: "text", text: eventData.error }],
-              } as A2AStreamEvent,
+              event: errorMessage,
               validationErrors: [],
               textContent: eventData.error,
             };
@@ -316,7 +301,7 @@ export function useDirectA2A(agentUrl: string | null): {
             }
 
             case "status-update": {
-              const statusEvent = event as TaskStatusUpdateEvent;
+              if (!isTaskStatusUpdateEvent(event)) break;
               if (!primaryKind || primaryKind === "message") {
                 primaryKind = "status-update";
               }
@@ -324,15 +309,15 @@ export function useDirectA2A(agentUrl: string | null): {
               dispatch({
                 type: "UPDATE_TASK",
                 payload: {
-                  id: statusEvent.taskId,
-                  status: statusEvent.status,
+                  id: event.taskId,
+                  status: event.status,
                 },
               });
 
               // For "completed" state, the message contains the full text
               // For "working" state, the message contains delta text
               if (textContent) {
-                if (statusEvent.status.state === "completed") {
+                if (event.status.state === "completed") {
                   accumulatedContent = textContent;
                 } else {
                   accumulatedContent += textContent;
@@ -342,7 +327,7 @@ export function useDirectA2A(agentUrl: string | null): {
             }
 
             case "artifact-update": {
-              const artifactEvent = event as TaskArtifactUpdateEvent;
+              if (!isTaskArtifactUpdateEvent(event)) break;
               if (!primaryKind || primaryKind === "message") {
                 primaryKind = "artifact-update";
               }
@@ -350,7 +335,7 @@ export function useDirectA2A(agentUrl: string | null): {
               dispatch({
                 type: "UPDATE_TASK",
                 payload: {
-                  id: artifactEvent.taskId,
+                  id: event.taskId,
                   status: { state: "working" },
                 },
               });
