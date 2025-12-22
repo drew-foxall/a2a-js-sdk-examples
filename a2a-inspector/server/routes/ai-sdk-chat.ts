@@ -230,7 +230,7 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
     body: t.Object({
       messages: t.Array(t.Any()),
       agentUrl: t.String({ minLength: 1 }),
-      contextId: t.Optional(t.String()),
+      contextId: t.Optional(t.Union([t.String(), t.Null()])),
       smoothStream: t.Optional(
         t.Object({
           enabled: t.Optional(t.Boolean()),
