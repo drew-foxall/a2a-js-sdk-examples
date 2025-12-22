@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "bunVersion": "1.x",
   "framework": "nextjs",
-  "installCommand": "pnpm -C .. install --frozen-lockfile --filter a2a-inspector...",
-  "buildCommand": "pnpm -C .. turbo run build --filter=a2a-inspector",
+  "installCommand": "cd .. && pnpm install --frozen-lockfile --filter a2a-inspector...",
+  "buildCommand": "pnpm exec turbo --cwd .. run build --filter=a2a-inspector",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ../packages/a2a-ai-provider-v3"
 }
 
