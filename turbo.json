@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["pnpm-lock.yaml", "biome.json", "tsconfig.json"],
   "globalPassThroughEnv": [
     "AI_PROVIDER",
     "AI_MODEL",
@@ -20,8 +21,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "build/**"],
-      "inputs": ["src/**", "app/**", "package.json", "tsconfig.json"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "build/**"]
     },
     "dev": {
       "cache": false,
@@ -39,34 +39,29 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
-      "inputs": ["src/**", "app/**", "**/*.test.ts", "**/*.spec.ts"]
+      "outputs": ["coverage/**"]
     },
     "test:watch": {
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"],
-      "inputs": ["src/**", "app/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+      "outputs": []
     },
     "lint:fix": {
       "cache": false,
-      "inputs": ["src/**", "app/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+      "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "outputs": [],
-      "inputs": ["src/**", "app/**", "**/*.ts", "**/*.tsx", "tsconfig.json"]
+      "outputs": []
     },
     "format": {
-      "outputs": [],
-      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+      "outputs": []
     },
     "format:write": {
       "cache": false,
-      "outputs": [],
-      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+      "outputs": []
     },
     "a2a-inspector#dev": {
       "cache": false,
@@ -81,7 +76,7 @@
       "dependsOn": ["^build"]
     },
     "a2a-inspector#lint": {
-      "dependsOn": ["^build"]
+      "outputs": []
     },
     "a2a-inspector#test": {
       "dependsOn": ["^build"],
