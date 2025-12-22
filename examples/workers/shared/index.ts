@@ -65,6 +65,7 @@ export {
   type ArtifactGenerationContext,
   type BaseWorkerEnv,
   type HealthCheckExtras,
+  type ResponseTypeSelectionContext,
   type TaskStoreConfig,
   type WorkerAdapterOptions,
   type WorkerEnvWithRedis,

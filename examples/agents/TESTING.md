@@ -94,31 +94,21 @@ createAgentTestSuite("My Agent", {
 
 ### Testing Streaming Agents
 
-For agents that use `mode: "stream"`, test the streaming functionality:
+For agents that use `mode: "stream"`, test streaming via the **A2A event stream** (status updates),
+not via non-existent `adapter.handleMessageStream()` helpers.
 
 ```typescript
 it("should stream responses", async () => {
   const { adapter } = createMyAgent();
-  const message = {
-    role: "user",
-    parts: [{ kind: "text", text: "Generate code" }],
-  };
+  const eventBus = createTestEventBus(); // collects published events
 
-  const stream = await adapter.handleMessageStream(message, {});
-  const chunks: string[] = [];
-  const reader = stream.getReader();
+  const userMessage = createTestA2AUserMessage("Generate code");
+  const requestContext = new RequestContext(userMessage, "test-task", "test-context", undefined);
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value) chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
+  await adapter.execute(requestContext, eventBus);
 
-  expect(chunks.length).toBeGreaterThan(0);
+  const kinds = eventBus.published.map((e) => e.kind);
+  expect(kinds).toContain("status-update");
 }, 30000);
 ```
 
@@ -127,13 +117,17 @@ it("should stream responses", async () => {
 For agents that generate artifacts (images, files, etc.):
 
 ```typescript
-import { validateArtifacts } from "../../test-utils/agent-test-helpers";
-
 it("should generate PNG artifacts", async () => {
   const { adapter } = createMyAgent();
-  const response = await adapter.handleMessage(message, {});
+  const eventBus = createTestEventBus();
 
-  validateArtifacts(response.message.parts, "image/png");
+  const userMessage = createTestA2AUserMessage("Generate an image");
+  const requestContext = new RequestContext(userMessage, "test-task", "test-context", undefined);
+
+  await adapter.execute(requestContext, eventBus);
+
+  const kinds = eventBus.published.map((e) => e.kind);
+  expect(kinds).toContain("artifact-update");
 });
 ```
 

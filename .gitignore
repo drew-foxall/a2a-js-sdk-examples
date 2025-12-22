@@ -23,6 +23,13 @@ workers/**/.dev.vars
 .wrangler/
 **/.wrangler/
 
+# Vercel local state (except workspace root for CI)
+# Keep /.vercel/project.json for GitHub Actions deployment
+**/.vercel/
+!/.vercel/
+/.vercel/*
+!/.vercel/project.json
+
 # IDE
 .vscode/
 .idea/
@@ -49,3 +56,4 @@ coverage/
 .tmp/
 temp/
 .turbo
+.vercel

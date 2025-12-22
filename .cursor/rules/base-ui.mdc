@@ -1,0 +1,187 @@
+# Base UI Usage in a2a-inspector
+
+This project uses `@base-ui/react` (v1.0.0) for building accessible, unstyled UI components in the a2a-inspector package.
+
+## Overview
+
+Base UI provides high-quality, unstyled React components that are:
+- **Composable**: Components can be combined and nested flexibly
+- **Styling Agnostic**: Works with any CSS approach (we use Tailwind CSS)
+- **Accessible**: Built-in ARIA attributes and keyboard navigation
+
+## shadcn/ui Integration
+
+**shadcn/ui now supports Base UI** as a component base. This means:
+- Components can be added/updated via `pnpm dlx shadcn@latest add <component>`
+- When re-initializing or adding components, shadcn will use Base UI primitives
+- The `components.json` is configured with `"style": "lyra"` which uses Base UI
+
+To add or update a component:
+```bash
+pnpm dlx shadcn@latest add button --overwrite
+```
+
+## Installation
+
+Base UI is already installed in the a2a-inspector package:
+```bash
+pnpm add @base-ui/react
+```
+
+## Import Pattern
+
+Import components from their specific subpaths for better tree-shaking:
+
+```typescript
+// ✅ Correct - specific imports
+import { AlertDialog } from "@base-ui/react/alert-dialog"
+import { Separator } from "@base-ui/react/separator"
+import { Dialog } from "@base-ui/react/dialog"
+
+// ❌ Avoid - barrel imports
+import { AlertDialog, Separator } from "@base-ui/react"
+```
+
+## Component Wrapper Pattern
+
+We wrap Base UI primitives in our own components at `a2a-inspector/components/ui/`. This provides:
+1. Consistent styling with our design system
+2. Simplified API for common use cases
+3. `data-slot` attributes for debugging
+
+### Example: Wrapping a Base UI Component
+
+```typescript
+"use client"
+
+import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
+import { cn } from "@/lib/utils"
+
+function Separator({
+  className,
+  orientation = "horizontal",
+  ...props
+}: SeparatorPrimitive.Props) {
+  return (
+    <SeparatorPrimitive
+      data-slot="separator"
+      orientation={orientation}
+      className={cn(
+        "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:self-stretch",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Separator }
+```
+
+## Key Patterns
+
+### 1. Data Attributes for State
+
+Base UI uses `data-*` attributes for component state instead of class-based state. Use these in Tailwind:
+
+```typescript
+// Animation based on open/closed state
+className="data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0"
+
+// Orientation-based styling
+className="data-[orientation=horizontal]:h-px data-[orientation=vertical]:w-px"
+```
+
+### 2. Render Prop Composition
+
+Use the `render` prop to compose Base UI with other components:
+
+```typescript
+<AlertDialogPrimitive.Close
+  render={<Button variant="outline" size="default" />}
+  {...props}
+/>
+```
+
+### 3. Type Extensions
+
+Extend Base UI prop types when adding custom props:
+
+```typescript
+function AlertDialogContent({
+  className,
+  size = "default",  // Custom prop
+  ...props
+}: AlertDialogPrimitive.Popup.Props & {
+  size?: "default" | "sm"
+}) {
+  // ...
+}
+```
+
+### 4. Portal Pattern
+
+Use Portal for components that need to escape their DOM hierarchy:
+
+```typescript
+function AlertDialogContent({ ... }) {
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Popup {...props} />
+    </AlertDialogPortal>
+  )
+}
+```
+
+## Available Components
+
+Reference the full component list at: https://base-ui.com/react/components
+
+Currently used in a2a-inspector:
+- **AlertDialog** - Modal dialogs requiring user action
+- **Button** - Interactive buttons
+- **Collapsible** - Expandable content sections
+- **Dialog** - General modal dialogs
+- **Menu** - Dropdown action menus (for DropdownMenu)
+- **PreviewCard** - Hover preview cards (for HoverCard)
+- **Select** - Dropdown selection
+- **Separator** - Visual dividers between content
+- **Tooltip** - Accessible hover hints
+
+Recommended for future use:
+- **Popover** - Floating content anchored to triggers
+- **Tabs** - Tab navigation panels
+- **Toast** - Notification messages
+- **Field/Form** - Form controls with validation
+
+## Documentation Links
+
+- [Quick Start](https://base-ui.com/react/overview/quick-start.md)
+- [Accessibility](https://base-ui.com/react/overview/accessibility.md)
+- [Styling Guide](https://base-ui.com/react/handbook/styling.md)
+- [Animation Guide](https://base-ui.com/react/handbook/animation.md)
+- [Composition Guide](https://base-ui.com/react/handbook/composition.md)
+- [Customization Guide](https://base-ui.com/react/handbook/customization.md)
+- [Forms Guide](https://base-ui.com/react/handbook/forms.md)
+- [TypeScript Guide](https://base-ui.com/react/handbook/typescript.md)
+
+## Migration from Radix UI
+
+The project has been migrated from Radix UI to Base UI. All UI components in `components/ui/` now use Base UI primitives.
+
+**Key API differences from Radix:**
+- `asChild` prop → `render` prop for composition
+- `data-[state=open]` → `data-[starting-style]`/`data-[ending-style]` for animations
+- `onValueChange(value: string)` → `onValueChange(value: string | null)` for Select
+
+When updating components, you can either:
+1. Use `pnpm dlx shadcn@latest add <component> --overwrite` to get the latest Base UI version
+2. Manually update following the patterns in this file
+
+Base UI is the successor to Radix UI primitives with a more modern API.
+
+## Utilities
+
+- **Direction Provider** - RTL support: https://base-ui.com/react/utils/direction-provider.md
+- **useRender Hook** - Custom render props: https://base-ui.com/react/utils/use-render.md

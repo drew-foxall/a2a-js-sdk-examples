@@ -4,4 +4,4 @@ packages:
   - 'examples/workers/*'
   - 'examples/workers/shared'
   - 'examples/vercel/*'
-
+  - 'a2a-inspector'

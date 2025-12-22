@@ -42,10 +42,16 @@
     "agent:weather": "pnpm --filter ./examples/agents agent:weather",
     "agent:airbnb": "pnpm --filter ./examples/agents agent:airbnb",
     "agent:planner": "pnpm --filter ./examples/agents agent:planner",
-    "inspector": "tsx scripts/start-inspector.ts",
-    "inspector:stop": "tsx scripts/stop-inspector.ts",
-    "inspector:logs": "tsx scripts/inspector-logs.ts",
-    "inspector:help": "echo '🔍 A2A Inspector Commands (Docker):\n  pnpm inspector        - Start inspector container\n  pnpm inspector:stop   - Stop inspector container\n  pnpm inspector:logs   - View container logs\n  \nMore info: cat INSPECTOR_SETUP.md'",
+    "inspector": "pnpm --filter a2a-inspector dev",
+    "inspector:build": "pnpm --filter a2a-inspector build",
+    "inspector:start": "pnpm --filter a2a-inspector start",
+    "inspector:typecheck": "pnpm --filter a2a-inspector typecheck",
+    "inspector:lint": "pnpm --filter a2a-inspector lint",
+    "inspector:test": "pnpm --filter a2a-inspector test",
+    "inspector:docker": "tsx scripts/start-inspector.ts",
+    "inspector:docker:stop": "tsx scripts/stop-inspector.ts",
+    "inspector:docker:logs": "tsx scripts/inspector-logs.ts",
+    "inspector:help": "echo '🔍 A2A Inspector Commands (Bun Runtime):\n  pnpm inspector           - Start local inspector (Next.js + Bun)\n  pnpm inspector:build     - Build inspector for production\n  pnpm inspector:start     - Start production build\n  pnpm inspector:typecheck - Run TypeScript checks\n  pnpm inspector:lint      - Run Biome linting\n  pnpm inspector:test      - Run tests\n  \nDocker (legacy):\n  pnpm inspector:docker      - Start Docker inspector\n  pnpm inspector:docker:stop - Stop Docker inspector\n  \nMore info: cat a2a-inspector/README.md'",
     "worker:hello-world": "pnpm --filter a2a-hello-world-worker dev",
     "worker:dice": "pnpm --filter a2a-dice-agent-worker dev",
     "worker:dice-durable": "pnpm --filter a2a-dice-agent-durable-worker dev",
@@ -70,25 +76,34 @@
     "test:integration:deployed": "tsx scripts/integration-test-workers.ts --deployed"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
+    "@biomejs/biome": "2.3.10",
     "@total-typescript/tsconfig": "1.0.4",
     "@types/node": "^24.10.1",
     "lefthook": "2.0.12",
     "tsx": "^4.21.0",
-    "turbo": "2.6.1",
+    "turbo": "2.7.1",
     "typescript": "^5.9.3"
   },
   "pnpm": {
     "overrides": {
-      "@ai-sdk/provider": "3.0.0-beta.16"
+      "@ai-sdk/provider": "3.0.0-beta.16",
+      "@types/react": "19.2.7",
+      "@types/react-dom": "19.2.3"
     },
     "onlyBuiltDependencies": [
-      "canvas"
+      "canvas",
+      "@swc/core",
+      "cbor-extract",
+      "esbuild",
+      "lefthook",
+      "msw",
+      "sharp",
+      "workerd"
     ]
   },
   "packageManager": "pnpm@10.23.0",
   "engines": {
-    "node": ">=24.0.0",
+    "node": "24.x",
     "pnpm": ">=10.0.0"
   },
   "keywords": [

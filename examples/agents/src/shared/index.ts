@@ -167,13 +167,22 @@ export {
   A2AAdapter,
   type A2AAdapterConfig,
   type A2ALogger,
-  type AIGenerateResult,
-  type AIStreamResult,
+  // Routing helpers (agent-owned routing step)
+  type A2AResponseType,
+  type ArtifactGenerationContext,
   ConsoleLogger,
+  createLLMResponseTypeRouter,
+  extractTextFromA2AMessage,
+  isTaskContinuation,
+  type LLMResponseTypeRouterOptions,
+  messageUnlessContinuation,
   NoOpLogger,
   type ParsedArtifact,
   type ParsedArtifacts,
-} from "./a2a-adapter.js";
+  preferTaskForContinuations,
+  type ResponseTypeSelectionContext,
+  type SelectResponseType,
+} from "@drew-foxall/a2a-ai-sdk-adapter";
 
 // ============================================================================
 // Utilities

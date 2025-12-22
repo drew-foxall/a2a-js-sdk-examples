@@ -2,13 +2,13 @@
 
 Common utilities for A2A agents using AI SDK.
 
-## A2AAgentAdapter
+## A2AAdapter
 
-**Bridge between AI SDK ToolLoopAgent and A2A Protocol**
+Bridge between AI SDK `ToolLoopAgent` and the A2A Protocol.
 
 ### Overview
 
-The `A2AAgentAdapter` enables you to define agents using AI SDK's `ToolLoopAgent` and expose them via the A2A protocol. This provides:
+The `A2AAdapter` enables you to define agents using AI SDK's `ToolLoopAgent` and expose them via the A2A protocol. This provides:
 
 - ✅ **Protocol-agnostic agents**: Same agent, multiple protocols (A2A, MCP, REST, CLI)
 - ✅ **Separation of concerns**: Agent logic separate from protocol integration
@@ -17,16 +17,16 @@ The `A2AAgentAdapter` enables you to define agents using AI SDK's `ToolLoopAgent
 
 ### Architecture
 
-```
-ToolLoopAgent (AI SDK)  →  A2AAgentAdapter  →  A2A Server (Hono)
+```text
+ToolLoopAgent (AI SDK)  →  A2AAdapter  →  A2A Server (Hono / Workers / Edge)
    [Agent Logic]           [Protocol Bridge]     [HTTP Transport]
 ```
 
 ### Basic Usage
 
 ```typescript
-import { ToolLoopAgent } from 'ai';
-import { A2AAgentAdapter } from './shared/a2a-agent-adapter.js';
+import { ToolLoopAgent } from "ai";
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import { DefaultRequestHandler } from '@drew-foxall/a2a-js-sdk/server';
 
 // 1. Define your agent (protocol-agnostic)
@@ -39,7 +39,7 @@ const myAgent = new ToolLoopAgent({
 });
 
 // 2. Wrap it with A2A adapter
-const executor = new A2AAgentAdapter(myAgent);
+const executor = new A2AAdapter(myAgent, { mode: "stream" });
 
 // 3. Expose via A2A server
 const requestHandler = new DefaultRequestHandler(
@@ -51,12 +51,13 @@ const requestHandler = new DefaultRequestHandler(
 
 ### Advanced Usage
 
-#### Custom Task State Parsing
+#### Custom Task State Parsing (multi-turn)
 
 Some agents may output special state indicators:
 
 ```typescript
-const executor = new A2AAgentAdapter(myAgent, {
+const executor = new A2AAdapter(myAgent, {
+  mode: "generate",
   parseTaskState: (text) => {
     const lastLine = text.trim().split('\n').at(-1)?.toUpperCase();
     if (lastLine === 'AWAITING_USER_INPUT') return 'input-required';
@@ -74,37 +75,28 @@ const executor = new A2AAgentAdapter(myAgent, {
 #### Include Conversation History
 
 ```typescript
-const executor = new A2AAgentAdapter(myAgent, {
+const executor = new A2AAdapter(myAgent, {
+  mode: "stream",
   includeHistory: true, // Pass previous messages to agent
   workingMessage: 'Thinking...',
   debug: true,
 });
 ```
 
-#### Dynamic Configuration with Call Options
+#### Agent-owned response routing (Message vs Task)
 
-Use AI SDK's Call Options feature for dynamic agent behavior:
+Per A2A, the server may respond with either a stateless `Message` or a stateful `Task`.
+Use `selectResponseType` as an **agent-owned routing step** (AI SDK “Routing” pattern):
 
 ```typescript
-const myAgent = new ToolLoopAgent({
-  model: 'openai/gpt-4o',
-  callOptionsSchema: z.object({
-    goal: z.string().optional(),
-    userId: z.string().optional(),
-  }),
-  prepareCall: async ({ options, ...settings }) => {
-    // Fetch user data, inject context, etc.
-    const userData = await fetchUserData(options.userId);
-    
-    return {
-      ...settings,
-      instructions: settings.instructions + `\nUser context: ${userData}`,
-    };
-  },
-});
+import { createLLMResponseTypeRouter } from "@drew-foxall/a2a-ai-sdk-adapter";
 
-// The adapter automatically passes userMessage.metadata as options
-const executor = new A2AAgentAdapter(myAgent);
+const executor = new A2AAdapter(myAgent, {
+  mode: "stream", // default execution mode for Task responses
+  selectResponseType: createLLMResponseTypeRouter({
+    model: routingModel, // choose a small/cheap model
+  }),
+});
 ```
 
 ### Reusing the Same Agent
@@ -113,7 +105,7 @@ Once defined, use your agent in multiple contexts:
 
 ```typescript
 // Via A2A protocol
-const a2aExecutor = new A2AAgentAdapter(myAgent);
+const a2aExecutor = new A2AAdapter(myAgent, { mode: "stream" });
 
 // Via REST API
 app.post('/api/chat', async (req, res) => {
@@ -179,7 +171,7 @@ export const myAgent = new ToolLoopAgent({
 });
 
 // Use with A2A (1 line!)
-const executor = new A2AAgentAdapter(myAgent);
+const executor = new A2AAdapter(myAgent, { mode: "stream" });
 ```
 
 ### Benefits
@@ -212,8 +204,8 @@ const model = getModel(); // Returns openai, anthropic, or google model
 ```
 
 Set environment variables:
+
 - `AI_PROVIDER`: `openai`, `anthropic`, or `google` (default: `openai`)
 - `OPENAI_API_KEY`: For OpenAI
 - `ANTHROPIC_API_KEY`: For Anthropic
 - `GOOGLE_GENERATIVE_AI_API_KEY`: For Google
-

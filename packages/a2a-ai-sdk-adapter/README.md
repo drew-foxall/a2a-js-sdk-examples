@@ -97,6 +97,7 @@ constructor(agent: ToolLoopAgent<never, TTools, never>, config: A2AAdapterConfig
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
 | `mode` | `'stream' \| 'generate'` | **Yes** | Execution mode (see [Mode Selection](#mode-selection)) |
+| `selectResponseType` | `(ctx) => 'message' \| 'task' \| Promise<'message' \| 'task'>` | No | **Agent-owned routing step** to choose A2A `Message` vs `Task` per request (defaults to `task`) |
 | `systemPrompt` | `string` | No | System prompt for the agent (default: generic A2A prompt) |
 | `maxSteps` | `number` | No | Max tool call iterations (default: 5) |
 | `includeHistory` | `boolean` | No | Include conversation history (default: false) |
@@ -107,6 +108,74 @@ constructor(agent: ToolLoopAgent<never, TTools, never>, config: A2AAdapterConfig
 | `parseTaskState` | `(text: string) => TaskState` | No | Custom task state parser (default: "completed") |
 
 ---
+
+## 🧭 Dynamic Response Type (A2A `Message` vs `Task`)
+
+A2A allows an agent to respond with either a stateless **`Message`** (immediate) or a stateful **`Task`** (lifecycle + streaming/progress). See “Agent Response: Task or Message” in the A2A core concepts doc ([A2A key concepts](https://raw.githubusercontent.com/a2aproject/A2A/main/docs/topics/key-concepts.md)).
+
+### Why this must be decided “up front”
+
+If the server starts emitting task lifecycle events (or starts SSE streaming), it has already committed to a **Task** response shape. Therefore the adapter needs a *routing decision* before it publishes any task events.
+
+### Recommended pattern: agent-owned routing (AI SDK “Routing”)
+
+Use `selectResponseType` as a small *routing/classification step* owned by your agentic system (not “the user telling the agent what to do”):
+
+```ts
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+
+const executor = new A2AAdapter(agent, {
+  mode: "stream", // default execution mode for Task responses
+
+  // Agent-owned routing step (AI SDK "Routing" pattern)
+  selectResponseType: async ({ userMessage, existingTask }) => {
+    // Continuations should stay in Task mode
+    if (existingTask) return "task";
+
+    // Do a cheap classification step (e.g. generateObject / small model)
+    const { responseType } = await classifyRequest(userMessage);
+    return responseType; // "message" | "task"
+  },
+});
+```
+
+Notes:
+- If you always want stateless behavior (e.g. “Hello World”), return `"message"`.
+- If you want full lifecycle + streaming/progress/cancellation, return `"task"`.
+
+### Utilities to reduce boilerplate
+
+The adapter exports small helpers you can use when implementing routing:
+
+```ts
+import {
+  extractTextFromA2AMessage,
+  createLLMResponseTypeRouter,
+  preferTaskForContinuations,
+} from "@drew-foxall/a2a-ai-sdk-adapter";
+
+const selectResponseType = preferTaskForContinuations(async ({ userMessage }) => {
+  const text = extractTextFromA2AMessage(userMessage);
+  // ... your agent-owned routing/classification logic ...
+  return text ? "message" : "task";
+});
+```
+
+If you want a ready-made LLM router (AI SDK `generateObject`), you can use:
+
+```ts
+import { createLLMResponseTypeRouter } from "@drew-foxall/a2a-ai-sdk-adapter";
+import { z } from "zod";
+
+const selectResponseType = createLLMResponseTypeRouter({
+  model: routingModel, // choose a small/cheap model
+  // Optional: omit schema to use the adapter’s default schema (requires zod installed)
+  schema: z.object({
+    responseType: z.enum(["message", "task"]),
+    reasoning: z.string().optional(),
+  }),
+});
+```
 
 ## 🎯 Mode Selection
 

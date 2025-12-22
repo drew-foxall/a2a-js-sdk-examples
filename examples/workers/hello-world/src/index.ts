@@ -53,14 +53,20 @@ const config = defineWorkerConfig<BaseWorkerEnv>({
       description: "The simplest possible A2A agent - responds with friendly greetings",
       skills: [helloWorldSkill],
       capabilities: {
-        stateTransitionHistory: true,
+        // This agent is designed for immediate, self-contained responses.
+        // It returns A2A `Message` responses by default (no task lifecycle / streaming).
+        streaming: false,
+        // No state transition history needed for Message responses
+        stateTransitionHistory: false,
       },
     }),
 
   adapterOptions: {
-    mode: "stream",
-    workingMessage: "Processing your greeting...",
-    includeHistory: true,
+    mode: "generate",
+    // Hello World always responds with Message (simple, immediate)
+    // This is a stateless response - no task lifecycle tracking needed
+    selectResponseType: () => "message",
+    includeHistory: false,
   },
 });
 

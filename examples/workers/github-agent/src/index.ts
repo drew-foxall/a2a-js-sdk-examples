@@ -19,6 +19,7 @@
 import type { AgentSkill } from "@drew-foxall/a2a-js-sdk";
 import { Octokit } from "@octokit/rest";
 import { createGitHubAgent, createGitHubClientFromOctokit } from "a2a-agents";
+import { createLLMResponseTypeRouter } from "@drew-foxall/a2a-ai-sdk-adapter";
 import {
   buildAgentCard,
   createA2AHonoWorker,
@@ -89,6 +90,43 @@ const config = defineWorkerConfig<GitHubEnv>({
   adapterOptions: {
     mode: "stream",
     workingMessage: "Querying GitHub...",
+    // Agent-owned routing step (AI SDK "Routing" pattern).
+    //
+    // This agent can handle both quick Q&A (Message) and tool-heavy workflows (Task).
+    // We keep continuations in Task mode by default (handled by the router).
+    selectResponseTypeFactory: ({ model, env: baseEnv }) => {
+      // Cast to GitHubEnv to access GITHUB_TOKEN
+      const env = baseEnv as GitHubEnv;
+
+      return createLLMResponseTypeRouter({
+        model,
+        buildPrompt: ({ userText, existingTask }) => {
+          if (existingTask) {
+            return [
+              "This is a continuation of an existing A2A Task.",
+              'Return responseType = "task".',
+              "",
+              "User request:",
+              userText,
+            ].join("\n");
+          }
+
+          const auth = env.GITHUB_TOKEN ? "authenticated" : "unauthenticated";
+
+          return [
+            "You are routing an A2A request for a GitHub assistant.",
+            "",
+            `GitHub API auth is currently: ${auth}.`,
+            "",
+            'Choose responseType = "message" when the response is immediate and self-contained (brief explanation, clarification question, auth guidance).',
+            'Choose responseType = "task" when the request likely requires GitHub API calls, multiple steps, or long output (searching repos, listing commits, analyzing activity).',
+            "",
+            "User request:",
+            userText,
+          ].join("\n");
+        },
+      });
+    },
   },
 
   healthCheckExtras: (env) => ({

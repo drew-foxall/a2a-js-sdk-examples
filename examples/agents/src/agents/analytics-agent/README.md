@@ -199,27 +199,27 @@ export async function generateBarChart(
 
 ### Artifact Streaming Pattern
 
-The Analytics Agent uses the **parseArtifacts** pattern:
+The Analytics Agent can use the **parseArtifacts** pattern in the A2A adapter (stream mode):
 
 ```typescript
-// In index.ts
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
-  
-  // This triggers streaming mode automatically!
-  parseArtifacts: async (prompt: string) => {
-    const chart = await generateChartFromPrompt(prompt);
-    return [{
-      artifactId: chart.id,
-      name: chart.name,
-      mimeType: "image/png",
-      data: chart.base64,
-    }];
-  },
-  
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+
+const adapter = new A2AAdapter(agent, {
+  mode: "stream",
   workingMessage: "Generating chart...",
+  // STREAM MODE ONLY: parse artifacts from accumulated text
+  parseArtifacts: (accumulatedText) => extractCharts(accumulatedText),
+  // OPTIONAL: generate artifacts after completion (async)
+  generateArtifacts: async ({ responseText, taskId, contextId }) => {
+    const chart = await generateChartFromPrompt(responseText);
+    return [
+      {
+        artifactId: chart.id,
+        name: chart.name,
+        parts: [{ kind: "text" as const, text: chart.base64 }],
+      },
+    ];
+  },
 });
 ```
 
@@ -231,23 +231,11 @@ const adapter = new A2AAdapter({
 5. **TaskArtifactUpdateEvent** emitted with PNG
 6. Client receives both text and image artifact
 
-### Automatic Streaming Mode
+### Mode selection
 
-The `A2AAdapter` **automatically detects streaming mode** when `parseArtifacts` is configured:
-
-```typescript
-// Simple mode (no parseArtifacts)
-new A2AAdapter({ agent, agentCard });
-
-// Streaming mode (parseArtifacts present) ← Analytics Agent uses this
-new A2AAdapter({ 
-  agent, 
-  agentCard, 
-  parseArtifacts: extractArtifacts 
-});
-```
-
-No manual mode selection needed!
+The adapter uses an explicit `mode`:
+- `mode: "stream"` for streaming text + incremental artifact parsing
+- `mode: "generate"` for a single awaited response
 
 ### Chart Configuration
 

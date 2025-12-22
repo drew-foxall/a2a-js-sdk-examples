@@ -476,18 +476,33 @@ export function extractA2aMetadata(response: Task | Message): A2aProviderMetadat
       metadata: toJSONObject(artifact.metadata),
     }));
 
+    // Extract finalText from completed task's status message
+    const finalText =
+      taskState === "completed" && statusMessage
+        ? statusMessage.parts
+            .filter((p): p is { kind: "text"; text: string } => p.kind === "text")
+            .map((p) => p.text)
+            .join("")
+        : null;
+
     return {
       taskId: response.id,
       contextId: response.contextId ?? null,
       taskState: taskState,
       inputRequired: taskState === "input-required",
       statusMessage,
+      finalText,
       artifacts,
       metadata: toJSONObjectOrNull(response.metadata),
     };
   }
 
   // Message response - serialize the message parts
+  const messageText = response.parts
+    .filter((p): p is { kind: "text"; text: string } => p.kind === "text")
+    .map((p) => p.text)
+    .join("");
+
   return {
     taskId: null,
     contextId: response.contextId ?? null,
@@ -499,6 +514,7 @@ export function extractA2aMetadata(response: Task | Message): A2aProviderMetadat
       parts: response.parts.map((p) => serializePart(p)),
       metadata: toJSONObject(response.metadata),
     },
+    finalText: messageText || null,
     artifacts: [],
     metadata: toJSONObjectOrNull(response.metadata),
   };

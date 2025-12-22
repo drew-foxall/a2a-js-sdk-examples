@@ -109,7 +109,15 @@ export interface DurableA2AAdapterConfig<TArgs extends unknown[] = []> {
 
   /**
    * Working status message to show while workflow is processing.
-   * @default "Processing your request..."
+   *
+   * @deprecated This option is no longer used. Status messages should not be
+   * included as TextParts in "working" status updates because AI SDK clients
+   * accumulate all text-delta events, causing status messages to be concatenated
+   * with actual response content.
+   *
+   * See: docs/A2A_PROTOCOL_UNDERSTANDING.md for detailed explanation
+   *
+   * @default "Processing your request..." (but not used)
    */
   workingMessage?: string;
 
@@ -473,6 +481,22 @@ export class DurableA2AAdapter<TArgs extends unknown[] = []> implements AgentExe
 
   /**
    * Publish "working" status update
+   *
+   * IMPORTANT: A2A Protocol Semantics
+   * ---------------------------------
+   * The "working" status indicates the agent is processing. Per A2A protocol:
+   * - The `message` field in status updates is for conveying information
+   * - However, when state is "working", any message content is a STATUS INDICATOR
+   *   (e.g., "Processing your request..."), NOT part of the actual response
+   * - Clients should display this differently (loading indicator, status bar)
+   *
+   * We intentionally DO NOT include a TextPart message here because:
+   * 1. AI SDK accumulates all text-delta events - status messages would be
+   *    concatenated with actual response content
+   * 2. The "completed" state contains the authoritative response text
+   * 3. Status indicators should be ephemeral, not part of conversation history
+   *
+   * See: docs/A2A_PROTOCOL_UNDERSTANDING.md for detailed explanation
    */
   private publishWorkingStatus(
     taskId: string,
@@ -485,14 +509,8 @@ export class DurableA2AAdapter<TArgs extends unknown[] = []> implements AgentExe
       contextId,
       status: {
         state: "working",
-        message: {
-          kind: "message",
-          role: "agent",
-          messageId: uuidv4(),
-          parts: [{ kind: "text", text: this.config.workingMessage }],
-          taskId,
-          contextId,
-        },
+        // NOTE: No message included - status text should not be accumulated
+        // with response content. Clients show generic "working" indicator.
         timestamp: new Date().toISOString(),
       },
       final: false,

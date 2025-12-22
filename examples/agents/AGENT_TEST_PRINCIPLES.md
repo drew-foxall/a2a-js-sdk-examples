@@ -345,7 +345,8 @@ describe("My Agent", () => {
 // ❌ BAD: Testing adapter in agent tests
 it("should work with A2AAdapter", async () => {
   const adapter = new A2AAdapter(agent, {...});
-  const response = await adapter.handleMessage(...);
+  // Adapter integration uses execute(requestContext, eventBus)
+  // and publishes A2A events to the event bus. This belongs in adapter tests.
   // This belongs in adapter tests!
 });
 

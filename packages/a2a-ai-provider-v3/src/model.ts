@@ -333,6 +333,10 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
   ): TransformStream<A2AStreamEventData, LanguageModelV3StreamPart> {
     let isFirstChunk = true;
     const activeTextIds = new Set<string>();
+    // Track taskIds that have already had content streamed (to avoid duplicating on final event)
+    // We use taskId instead of messageId because some A2A agents send different messageIds
+    // for each delta but the same taskId for all events in a task.
+    const completedTaskIds = new Set<string>();
     let finishReason: LanguageModelV3FinishReason = "unknown";
     let a2aMetadata: A2aProviderMetadata = createEmptyMetadata();
 
@@ -358,7 +362,8 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
             a2aMetadata,
             finishReason,
             controller,
-            activeTextIds
+            activeTextIds,
+            completedTaskIds
           ));
         } else if (event.kind === "artifact-update") {
           a2aMetadata = this.handleArtifactUpdate(event, a2aMetadata, controller, activeTextIds);
@@ -367,6 +372,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
             event,
             controller,
             activeTextIds,
+            completedTaskIds,
             isFirstChunk
           ));
         } else if (event.kind === "message") {
@@ -404,24 +410,133 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
     metadata: A2aProviderMetadata,
     currentFinishReason: LanguageModelV3FinishReason,
     controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
-    activeTextIds: Set<string>
+    activeTextIds: Set<string>,
+    completedTaskIds: Set<string>
   ) {
     const taskState = event.status?.state ?? null;
+    const taskId = event.taskId;
 
-    // Stream text content from status message if present
-    // This is the primary mechanism for streaming text deltas per A2A protocol
+    // =========================================================================
+    // A2A STATUS-UPDATE TEXT STREAMING
+    // =========================================================================
+    //
+    // This section handles streaming text content from A2A status-update events.
+    // Understanding A2A protocol semantics is critical for correct behavior.
+    //
+    // ## A2A Protocol Semantics
+    //
+    // A2A agents send status-update events with different states:
+    //
+    // 1. "working" state:
+    //    - Message contains DELTA text (incremental chunks)
+    //    - May include status indicators like "Processing your request..."
+    //    - These are streamed to show real-time progress
+    //
+    // 2. "completed" state:
+    //    - Message contains the FULL AUTHORITATIVE text (not a delta)
+    //    - This REPLACES all accumulated working deltas
+    //    - This is the final response that should be displayed
+    //
+    // ## The Problem
+    //
+    // AI SDK's useChat hook accumulates all text-delta events. There's no native
+    // "replace" mechanism. If we emit both working deltas AND completed content
+    // to the same text stream, they get concatenated:
+    //
+    //   Working deltas: "Processing..." + "Hello" + " world"
+    //   Completed:      "Hello world"
+    //   Result:         "Processing...Hello worldHello world" (WRONG!)
+    //
+    // ## Our Solution
+    //
+    // We emit the completed content as a SEPARATE text stream (different ID).
+    // This creates two text parts in the AI SDK message. The client then uses
+    // the LAST text part as the authoritative content.
+    //
+    //   Text Part 1 (working stream): "Processing...Hello world"
+    //   Text Part 2 (completed stream): "Hello world"
+    //   Client uses: Text Part 2 (CORRECT!)
+    //
+    // ## Implementation Notes
+    //
+    // - We track by taskId (not messageId) because A2A agents may send different
+    //   messageIds for each delta but the same taskId for all events in a task.
+    // - activeTextIds tracks open text streams (for text-start/text-end pairing)
+    // - completedTaskIds tracks tasks that have finished (to avoid re-emitting)
+    //
+    // ## Debugging Tips
+    //
+    // If you see duplicated content in the UI:
+    // 1. Check if completed content is being emitted to the same stream as deltas
+    // 2. Verify the client is using the last text part (see AISDKView.tsx onFinish)
+    // 3. Add logging here to see taskState, taskId, and hasStreamedContentForTask
+    //
+    // =========================================================================
     if (event.status?.message?.parts) {
       const isLastChunk = event.final ?? false;
-      this.enqueueParts(
-        controller,
-        event.status.message.parts,
-        event.status.message.messageId,
-        isLastChunk,
-        activeTextIds
-      );
+
+      // Use taskId as the text stream ID - it's consistent across all events
+      // for a single task, unlike messageId which may change per delta
+      const textStreamId = taskId;
+      const isCompletedState = taskState === "completed";
+      const hasStreamedContentForTask =
+        activeTextIds.has(textStreamId) || completedTaskIds.has(taskId);
+
+      if (isCompletedState) {
+        // COMPLETED STATE: Emit authoritative content
+        //
+        // If we've already streamed working deltas, emit completed content
+        // as a NEW text stream to create a separate text part.
+        // The client will use the last text part as authoritative.
+        if (hasStreamedContentForTask) {
+          // Close the working stream first
+          if (activeTextIds.has(textStreamId)) {
+            controller.enqueue({ type: "text-end", id: textStreamId });
+            activeTextIds.delete(textStreamId);
+          }
+          // Emit completed content with a DIFFERENT ID to create a new text part
+          // The "-completed" suffix ensures it's a distinct stream
+          const completedStreamId = `${textStreamId}-completed`;
+          this.enqueueParts(
+            controller,
+            event.status.message.parts,
+            completedStreamId,
+            true, // isLastChunk - completed is always final
+            activeTextIds
+          );
+        } else {
+          // Non-streaming agent: no prior deltas, emit content directly
+          this.enqueueParts(
+            controller,
+            event.status.message.parts,
+            textStreamId,
+            true, // isLastChunk
+            activeTextIds
+          );
+        }
+        completedTaskIds.add(taskId);
+      } else {
+        // WORKING STATE: Emit as streaming delta
+        //
+        // These deltas are accumulated by AI SDK. The completed state
+        // will emit authoritative content that the client uses to replace
+        // these accumulated deltas.
+        this.enqueueParts(
+          controller,
+          event.status.message.parts,
+          textStreamId,
+          isLastChunk,
+          activeTextIds
+        );
+        if (isLastChunk) {
+          completedTaskIds.add(taskId);
+        }
+      }
     }
 
     let statusMessage: A2aSerializedStatusMessage | null = null;
+    let finalText: string | null = metadata.finalText;
+
     if (event.status?.message) {
       const msg = event.status.message;
       statusMessage = {
@@ -430,6 +545,15 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
         parts: msg.parts.map((p) => serializePart(p)),
         metadata: toJSONObject(msg.metadata),
       };
+
+      // Capture finalText when we receive the "completed" state
+      // This allows clients to replace accumulated streaming content with the authoritative final text
+      if (taskState === "completed") {
+        finalText = msg.parts
+          .filter((p): p is { kind: "text"; text: string } => p.kind === "text")
+          .map((p) => p.text)
+          .join("");
+      }
     }
 
     const a2aMetadata: A2aProviderMetadata = {
@@ -439,6 +563,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
       taskState,
       inputRequired: taskState === "input-required",
       statusMessage: statusMessage ?? metadata.statusMessage,
+      finalText,
     };
 
     const finishReason = event.final ? mapFinishReason(event) : currentFinishReason;
@@ -485,27 +610,50 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
     };
   }
 
+  /**
+   * Handle A2A "task" events.
+   *
+   * Task events are sent at the end of a task and contain the complete task state.
+   * If we've already streamed content via status-update events, we skip emitting
+   * the task content to avoid duplication.
+   *
+   * IMPORTANT: Task events use `event.id` for the task ID, while status-update
+   * events use `event.taskId`. Both refer to the same task.
+   */
   private handleTaskEvent(
     event: A2AStreamEventData & { kind: "task" },
     controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
     activeTextIds: Set<string>,
+    completedTaskIds: Set<string>,
     isFirstChunk: boolean
   ) {
     const a2aMetadata = extractA2aMetadata(event);
     const finishReason = mapTaskStateToFinishReason(event.status?.state);
 
+    // IMPORTANT: For "task" events, the task ID is in event.id
+    // (not event.taskId like status-update events)
+    const taskId = event.id;
+
     if (isFirstChunk) {
       controller.enqueue({ type: "response-metadata", ...getResponseMetadata(event) });
     }
 
+    // Skip emitting task content if we've already streamed via status-update events.
+    // The status-update handler already emitted the authoritative completed content.
     if (event.status?.message) {
-      this.enqueueParts(
-        controller,
-        event.status.message.parts,
-        event.status.message.messageId,
-        true,
-        activeTextIds
-      );
+      const hasStreamedContent = activeTextIds.has(taskId) || completedTaskIds.has(taskId);
+
+      if (hasStreamedContent) {
+        // Already streamed content for this task - just close the stream if open
+        if (activeTextIds.has(taskId)) {
+          controller.enqueue({ type: "text-end", id: taskId });
+          activeTextIds.delete(taskId);
+        }
+        // Skip emitting - would duplicate the streamed content
+      } else {
+        // No prior streaming - this is a non-streaming response, emit the content
+        this.enqueueParts(controller, event.status.message.parts, taskId, true, activeTextIds);
+      }
     }
 
     if (event.artifacts) {

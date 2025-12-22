@@ -104,6 +104,31 @@ describe("createA2AExecutor", () => {
 
     expect(createAgentSpy).toHaveBeenCalledWith(mockModel, mockEnv);
   });
+
+  it("should call selectResponseTypeFactory when provided", () => {
+    const selectResponseType = vi.fn(() => "message" as const);
+    const factorySelect = vi.fn(() => "task" as const);
+    const selectResponseTypeFactory = vi.fn(() => factorySelect);
+
+    const config: A2AWorkerConfig = {
+      agentName: "Test Agent",
+      createAgent: () => createMockAgent(),
+      createAgentCard: () => mockAgentCard,
+      adapterOptions: {
+        mode: "stream",
+        selectResponseType,
+        selectResponseTypeFactory,
+      },
+    };
+
+    createA2AExecutor(config, mockModel, mockEnv);
+
+    expect(selectResponseTypeFactory).toHaveBeenCalledTimes(1);
+    expect(selectResponseTypeFactory).toHaveBeenCalledWith({
+      model: mockModel,
+      env: mockEnv,
+    });
+  });
 });
 
 describe("defineWorkerConfig", () => {

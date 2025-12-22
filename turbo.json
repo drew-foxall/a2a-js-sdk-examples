@@ -1,10 +1,27 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["pnpm-lock.yaml", "biome.json", "tsconfig.json"],
+  "globalPassThroughEnv": [
+    "AI_PROVIDER",
+    "AI_MODEL",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "GOOGLE_GENERATIVE_AI_API_KEY",
+    "GROQ_API_KEY",
+    "OLLAMA_BASE_URL",
+    "AZURE_RESOURCE_NAME",
+    "AZURE_OPENAI_API_KEY",
+    "GITHUB_TOKEN",
+    "TMDB_API_KEY",
+    "DEFENDER_URL",
+    "MAX_TURNS",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "build/**"],
-      "inputs": ["src/**", "package.json", "tsconfig.json"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "build/**"]
     },
     "dev": {
       "cache": false,
@@ -22,34 +39,48 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
-      "inputs": ["src/**", "**/*.test.ts", "**/*.spec.ts"]
+      "outputs": ["coverage/**"]
     },
     "test:watch": {
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"],
-      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+      "outputs": []
     },
     "lint:fix": {
       "cache": false,
-      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+      "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "outputs": [],
-      "inputs": ["src/**", "**/*.ts", "**/*.tsx", "tsconfig.json"]
+      "outputs": []
     },
     "format": {
-      "outputs": [],
-      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+      "outputs": []
     },
     "format:write": {
       "cache": false,
-      "outputs": [],
-      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.md"]
+      "outputs": []
+    },
+    "a2a-inspector#dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build"]
+    },
+    "a2a-inspector#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "a2a-inspector#typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "a2a-inspector#lint": {
+      "outputs": []
+    },
+    "a2a-inspector#test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
     }
   }
 }

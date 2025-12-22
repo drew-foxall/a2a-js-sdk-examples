@@ -221,6 +221,19 @@ export interface ParsedArtifacts {
 }
 
 /**
+ * Context provided to selectResponseType hook
+ *
+ * Contains information about the current request to help decide
+ * whether to respond with a Message or Task.
+ */
+export interface ResponseTypeSelectionContext {
+  /** The incoming user message */
+  userMessage: Message;
+  /** Existing task if this is a continuation, undefined for new requests */
+  existingTask?: Task;
+}
+
+/**
  * Configuration options for A2AAdapter
  *
  * Mirrors AI SDK's streamText vs generateText model:
@@ -238,11 +251,71 @@ export interface A2AAdapterConfig {
    * - Stream: Better UX for long responses, real-time feedback
    * - Generate: Simpler, single response, good for quick agents
    *
+   * Note: This mode only applies to Task-based responses. Message responses
+   * always use agent.generate() since they are immediate and don't need streaming.
+   *
    * @example
    * mode: 'stream'   // Real-time streaming
    * mode: 'generate' // Awaited response
    */
   mode: "stream" | "generate";
+
+  /**
+   * Determine response type for each request.
+   *
+   * IMPORTANT (AI SDK workflow alignment):
+   * This is intended to be an **agent-owned routing step**, not a client instruction.
+   * In A2A, the server must choose whether to respond with a stateless `Message` or
+   * initiate a stateful `Task` **before** it emits any task lifecycle events (and before
+   * starting SSE streaming). The most reliable way to do that while keeping the decision
+   * "owned by the agent" is to implement a small *routing/classification* step here
+   * (AI SDK “Routing” pattern) using a cheap model call or deterministic policy.
+   *
+   * Continuations:
+   * If `existingTask` is present, you should almost always return `"task"` to continue
+   * the task lifecycle rather than switching to a stateless message mid-context.
+   *
+   * A2A protocol allows agents to respond with either:
+   * - "message": Stateless, immediate response (no task tracking)
+   * - "task": Stateful, tracked operation with lifecycle
+   *
+   * Use "message" for:
+   * - Simple queries with immediate answers
+   * - Trivial interactions (greetings, quick Q&A)
+   * - Operations that don't need progress tracking or cancellation
+   *
+   * Use "task" for:
+   * - Long-running operations
+   * - Multi-step workflows (sequential chains, parallel processing)
+   * - Operations that benefit from progress tracking
+   * - Operations that may need cancellation
+   * - Evaluator-optimizer loops
+   * - Orchestrator-worker patterns
+   *
+   * @param context - Request context with user message and existing task
+   * @returns "message" or "task" (sync or async)
+   * @default Always returns "task" (backward compatible)
+   *
+   * @example Always use message (for simple agents like Hello World)
+   * ```typescript
+   * selectResponseType: () => "message"
+   * ```
+   *
+   * @example Agent-owned routing (AI SDK “Routing” pattern)
+   * ```typescript
+   * selectResponseType: async ({ userMessage, existingTask }) => {
+   *   if (existingTask) return "task";
+   *
+   *   // Do a cheap classification step (e.g. generateObject / small model)
+   *   // to decide whether this request should be tracked as a Task.
+   *   const { responseType } = await classifyRequest(userMessage);
+   *   return responseType; // "message" | "task"
+   * }
+   * ```
+   */
+  selectResponseType?: (
+    context: ResponseTypeSelectionContext
+  ) => "message" | "task" | Promise<"message" | "task">;
 
   /**
    * Parse artifacts from accumulated text during streaming (STREAM MODE ONLY)
@@ -335,7 +408,17 @@ export interface A2AAdapterConfig {
   /**
    * Working status message to show while agent is processing.
    *
-   * @default "Processing your request..."
+   * @deprecated This option is no longer used. Status messages should not be
+   * included as TextParts in "working" status updates because AI SDK clients
+   * accumulate all text-delta events, causing status messages to be concatenated
+   * with actual response content.
+   *
+   * Instead, clients should display a generic "Agent is working..." indicator
+   * when they receive a status-update with state="working".
+   *
+   * See: docs/A2A_PROTOCOL_UNDERSTANDING.md for detailed explanation
+   *
+   * @default "Processing your request..." (but not used)
    */
   workingMessage?: string;
 
@@ -407,6 +490,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       | "parseTaskState"
       | "transformResponse"
       | "buildFinalMessage"
+      | "selectResponseType"
       | "logger"
     >
   > &
@@ -417,6 +501,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       | "parseTaskState"
       | "transformResponse"
       | "buildFinalMessage"
+      | "selectResponseType"
     >;
 
   constructor(
@@ -442,6 +527,7 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       parseTaskState: config?.parseTaskState,
       transformResponse: config?.transformResponse,
       buildFinalMessage: config?.buildFinalMessage,
+      selectResponseType: config?.selectResponseType,
     };
 
     // Initialize logger first so we can use it for warnings
@@ -466,18 +552,147 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
   /**
    * Execute an A2A request using the wrapped ToolLoopAgent
    *
-   * EXPLICIT MODE EXECUTION:
+   * RESPONSE TYPE SELECTION:
+   * - If selectResponseType returns "message" → Immediate stateless response
+   * - If selectResponseType returns "task" (default) → Full task lifecycle
+   *
+   * TASK MODE EXECUTION:
    * - mode: 'stream' → Uses agent.stream() for real-time responses
    * - mode: 'generate' → Uses agent.generate() for awaited responses
    */
   async execute(requestContext: RequestContext, eventBus: ExecutionEventBus): Promise<void> {
     const { userMessage, task: existingTask } = requestContext;
 
+    // Determine response type for this request
+    const responseType = this.config.selectResponseType
+      ? await this.config.selectResponseType({ userMessage, existingTask })
+      : "task"; // Default: backward compatible
+
+    if (responseType === "message") {
+      // Execute as stateless Message response
+      await this.executeAsMessage(userMessage, eventBus);
+      return;
+    }
+
+    // Execute as stateful Task response
+    await this.executeAsTask(requestContext, eventBus);
+  }
+
+  /**
+   * Execute request and respond with stateless Message.
+   *
+   * Per A2A protocol, Message responses are for immediate, self-contained
+   * interactions that don't require state management or progress tracking.
+   *
+   * No Task lifecycle events are published (no submitted → working → completed).
+   * The response is a single Message event.
+   */
+  private async executeAsMessage(userMessage: Message, eventBus: ExecutionEventBus): Promise<void> {
+    const contextId = userMessage.contextId || uuidv4();
+
+    this.logger.debug("Executing as Message response", {
+      messageId: userMessage.messageId,
+      contextId,
+    });
+
+    // Extract user prompt from A2A message
+    const userPrompt = this.extractTextFromMessage(userMessage);
+
+    if (!userPrompt) {
+      this.logger.warn("No text found in message", { messageId: userMessage.messageId });
+      this.publishErrorMessage(contextId, "No message text to process", eventBus);
+      return;
+    }
+
+    try {
+      // Prepare messages for agent (no history for message mode - stateless)
+      const messages = this.prepareMessages(userMessage, undefined);
+
+      // Convert to AI SDK ModelMessage format
+      const aiMessages: ModelMessage[] = messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      // Always use generate mode for Message responses (no streaming needed)
+      this.logger.debug("Calling agent.generate() for Message response", { contextId });
+      const result = await this.agent.generate({
+        prompt: aiMessages,
+      });
+
+      // Transform response if configured
+      const transformed = this.config.transformResponse
+        ? this.config.transformResponse(result)
+        : result;
+
+      // Extract text from transformed result
+      const responseText = typeof transformed === "string" ? transformed : transformed.text;
+
+      // Publish Message response (NOT a Task)
+      const responseMessage: Message = {
+        kind: "message",
+        role: "agent",
+        messageId: uuidv4(),
+        contextId: contextId,
+        parts: [{ kind: "text", text: responseText }],
+        metadata: {},
+      };
+
+      eventBus.publish(responseMessage);
+      this.logger.debug("Published Message response", {
+        contextId,
+        responseLength: responseText.length,
+      });
+    } catch (error: unknown) {
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error("Error in Message execution", {
+        contextId,
+        error: this.toLogContextError(error),
+      });
+      this.publishErrorMessage(contextId, errorMessage, eventBus);
+    }
+  }
+
+  /**
+   * Publish an error as a Message response.
+   */
+  private publishErrorMessage(
+    contextId: string,
+    errorText: string,
+    eventBus: ExecutionEventBus
+  ): void {
+    const errorMessage: Message = {
+      kind: "message",
+      role: "agent",
+      messageId: uuidv4(),
+      contextId: contextId,
+      parts: [{ kind: "text", text: `Error: ${errorText}` }],
+      metadata: {},
+    };
+    eventBus.publish(errorMessage);
+  }
+
+  /**
+   * Execute request with full Task lifecycle.
+   *
+   * Creates a Task with submitted → working → completed lifecycle.
+   * Supports streaming, progress tracking, and cancellation.
+   *
+   * EXPLICIT MODE EXECUTION:
+   * - mode: 'stream' → Uses agent.stream() for real-time responses
+   * - mode: 'generate' → Uses agent.generate() for awaited responses
+   */
+  private async executeAsTask(
+    requestContext: RequestContext,
+    eventBus: ExecutionEventBus
+  ): Promise<void> {
+    const { userMessage, task: existingTask } = requestContext;
+
     // Determine IDs for the task and context
     const taskId = existingTask?.id || uuidv4();
     const contextId = userMessage.contextId || existingTask?.contextId || uuidv4();
 
-    this.logger.debug("Processing message", {
+    this.logger.debug("Processing message as Task", {
       messageId: userMessage.messageId,
       taskId,
       contextId,
@@ -946,6 +1161,27 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
 
   /**
    * Publish "working" status update
+   *
+   * IMPORTANT: A2A Protocol Semantics
+   * ---------------------------------
+   * The "working" status indicates the agent is processing. Per A2A protocol:
+   * - The `message` field in status updates is for conveying information
+   * - However, when state is "working", any message content is a STATUS INDICATOR
+   *   (e.g., "Processing your request..."), NOT part of the actual response
+   * - Clients should display this differently (loading indicator, status bar)
+   *
+   * We intentionally DO NOT include a TextPart message here because:
+   * 1. AI SDK accumulates all text-delta events - status messages would be
+   *    concatenated with actual response content
+   * 2. The "completed" state contains the authoritative response text
+   * 3. Status indicators should be ephemeral, not part of conversation history
+   *
+   * If you need to convey status information, consider:
+   * - Using DataPart with structured status metadata
+   * - Having the client show a generic "Agent is working..." indicator
+   *
+   * See: docs/A2A_PROTOCOL_UNDERSTANDING.md for detailed explanation
+   * See: https://raw.githubusercontent.com/a2aproject/A2A/main/docs/topics/streaming-and-async.md
    */
   private publishWorkingStatus(
     taskId: string,
@@ -958,14 +1194,9 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       contextId: contextId,
       status: {
         state: "working",
-        message: {
-          kind: "message",
-          role: "agent",
-          messageId: uuidv4(),
-          parts: [{ kind: "text", text: this.config.workingMessage }],
-          taskId: taskId,
-          contextId: contextId,
-        },
+        // NOTE: No message included - see comment above for rationale
+        // The workingMessage config is intentionally not used here to avoid
+        // status text being accumulated with response content in AI SDK clients
         timestamp: new Date().toISOString(),
       },
       final: false,

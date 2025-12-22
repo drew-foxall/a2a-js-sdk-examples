@@ -114,10 +114,12 @@ export function createHelloWorldAgent(model: LanguageModel) {
 
 Uses the unified `A2AAdapter` pattern:
 ```typescript
-const adapter = new A2AAdapter({
-  agent,
-  agentCard,
-  logger: console,
+import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
+
+// Hello World is immediate + self-contained, so Message responses work well:
+const adapter = new A2AAdapter(agent, {
+  mode: "generate",
+  selectResponseType: () => "message",
 });
 ```
 

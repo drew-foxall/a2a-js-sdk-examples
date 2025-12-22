@@ -1,0 +1,140 @@
+# =============================================================================
+# A2A Inspector Deployment Workflow
+# =============================================================================
+#
+# This workflow is OPTIONAL and exists for manual/preview deployments.
+# Production deployments happen automatically via Vercel's GitHub integration.
+#
+# ## Architecture
+#
+# 1. CI Workflow (ci.yml) - Quality Gates
+#    - Runs on all PRs and pushes to main/develop
+#    - Type checking, linting, testing
+#    - Must pass before merge to main
+#
+# 2. Vercel GitHub Integration - Production Deploys
+#    - Automatically triggered on push to main
+#    - Uses vercel.json configuration
+#    - Skips type checking (CI already validated)
+#
+# 3. This Workflow - Preview/Manual Deploys
+#    - Manual trigger for preview deployments
+#    - Useful for testing before merge
+#    - Leverages Turborepo caching from CI
+#
+# ## When to Use This Workflow
+#
+# - Manual preview deployments from feature branches
+# - Testing deployment configuration changes
+# - Emergency rollbacks (with workflow_dispatch)
+#
+# =============================================================================
+
+name: Deploy A2A Inspector (Manual)
+
+on:
+  # Only manual trigger - Vercel handles automatic deploys
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+
+# Cancel in-progress runs when a new workflow with the same group name starts
+concurrency:
+  group: deploy-inspector-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_INSPECTOR_PROJECT_ID }}
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: ${{ inputs.environment || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+      environment: ${{ inputs.environment || 'preview' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [[ "${{ inputs.environment }}" == "production" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "vercel_args=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Try to restore CI build artifacts first (if CI ran on same commit)
+      - name: Restore CI build artifacts
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            a2a-inspector/.next
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
+
+      # Build workspace dependencies if cache miss
+      - name: Build workspace dependencies
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: pnpm turbo run build --filter=a2a-inspector^...
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=${{ steps.set-env.outputs.environment }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build with Vercel
+        run: vercel build ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt ${{ steps.set-env.outputs.vercel_args }} --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "### 🚀 Deployment URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ steps.set-env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** $URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> Built with Bun runtime 🥟" >> $GITHUB_STEP_SUMMARY
