@@ -35,6 +35,11 @@ jobs:
           node-version: 'lts/*'
           cache: 'pnpm'
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -48,6 +53,7 @@ jobs:
           path: |
             packages/*/dist
             examples/*/dist
+            a2a-inspector/.next
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
@@ -80,6 +86,7 @@ jobs:
           path: |
             packages/*/dist
             examples/*/dist
+            a2a-inspector/.next
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
@@ -114,6 +121,7 @@ jobs:
           path: |
             packages/*/dist
             examples/*/dist
+            a2a-inspector/.next
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
@@ -148,6 +156,7 @@ jobs:
           path: |
             packages/*/dist
             examples/*/dist
+            a2a-inspector/.next
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
@@ -185,6 +194,7 @@ jobs:
           path: |
             packages/*/dist
             examples/*/dist
+            a2a-inspector/.next
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
@@ -202,3 +212,53 @@ jobs:
           name: adapter-package
           path: packages/a2a-ai-sdk-adapter/*.tgz
           retention-days: 7
+
+  # Stage 4: Inspector build verification (runs in parallel with package)
+  # This ensures the inspector CAN build without deploying
+  verify-inspector:
+    name: Verify Inspector Build
+    needs: [typecheck, lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/*/dist
+            examples/*/dist
+            a2a-inspector/.next
+            node_modules/.cache/turbo
+          key: build-artifacts-${{ github.sha }}
+
+      - name: Build inspector
+        run: pnpm turbo run build --filter=a2a-inspector
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "a2a-inspector/.next" ]; then
+            echo "❌ Inspector build failed - .next directory not found"
+            exit 1
+          fi
+          echo "✅ Inspector build verified successfully"

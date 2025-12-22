@@ -1,17 +1,39 @@
-name: Deploy A2A Inspector
+# =============================================================================
+# A2A Inspector Deployment Workflow
+# =============================================================================
+#
+# This workflow is OPTIONAL and exists for manual/preview deployments.
+# Production deployments happen automatically via Vercel's GitHub integration.
+#
+# ## Architecture
+#
+# 1. CI Workflow (ci.yml) - Quality Gates
+#    - Runs on all PRs and pushes to main/develop
+#    - Type checking, linting, testing
+#    - Must pass before merge to main
+#
+# 2. Vercel GitHub Integration - Production Deploys
+#    - Automatically triggered on push to main
+#    - Uses vercel.json configuration
+#    - Skips type checking (CI already validated)
+#
+# 3. This Workflow - Preview/Manual Deploys
+#    - Manual trigger for preview deployments
+#    - Useful for testing before merge
+#    - Leverages Turborepo caching from CI
+#
+# ## When to Use This Workflow
+#
+# - Manual preview deployments from feature branches
+# - Testing deployment configuration changes
+# - Emergency rollbacks (with workflow_dispatch)
+#
+# =============================================================================
+
+name: Deploy A2A Inspector (Manual)
 
 on:
-  push:
-    paths:
-      - 'a2a-inspector/**'
-      - 'packages/a2a-ai-provider-v3/**'
-      - '.github/workflows/deploy-inspector.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'a2a-inspector/**'
-      - 'packages/a2a-ai-provider-v3/**'
-      - '.github/workflows/deploy-inspector.yml'
+  # Only manual trigger - Vercel handles automatic deploys
   workflow_dispatch:
     inputs:
       environment:
@@ -35,15 +57,33 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_INSPECTOR_PROJECT_ID }}
 
 jobs:
-  # Stage 1: Build workspace dependencies (can reuse CI cache if available)
-  build:
-    name: Build Dependencies
+  deploy:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
+    environment:
+      name: ${{ inputs.environment || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+      environment: ${{ inputs.environment || 'preview' }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [[ "${{ inputs.environment }}" == "production" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "vercel_args=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -69,87 +109,18 @@ jobs:
         with:
           path: |
             packages/*/dist
+            a2a-inspector/.next
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
-      # Only build if cache miss - Turbo will handle incremental builds
+      # Build workspace dependencies if cache miss
       - name: Build workspace dependencies
+        if: steps.cache-restore.outputs.cache-hit != 'true'
         run: pnpm turbo run build --filter=a2a-inspector^...
-
-      # Save build artifacts for deploy job
-      - name: Cache inspector build artifacts
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            packages/*/dist
-            node_modules/.cache/turbo
-          key: inspector-build-${{ github.sha }}
-
-  # Stage 2: Deploy to Vercel (after build completes)
-  deploy:
-    name: Deploy to Vercel
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    # Set environment based on branch/event
-    environment:
-      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'production' || inputs.environment || 'preview' }}
-      url: ${{ steps.deploy.outputs.url }}
-
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
-      environment: ${{ steps.set-env.outputs.environment }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Determine environment
-        id: set-env
-        run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
-          elif [[ "${{ inputs.environment }}" == "production" ]]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-            echo "vercel_args=--prod" >> $GITHUB_OUTPUT
-          else
-            echo "environment=preview" >> $GITHUB_OUTPUT
-            echo "vercel_args=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'pnpm'
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Restore build artifacts from build job
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            packages/*/dist
-            node_modules/.cache/turbo
-          key: inspector-build-${{ github.sha }}
 
       - name: Install Vercel CLI
         run: pnpm add -g vercel@latest
 
-      # Run vercel commands from workspace root where .vercel/project.json is located
-      # The project's root directory setting in Vercel dashboard points to a2a-inspector
       - name: Pull Vercel Environment
         run: vercel pull --yes --environment=${{ steps.set-env.outputs.environment }} --token=${{ secrets.VERCEL_TOKEN }}
 
@@ -165,41 +136,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ steps.set-env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**URL:** $URL" >> $GITHUB_STEP_SUMMARY
-
-  # Stage 3: Comment on PR with deployment URL (parallel to nothing, just depends on deploy)
-  comment:
-    name: Comment on PR
-    needs: deploy
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-
-    steps:
-      - name: Find existing comment
-        uses: peter-evans/find-comment@v3
-        id: find-comment
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: A2A Inspector Preview
-
-      - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ## 🔍 A2A Inspector Preview
-
-            | Name | Status | URL |
-            |------|--------|-----|
-            | **a2a-inspector** | ✅ Ready | [${{ needs.deploy.outputs.url }}](${{ needs.deploy.outputs.url }}) |
-
-            ---
-            
-            **Commit:** ${{ github.sha }}
-            **Branch:** `${{ github.head_ref }}`
-            
-            > Built with Bun runtime 🥟
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> Built with Bun runtime 🥟" >> $GITHUB_STEP_SUMMARY

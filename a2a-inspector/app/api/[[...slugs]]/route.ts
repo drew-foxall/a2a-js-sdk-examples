@@ -4,6 +4,10 @@ import { app } from "@/server";
 // which is not allowed in Edge runtime
 export const runtime = "nodejs";
 
+// Maximum function duration for streaming responses
+// 300s = 5 minutes (Hobby max, Pro/Enterprise can go up to 800s with Fluid Compute)
+export const maxDuration = 300;
+
 /**
  * Next.js catch-all API route that forwards all requests to the Elysia app.
  *

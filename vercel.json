@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "pnpm install --frozen-lockfile --filter a2a-inspector...",
+  "buildCommand": "pnpm -r --filter a2a-inspector... run build",
+  "outputDirectory": "a2a-inspector/.next",
+  "functions": {
+    "a2a-inspector/app/api/**/*.ts": {
+      "maxDuration": 300
+    }
+  }
+}
+
