@@ -47,7 +47,9 @@ function extractEventMetadata(event: unknown): Partial<A2AEventData> {
   // For message events
   if (Array.isArray(e.parts)) {
     textContent = e.parts
-      .filter((p: unknown) => p && typeof p === "object" && (p as Record<string, unknown>).kind === "text")
+      .filter(
+        (p: unknown) => p && typeof p === "object" && (p as Record<string, unknown>).kind === "text"
+      )
       .map((p: unknown) => ((p as Record<string, unknown>).text as string) || "")
       .join("");
   }
@@ -144,7 +146,13 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
   "/",
   async ({ body }) => {
     try {
-      const { messages, agentUrl, contextId, smoothStream: smoothCfg, includeRawEvents = true } = body;
+      const {
+        messages,
+        agentUrl,
+        contextId,
+        smoothStream: smoothCfg,
+        includeRawEvents = true,
+      } = body;
 
       if (!agentUrl) {
         return new Response(JSON.stringify({ error: "Agent URL is required" }), {
@@ -242,5 +250,3 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
     }),
   }
 );
-
-
