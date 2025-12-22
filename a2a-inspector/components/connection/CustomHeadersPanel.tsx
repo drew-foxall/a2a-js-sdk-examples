@@ -207,13 +207,10 @@ function HeaderRow({
 export function customHeadersToRecord(headers: CustomHeader[] | undefined): Record<string, string> {
   if (!headers) return {};
 
-  return headers
-    .filter((h) => h.enabled && h.name.trim() && h.value.trim())
-    .reduce(
-      (acc, h) => {
-        acc[h.name.trim()] = h.value.trim();
-        return acc;
-      },
-      {} as Record<string, string>
-    );
+  // Use Object.fromEntries to avoid type assertion on reduce accumulator
+  return Object.fromEntries(
+    headers
+      .filter((h) => h.enabled && h.name.trim() && h.value.trim())
+      .map((h) => [h.name.trim(), h.value.trim()])
+  );
 }

@@ -1,10 +1,21 @@
 import type {
   AgentCard,
   Message,
+  Part,
   Task,
   TaskArtifactUpdateEvent,
   TaskStatusUpdateEvent,
 } from "@drew-foxall/a2a-js-sdk";
+import {
+  hasMessageStructure,
+  hasTaskArtifactUpdateStructure,
+  hasTaskStatusUpdateStructure,
+  hasTaskStructure,
+  isMessage,
+  isTask,
+  isTaskArtifactUpdateEvent,
+  isTaskStatusUpdateEvent,
+} from "@/lib/a2a-type-guards";
 
 /**
  * Validation error with field path and message.
@@ -126,35 +137,47 @@ export type A2AEvent = Message | Task | TaskStatusUpdateEvent | TaskArtifactUpda
  * Returns an array of validation errors/warnings.
  */
 export function validateA2AEvent(event: A2AEvent): ValidationError[] {
-  const errors: ValidationError[] = [];
+  // Use type guards to properly narrow the event type
+  if (isMessage(event)) {
+    return validateMessage(event);
+  }
 
-  // Check if it's a Message
-  if ("role" in event && "parts" in event) {
+  if (isTask(event)) {
+    return validateTask(event);
+  }
+
+  if (isTaskStatusUpdateEvent(event)) {
+    return validateTaskStatusUpdate(event);
+  }
+
+  if (isTaskArtifactUpdateEvent(event)) {
+    return validateTaskArtifactUpdate(event);
+  }
+
+  // Fallback: check structure for events that may not have `kind` discriminator
+  if (hasMessageStructure(event)) {
     return validateMessage(event as Message);
   }
 
-  // Check if it's a Task
-  if ("id" in event && "status" in event && !("taskId" in event)) {
+  if (hasTaskStructure(event)) {
     return validateTask(event as Task);
   }
 
-  // Check if it's a TaskStatusUpdateEvent
-  if ("taskId" in event && "status" in event && !("artifact" in event)) {
+  if (hasTaskStatusUpdateStructure(event)) {
     return validateTaskStatusUpdate(event as TaskStatusUpdateEvent);
   }
 
-  // Check if it's a TaskArtifactUpdateEvent
-  if ("taskId" in event && "artifact" in event) {
+  if (hasTaskArtifactUpdateStructure(event)) {
     return validateTaskArtifactUpdate(event as TaskArtifactUpdateEvent);
   }
 
-  errors.push({
-    field: "event",
-    message: "Unknown event type",
-    severity: "warning",
-  });
-
-  return errors;
+  return [
+    {
+      field: "event",
+      message: "Unknown event type",
+      severity: "warning",
+    },
+  ];
 }
 
 /**
@@ -203,15 +226,30 @@ function validateMessage(message: Message): ValidationError[] {
 }
 
 /**
+ * Type guard to check if value has a specific property.
+ */
+function hasProperty<K extends string>(obj: object, key: K): obj is object & Record<K, unknown> {
+  return key in obj;
+}
+
+/**
  * Validates a message Part.
  */
-function validatePart(part: unknown, index: number): ValidationError[] {
+function validatePart(part: Part | unknown, index: number): ValidationError[] {
   const errors: ValidationError[] = [];
-  const p = part as Record<string, unknown>;
 
-  // TextPart
-  if ("text" in p) {
-    if (typeof p.text !== "string") {
+  if (part === null || typeof part !== "object") {
+    errors.push({
+      field: `parts[${index}]`,
+      message: "Part must be an object",
+      severity: "error",
+    });
+    return errors;
+  }
+
+  // TextPart - has "text" property
+  if (hasProperty(part, "text")) {
+    if (typeof part.text !== "string") {
       errors.push({
         field: `parts[${index}].text`,
         message: "Text part text must be a string",
@@ -221,17 +259,26 @@ function validatePart(part: unknown, index: number): ValidationError[] {
     return errors;
   }
 
-  // FilePart
-  if ("file" in p) {
-    const file = p.file as Record<string, unknown>;
-    if (!file.mimeType) {
+  // FilePart - has "file" property
+  if (hasProperty(part, "file")) {
+    const file = part.file;
+    if (file === null || typeof file !== "object") {
+      errors.push({
+        field: `parts[${index}].file`,
+        message: "File part file must be an object",
+        severity: "error",
+      });
+      return errors;
+    }
+
+    if (!hasProperty(file, "mimeType") || !file.mimeType) {
       errors.push({
         field: `parts[${index}].file.mimeType`,
         message: "File part mimeType is required",
         severity: "error",
       });
     }
-    if (!file.bytes && !file.uri) {
+    if (!hasProperty(file, "bytes") && !hasProperty(file, "uri")) {
       errors.push({
         field: `parts[${index}].file`,
         message: "File part must have either bytes or uri",
@@ -241,9 +288,9 @@ function validatePart(part: unknown, index: number): ValidationError[] {
     return errors;
   }
 
-  // DataPart
-  if ("data" in p) {
-    if (typeof p.data !== "object" || p.data === null) {
+  // DataPart - has "data" property
+  if (hasProperty(part, "data")) {
+    if (typeof part.data !== "object" || part.data === null) {
       errors.push({
         field: `parts[${index}].data`,
         message: "Data part data must be an object",

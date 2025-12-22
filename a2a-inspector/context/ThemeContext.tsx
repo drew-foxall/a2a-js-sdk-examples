@@ -27,6 +27,18 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = "a2a-inspector-theme";
 
 /**
+ * Valid theme mode values.
+ */
+const THEME_MODE_VALUES: readonly ThemeMode[] = ["light", "dark", "system"] as const;
+
+/**
+ * Type guard to check if a value is a valid ThemeMode.
+ */
+function isThemeMode(value: unknown): value is ThemeMode {
+  return typeof value === "string" && THEME_MODE_VALUES.includes(value as ThemeMode);
+}
+
+/**
  * Theme context provider with system preference detection and persistence.
  */
 export function ThemeProvider({ children }: { readonly children: ReactNode }): React.JSX.Element {
@@ -36,8 +48,8 @@ export function ThemeProvider({ children }: { readonly children: ReactNode }): R
 
   // Load saved preference on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-    if (saved && ["light", "dark", "system"].includes(saved)) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (isThemeMode(saved)) {
       setModeState(saved);
     }
     setMounted(true);

@@ -1,5 +1,4 @@
 import { a2aV3 } from "@drew-foxall/a2a-ai-provider-v3";
-import type { Part, TextPart } from "@drew-foxall/a2a-js-sdk";
 import type { UIMessageStreamWriter } from "ai";
 import {
   convertToModelMessages,
@@ -9,70 +8,13 @@ import {
   streamText,
 } from "ai";
 import { Elysia, t } from "elysia";
+import {
+  extractTextFromParts,
+  getArrayProp,
+  getObjectProp,
+  getStringProp,
+} from "@/lib/a2a-type-guards";
 import type { A2AEventData } from "../../schemas/a2a-events";
-
-/**
- * Type guard to check if a value is a valid Part object.
- */
-function isPart(value: unknown): value is Part {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "kind" in value &&
-    (value.kind === "text" || value.kind === "file" || value.kind === "data")
-  );
-}
-
-/**
- * Type guard to check if a Part is a TextPart.
- */
-function isTextPart(part: Part): part is TextPart {
-  return part.kind === "text";
-}
-
-/**
- * Safely extract string property from an object.
- */
-function getStringProp(obj: object, key: string): string | undefined {
-  if (key in obj) {
-    const value = (obj as Record<string, unknown>)[key];
-    return typeof value === "string" ? value : undefined;
-  }
-  return undefined;
-}
-
-/**
- * Safely extract object property from an object.
- */
-function getObjectProp(obj: object, key: string): object | undefined {
-  if (key in obj) {
-    const value = (obj as Record<string, unknown>)[key];
-    return value !== null && typeof value === "object" ? value : undefined;
-  }
-  return undefined;
-}
-
-/**
- * Safely extract array property from an object.
- */
-function getArrayProp(obj: object, key: string): unknown[] | undefined {
-  if (key in obj) {
-    const value = (obj as Record<string, unknown>)[key];
-    return Array.isArray(value) ? value : undefined;
-  }
-  return undefined;
-}
-
-/**
- * Extract text content from an array of parts.
- */
-function extractTextFromParts(parts: unknown[]): string {
-  return parts
-    .filter(isPart)
-    .filter(isTextPart)
-    .map((part) => part.text)
-    .join("");
-}
 
 /**
  * Extract event metadata from a raw A2A event.

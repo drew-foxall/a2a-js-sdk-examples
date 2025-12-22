@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 /**
@@ -21,10 +22,9 @@ import type { NextConfig } from "next";
  * - Headers configured for no-cache on streaming endpoints
  */
 const nextConfig: NextConfig = {
-  // For Turbopack in monorepo, point to workspace root
-  // Using relative path - Next.js resolves relative to this config file
+  // For Turbopack in monorepo, point to workspace root (absolute path required)
   turbopack: {
-    root: "..",
+    root: path.resolve(__dirname, ".."),
   },
 
   // Skip type checking during build - CI handles this

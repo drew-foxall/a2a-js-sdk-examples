@@ -17,6 +17,18 @@ import { cn } from "@/lib/utils";
 import type { AuthConfig, AuthType } from "@/types";
 
 /**
+ * Valid auth type values.
+ */
+const AUTH_TYPE_VALUES: readonly AuthType[] = ["none", "bearer", "api-key", "basic"] as const;
+
+/**
+ * Type guard to check if a value is a valid AuthType.
+ */
+function isAuthType(value: unknown): value is AuthType {
+  return typeof value === "string" && AUTH_TYPE_VALUES.includes(value as AuthType);
+}
+
+/**
  * Auth type configuration with labels and icons.
  */
 const AUTH_TYPES: Array<{
@@ -87,14 +99,13 @@ export function AuthConfigPanel({
 
   const handleTypeChange = useCallback(
     (value: string | null) => {
-      if (value === null) return;
-      const newType = value as AuthType;
+      if (value === null || !isAuthType(value)) return;
       // Reset all auth fields when changing type
       const newConfig: AuthConfig = {
-        type: newType,
+        type: value,
       };
       dispatch({ type: "SET_AUTH_CONFIG", payload: newConfig });
-      log("info", `Auth type changed to: ${newType}`);
+      log("info", `Auth type changed to: ${value}`);
     },
     [dispatch, log]
   );

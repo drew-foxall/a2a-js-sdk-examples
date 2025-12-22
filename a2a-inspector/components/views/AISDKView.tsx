@@ -43,12 +43,16 @@ interface AISDKViewProps {
 
 /**
  * Convert A2A event data from the stream to RawA2AEvent format.
+ * The event field is validated at runtime by the A2A provider before reaching here.
  */
 function toRawA2AEvent(data: A2AEventData, index: number): RawA2AEvent {
   const result: RawA2AEvent = {
     id: `a2a-event-${index}-${data.timestamp}`,
     timestamp: new Date(data.timestamp),
     kind: data.kind,
+    // The event is already validated by the A2A provider's type system
+    // We use a type assertion here because the schema validates the structure
+    // but zod's z.unknown() doesn't carry the type information
     event: data.event as RawA2AEvent["event"],
     validationErrors: [], // TODO: Add validation
   };
@@ -113,6 +117,8 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
     // Receive raw A2A events via onData callback
     onData: (dataPart) => {
       if (dataPart.type === "data-a2a-event") {
+        // Type narrowing: after checking dataPart.type, we know data matches A2AEventData
+        // The schema in a2aDataPartSchemas validates this structure at runtime
         const eventData = dataPart.data as A2AEventData;
         const rawEvent = toRawA2AEvent(eventData, eventCountRef.current++);
 
@@ -211,13 +217,18 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
   const isLoading = status === "submitted" || status === "streaming";
 
   // Build session details from raw events
-  const session = useMemo(
-    () => ({
+  const session = useMemo(() => {
+    // Find the first task event and extract its ID safely
+    const taskEvent = rawEvents.find((e: RawA2AEvent) => e.kind === "task");
+    let taskId: string | null = null;
+    if (taskEvent?.event && typeof taskEvent.event === "object" && "id" in taskEvent.event) {
+      const eventId = (taskEvent.event as { id?: unknown }).id;
+      taskId = typeof eventId === "string" ? eventId : null;
+    }
+
+    return {
       contextId: contextIdRef.current,
-      taskId: rawEvents.find((e: RawA2AEvent) => e.kind === "task")?.event
-        ? ((rawEvents.find((e: RawA2AEvent) => e.kind === "task")?.event as { id?: string })?.id ??
-          null)
-        : null,
+      taskId,
       transport: "http" as const,
       capabilities: {
         streaming: agentCard?.capabilities?.streaming ?? false,
@@ -227,9 +238,8 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
       startedAt: rawEvents.length > 0 ? (rawEvents[0]?.timestamp ?? null) : null,
       messageCount: messages.length,
       eventCount: rawEvents.length,
-    }),
-    [rawEvents, messages.length, agentCard]
-  );
+    };
+  }, [rawEvents, messages.length, agentCard]);
 
   if (!isConnected) {
     return (
