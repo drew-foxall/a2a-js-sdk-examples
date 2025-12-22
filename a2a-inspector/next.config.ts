@@ -14,7 +14,7 @@ import type { NextConfig } from "next";
  *
  * ## SSE Streaming
  * - API routes use Node.js runtime for full streaming support
- * - See: app/api/[[...slugs]]/route.ts and app/api/ai-sdk-chat/route.ts
+ * - See: app/api/[[...slugs]]/route.ts (forwards all /api/* to Elysia)
  *
  * ## Fluid Compute
  * - maxDuration configured in vercel.json for API routes

@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { agentCardRoutes } from "./routes/agent-card";
+import { aiSdkChatRoutes } from "./routes/ai-sdk-chat";
 import { healthRoutes } from "./routes/health";
 import { streamRoutes } from "./routes/stream";
 
@@ -11,6 +12,7 @@ import { streamRoutes } from "./routes/stream";
 export const app = new Elysia({ prefix: "/api" })
   .use(healthRoutes)
   .use(agentCardRoutes)
+  .use(aiSdkChatRoutes)
   .use(streamRoutes);
 
 export type App = typeof app;

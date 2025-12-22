@@ -153,9 +153,7 @@ Both API routes use Node.js runtime for full streaming support:
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// app/api/ai-sdk-chat/route.ts
-export const runtime = "nodejs";
-export const maxDuration = 300;
+// /api/ai-sdk-chat is handled by Elysia (server/routes/ai-sdk-chat.ts)
 ```
 
 ### Headers for Streaming
