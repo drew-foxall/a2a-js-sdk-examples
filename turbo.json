@@ -20,7 +20,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "build/**"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "build/**"],
       "inputs": ["src/**", "app/**", "package.json", "tsconfig.json"]
     },
     "dev": {
@@ -75,7 +75,7 @@
     },
     "a2a-inspector#build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**"]
+      "outputs": [".next/**", "!.next/cache/**"]
     },
     "a2a-inspector#typecheck": {
       "dependsOn": ["^build"]
