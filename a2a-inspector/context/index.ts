@@ -5,6 +5,6 @@ export {
   useDebugLog,
   useInspector,
   useMessages,
-} from "./InspectorContext";
+} from "./inspector-context";
 
-export { ThemeProvider, useTheme } from "./ThemeContext";
+export { ThemeProvider, useTheme } from "./theme-context";

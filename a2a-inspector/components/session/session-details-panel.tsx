@@ -11,7 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type React from "react";
-import { JsonViewerButton } from "@/components/debug/JsonViewerModal";
+import { JsonViewerButton } from "@/components/debug/json-viewer-modal";
 import { useConnection } from "@/context";
 import { cn } from "@/lib/utils";
 import type { SessionDetails } from "@/types";

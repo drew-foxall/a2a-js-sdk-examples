@@ -28,7 +28,7 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { JsonViewerButton } from "@/components/debug/JsonViewerModal";
+import { JsonViewerButton } from "@/components/debug/json-viewer-modal";
 import { EventsDropdown, KindChip, ValidationStatus } from "@/components/message";
 import { SessionDetailsPanel } from "@/components/session";
 import { Button } from "@/components/ui/button";

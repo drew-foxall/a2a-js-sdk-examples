@@ -12,7 +12,7 @@ import {
   Sparkle,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { ValidationErrors } from "./ValidationErrors";
+import { ValidationErrors } from "./validation-errors";
 
 interface AgentCardDisplayProps {
   readonly card: AgentCard;

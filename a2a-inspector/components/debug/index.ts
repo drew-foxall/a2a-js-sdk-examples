@@ -1,2 +1,2 @@
-export { DebugConsole } from "./DebugConsole";
-export { JsonViewerButton, JsonViewerModal } from "./JsonViewerModal";
+export { DebugConsole } from "./debug-console";
+export { JsonViewerButton, JsonViewerModal } from "./json-viewer-modal";

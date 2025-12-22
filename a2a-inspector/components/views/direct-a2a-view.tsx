@@ -25,12 +25,12 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { JsonViewerButton } from "@/components/debug/JsonViewerModal";
+import { JsonViewerButton } from "@/components/debug/json-viewer-modal";
 import { EventsDropdown, KindChip, ValidationStatus } from "@/components/message";
 import { SessionDetailsPanel } from "@/components/session";
 import { Button } from "@/components/ui/button";
 import { useConnection } from "@/context";
-import { useDirectA2A } from "@/hooks/useDirectA2A";
+import { useDirectA2A } from "@/hooks/use-direct-a2a";
 import { cn } from "@/lib/utils";
 import type { ChatMessage, MessageDisplayMode, RawA2AEvent } from "@/types";
 

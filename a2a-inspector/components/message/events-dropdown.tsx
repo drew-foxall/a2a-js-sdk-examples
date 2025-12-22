@@ -3,11 +3,11 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { JsonViewerButton } from "@/components/debug/JsonViewerModal";
+import { JsonViewerButton } from "@/components/debug/json-viewer-modal";
 import { cn } from "@/lib/utils";
 import type { RawA2AEvent } from "@/types";
-import { KindChip } from "./KindChip";
-import { ValidationStatus } from "./ValidationStatus";
+import { KindChip } from "./kind-chip";
+import { ValidationStatus } from "./validation-status";
 
 interface EventsDropdownProps {
   readonly events: RawA2AEvent[];

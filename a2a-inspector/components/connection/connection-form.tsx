@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useConnection } from "@/context";
-import { useAgentConnection } from "@/hooks/useAgentConnection";
-import { useAutoConnectFromUrl, useUrlState } from "@/hooks/useUrlState";
+import { useAgentConnection } from "@/hooks/use-agent-connection";
+import { useAutoConnectFromUrl, useUrlState } from "@/hooks/use-url-state";
 
 interface ConnectionFormProps {
   /** Compact mode for sidebar display */
@@ -18,6 +18,12 @@ interface ConnectionFormProps {
  * Connection form for entering agent URL and connecting/disconnecting.
  * Supports URL state persistence - agent URL is synced to URL params.
  */
+// Placeholder varies by environment - localhost for dev, generic example for prod
+const PLACEHOLDER_URL =
+  process.env.NODE_ENV === "development"
+    ? "Enter agent URL (e.g., http://localhost:8787)"
+    : "Enter agent URL (e.g., https://your-agent.example.com)";
+
 export function ConnectionForm({ compact = false }: ConnectionFormProps): React.JSX.Element {
   const connection = useConnection();
   const { connect, disconnect, isConnecting } = useAgentConnection();
@@ -77,7 +83,7 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter agent URL (e.g., http://localhost:8787)"
+            placeholder={PLACEHOLDER_URL}
             disabled={isDisabled || isConnected}
             aria-invalid={connection.status === "error"}
             className="h-9"

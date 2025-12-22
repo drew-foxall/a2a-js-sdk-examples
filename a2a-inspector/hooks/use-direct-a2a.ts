@@ -3,7 +3,7 @@
 import type { Message, Task } from "@drew-foxall/a2a-js-sdk";
 import { useCallback, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { authConfigToHeaders } from "@/components/connection/AuthConfigPanel";
+import { authConfigToHeaders } from "@/components/connection/auth-config-panel";
 import { getEventKind } from "@/components/message";
 import { useAuthConfig, useInspector } from "@/context";
 import {

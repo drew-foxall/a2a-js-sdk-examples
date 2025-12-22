@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { authConfigToHeaders } from "@/components/connection/AuthConfigPanel";
+import { authConfigToHeaders } from "@/components/connection/auth-config-panel";
 import { useAuthConfig, useInspector } from "@/context";
 import { client } from "@/lib/eden";
-import { useUrlState } from "./useUrlState";
+import { useUrlState } from "./use-url-state";
 
 interface ValidationError {
   field: string;

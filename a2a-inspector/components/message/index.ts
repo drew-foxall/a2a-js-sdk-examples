@@ -1,3 +1,3 @@
-export { EventsDropdown } from "./EventsDropdown";
-export { getEventKind, KindChip } from "./KindChip";
-export { ValidationStatus } from "./ValidationStatus";
+export { EventsDropdown } from "./events-dropdown";
+export { getEventKind, KindChip } from "./kind-chip";
+export { ValidationStatus } from "./validation-status";

@@ -1,1 +1,1 @@
-export { SessionDetailsPanel } from "./SessionDetailsPanel";
+export { SessionDetailsPanel } from "./session-details-panel";

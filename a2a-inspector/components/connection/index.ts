@@ -1,6 +1,6 @@
-export { AgentCardDisplay } from "./AgentCardDisplay";
-export { AuthConfigPanel, authConfigToHeaders } from "./AuthConfigPanel";
-export { ConnectionForm } from "./ConnectionForm";
-export { ConnectionStatus } from "./ConnectionStatus";
-export { CustomHeadersPanel, customHeadersToRecord } from "./CustomHeadersPanel";
-export { ValidationErrors } from "./ValidationErrors";
+export { AgentCardDisplay } from "./agent-card-display";
+export { AuthConfigPanel, authConfigToHeaders } from "./auth-config-panel";
+export { ConnectionForm } from "./connection-form";
+export { ConnectionStatus } from "./connection-status";
+export { CustomHeadersPanel, customHeadersToRecord } from "./custom-headers-panel";
+export { ValidationErrors } from "./validation-errors";
