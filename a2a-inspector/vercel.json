@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "bunVersion": "1.x",
   "framework": "nextjs",
   "installCommand": "pnpm -C .. install --frozen-lockfile --filter a2a-inspector...",
   "buildCommand": "pnpm -C .. -r --filter a2a-inspector... run build"
