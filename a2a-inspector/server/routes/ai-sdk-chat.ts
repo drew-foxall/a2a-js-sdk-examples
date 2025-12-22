@@ -1,4 +1,5 @@
 import { a2aV3 } from "@drew-foxall/a2a-ai-provider-v3";
+import type { Part, TextPart } from "@drew-foxall/a2a-js-sdk";
 import type { UIMessageStreamWriter } from "ai";
 import {
   convertToModelMessages,
@@ -11,47 +12,98 @@ import { Elysia, t } from "elysia";
 import type { A2AEventData } from "../../schemas/a2a-events";
 
 /**
+ * Type guard to check if a value is a valid Part object.
+ */
+function isPart(value: unknown): value is Part {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "kind" in value &&
+    (value.kind === "text" || value.kind === "file" || value.kind === "data")
+  );
+}
+
+/**
+ * Type guard to check if a Part is a TextPart.
+ */
+function isTextPart(part: Part): part is TextPart {
+  return part.kind === "text";
+}
+
+/**
+ * Safely extract string property from an object.
+ */
+function getStringProp(obj: object, key: string): string | undefined {
+  if (key in obj) {
+    const value = (obj as Record<string, unknown>)[key];
+    return typeof value === "string" ? value : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Safely extract object property from an object.
+ */
+function getObjectProp(obj: object, key: string): object | undefined {
+  if (key in obj) {
+    const value = (obj as Record<string, unknown>)[key];
+    return value !== null && typeof value === "object" ? value : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Safely extract array property from an object.
+ */
+function getArrayProp(obj: object, key: string): unknown[] | undefined {
+  if (key in obj) {
+    const value = (obj as Record<string, unknown>)[key];
+    return Array.isArray(value) ? value : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Extract text content from an array of parts.
+ */
+function extractTextFromParts(parts: unknown[]): string {
+  return parts
+    .filter(isPart)
+    .filter(isTextPart)
+    .map((part) => part.text)
+    .join("");
+}
+
+/**
  * Extract event metadata from a raw A2A event.
  */
 function extractEventMetadata(event: unknown): Partial<A2AEventData> {
   if (!event || typeof event !== "object") return {};
 
-  const e = event as Record<string, unknown>;
-
-  // Extract common fields
-  const taskId =
-    typeof e.id === "string" ? e.id : typeof e.taskId === "string" ? e.taskId : undefined;
-  const contextId = typeof e.contextId === "string" ? e.contextId : undefined;
-  const messageId = typeof e.messageId === "string" ? e.messageId : undefined;
+  // Extract common fields using type-safe accessors
+  const taskId = getStringProp(event, "id") ?? getStringProp(event, "taskId");
+  const contextId = getStringProp(event, "contextId");
+  const messageId = getStringProp(event, "messageId");
 
   // Extract text content from various event types
   let textContent: string | undefined;
 
-  // For status-update events
-  if (e.status && typeof e.status === "object") {
-    const status = e.status as Record<string, unknown>;
-    if (status.message && typeof status.message === "object") {
-      const msg = status.message as Record<string, unknown>;
-      if (Array.isArray(msg.parts)) {
-        textContent = msg.parts
-          .filter(
-            (p: unknown) =>
-              p && typeof p === "object" && (p as Record<string, unknown>).kind === "text"
-          )
-          .map((p: unknown) => ((p as Record<string, unknown>).text as string) || "")
-          .join("");
+  // For status-update events: event.status.message.parts
+  const status = getObjectProp(event, "status");
+  if (status) {
+    const message = getObjectProp(status, "message");
+    if (message) {
+      const parts = getArrayProp(message, "parts");
+      if (parts) {
+        textContent = extractTextFromParts(parts);
       }
     }
   }
 
-  // For message events
-  if (Array.isArray(e.parts)) {
-    textContent = e.parts
-      .filter(
-        (p: unknown) => p && typeof p === "object" && (p as Record<string, unknown>).kind === "text"
-      )
-      .map((p: unknown) => ((p as Record<string, unknown>).text as string) || "")
-      .join("");
+  // For message events: event.parts
+  const eventParts = getArrayProp(event, "parts");
+  if (eventParts) {
+    textContent = extractTextFromParts(eventParts);
   }
 
   return {
@@ -74,19 +126,22 @@ function extractEventMetadata(event: unknown): Partial<A2AEventData> {
 function getEventKind(event: unknown): A2AEventData["kind"] {
   if (!event || typeof event !== "object") return "message";
 
-  const e = event as Record<string, unknown>;
-  const kind = e.kind;
+  const kind = getStringProp(event, "kind");
 
   if (kind === "task") return "task";
   if (kind === "message") return "message";
   if (kind === "status-update") return "status-update";
   if (kind === "artifact-update") return "artifact-update";
 
-  if (e.code !== undefined && e.message !== undefined) {
+  // Check for error structure (has code and message properties)
+  const code = getStringProp(event, "code") ?? ("code" in event ? event.code : undefined);
+  const message = getStringProp(event, "message");
+  if (code !== undefined && message !== undefined) {
     return "error";
   }
 
-  if (e.status && typeof e.status === "object") {
+  // Fallback: check for task-like structure (has status object)
+  if (getObjectProp(event, "status")) {
     return "task";
   }
 
