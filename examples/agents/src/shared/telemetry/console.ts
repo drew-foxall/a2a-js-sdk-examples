@@ -289,7 +289,7 @@ export class ConsoleTelemetryProvider implements TelemetryProvider {
     if (!this.enabled) return;
 
     // Check minimum severity
-    if (SEVERITY_LEVELS[severity] < SEVERITY_LEVELS[this.config.minSeverity!]) {
+    if (SEVERITY_LEVELS[severity] < SEVERITY_LEVELS[this.config.minSeverity ?? "info"]) {
       return;
     }
 

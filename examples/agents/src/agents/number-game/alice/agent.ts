@@ -44,7 +44,7 @@ export class AliceAgent {
    * @returns The result of grading the guess
    */
   async grade(sessionId: string, guess: number): Promise<GradeResult> {
-    const { state, isNew } = await this.gameStore.getOrCreate(sessionId);
+    const { state } = await this.gameStore.getOrCreate(sessionId);
 
     // Handle invalid input
     if (Number.isNaN(guess)) {

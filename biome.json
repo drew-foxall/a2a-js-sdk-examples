@@ -63,6 +63,16 @@
       "formatter": {
         "lineWidth": 80
       }
+    },
+    {
+      "includes": ["*.test.ts", "*.spec.ts", "*.e2e.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
     }
   ]
 }
