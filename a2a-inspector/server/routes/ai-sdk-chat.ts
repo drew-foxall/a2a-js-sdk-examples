@@ -1,5 +1,5 @@
 import { a2aV3 } from "@drew-foxall/a2a-ai-provider-v3";
-import type { UIMessage, UIMessageStreamWriter } from "ai";
+import type { UIMessageStreamWriter } from "ai";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -110,7 +110,32 @@ function emitA2AEvent(writer: UIMessageStreamWriter, rawEvent: unknown): void {
 }
 
 /**
- * AI SDK chat route implemented inside Elysia.
+ * AI SDK chat route that uses the A2A V3 provider.
+ *
+ * This route uses createUIMessageStream to emit both:
+ * 1. Text stream parts from the A2A agent (via streamText)
+ * 2. Raw A2A events as data parts (for the Raw/Pretty event view)
+ *
+ * The client can receive these via:
+ * - messages: The accumulated text messages
+ * - onData: Callback for raw A2A event data parts
+ *
+ * ## Data Flow
+ *
+ * ```
+ * A2A Agent → streamText (with onChunk callback)
+ *                  │
+ *                  ├─── onChunk (raw events) ──→ writer.write(data-a2a-event)
+ *                  │
+ *                  └─── toUIMessageStream() ──→ writer.merge()
+ *                                                    │
+ *                                                    ↓
+ *                                            createUIMessageStream
+ *                                                    │
+ *                                                    ↓
+ *                                                useChat
+ *                                           (messages + onData)
+ * ```
  *
  * This is served via the Next.js catch-all route (`app/api/[[...slugs]]/route.ts`)
  * so **all** `/api/*` requests are handled by Elysia.
@@ -135,20 +160,29 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
         });
       }
 
+      // Create the A2A model using the provider
       const model = a2aV3(agentUrl);
 
+      // Build provider options only if contextId is provided
       const providerOptions = contextId ? { a2a: { contextId } } : {};
 
+      // Convert UIMessage[] (from useChat) to ModelMessage[] (for streamText)
       const modelMessages = convertToModelMessages(messages);
 
+      // Use createUIMessageStream to have full control over what we emit
       return createUIMessageStreamResponse({
         stream: createUIMessageStream({
           execute: async ({ writer }) => {
+            // Build streamText options
+            // We conditionally add onChunk only when includeRawEvents is true
+            // to satisfy exactOptionalPropertyTypes
             const streamOptions = {
               model,
               messages: modelMessages,
               providerOptions,
+              // Enable raw chunks so onChunk receives them
               includeRawChunks: includeRawEvents,
+              // Apply smooth streaming transform if enabled
               ...(smoothCfg?.enabled
                 ? {
                     experimental_transform: smoothStream({
@@ -159,6 +193,8 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
                 : {}),
             };
 
+            // Start the streamText call
+            // Use onChunk to capture raw A2A events and emit them as data parts
             const result = includeRawEvents
               ? streamText({
                   ...streamOptions,
@@ -170,6 +206,7 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
                 })
               : streamText(streamOptions);
 
+            // Merge the UI message stream (text parts, reasoning, sources, etc.)
             const uiStream = result.toUIMessageStream({
               sendReasoning: true,
               sendSources: true,
