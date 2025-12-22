@@ -16,11 +16,12 @@ env:
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
-  # Stage 1: Build everything first (required by dependent jobs)
-  build:
-    name: Build
+  # Single job for all quality checks - faster than parallelizing across jobs
+  # because job setup overhead (checkout, install) exceeds time saved by parallelism
+  ci:
+    name: Build & Validate
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -43,10 +44,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build all packages
+      # Build first - required for typecheck/lint/test due to workspace deps
+      - name: Build
         run: pnpm build
 
-      # Cache build artifacts for dependent jobs
+      # Run validations in parallel using Turborepo
+      # Turbo handles parallelism internally, more efficient than GHA job parallelism
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+        env:
+          CI: true
+
+      # Cache build artifacts for downstream jobs
       - name: Cache build artifacts
         uses: actions/cache/save@v4
         with:
@@ -57,118 +72,10 @@ jobs:
             node_modules/.cache/turbo
           key: build-artifacts-${{ github.sha }}
 
-  # Stage 2: Parallel validation jobs (run after build completes)
-  typecheck:
-    name: Type Check
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            packages/*/dist
-            examples/*/dist
-            a2a-inspector/.next
-            node_modules/.cache/turbo
-          key: build-artifacts-${{ github.sha }}
-
-      - name: Type check
-        run: pnpm typecheck
-
-  lint:
-    name: Lint
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            packages/*/dist
-            examples/*/dist
-            a2a-inspector/.next
-            node_modules/.cache/turbo
-          key: build-artifacts-${{ github.sha }}
-
-      - name: Lint
-        run: pnpm lint
-
-  test:
-    name: Test
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            packages/*/dist
-            examples/*/dist
-            a2a-inspector/.next
-            node_modules/.cache/turbo
-          key: build-artifacts-${{ github.sha }}
-
-      - name: Test
-        run: pnpm test
-        env:
-          CI: true
-
-  # Stage 3: Package verification (runs after all validations pass)
+  # Verify adapter package can be published
   package:
     name: Verify Adapter Package
-    needs: [typecheck, lint, test]
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -213,11 +120,10 @@ jobs:
           path: packages/a2a-ai-sdk-adapter/*.tgz
           retention-days: 7
 
-  # Stage 4: Inspector build verification (runs in parallel with package)
-  # This ensures the inspector CAN build without deploying
+  # Verify inspector can build (for Vercel deployment confidence)
   verify-inspector:
     name: Verify Inspector Build
-    needs: [typecheck, lint, test]
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
