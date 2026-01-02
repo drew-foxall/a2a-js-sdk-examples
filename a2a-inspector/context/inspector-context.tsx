@@ -52,6 +52,15 @@ interface InspectorState {
 }
 
 /**
+ * Payload for connecting from a stored agent.
+ */
+interface ConnectFromStoredPayload {
+  url: string;
+  card: AgentCard;
+  validationErrors?: ConnectionState["validationErrors"];
+}
+
+/**
  * Inspector actions.
  */
 type InspectorAction =
@@ -66,6 +75,7 @@ type InspectorAction =
     }
   | { type: "SET_CONNECTION_ERROR"; payload: string }
   | { type: "DISCONNECT" }
+  | { type: "CONNECT_FROM_STORED"; payload: ConnectFromStoredPayload }
   | { type: "SET_AUTH_CONFIG"; payload: AuthConfig }
   | { type: "SET_VIEW_MODE"; payload: ViewMode }
   | { type: "ADD_MESSAGE"; payload: ChatMessage }
@@ -155,6 +165,23 @@ function inspectorReducer(state: InspectorState, action: InspectorAction): Inspe
           validationErrors: [],
           error: null,
         },
+        messages: [],
+        tasks: new Map(),
+        currentTaskId: null,
+        currentContextId: null,
+      };
+
+    case "CONNECT_FROM_STORED":
+      return {
+        ...state,
+        connection: {
+          agentUrl: action.payload.url,
+          status: "connected",
+          agentCard: action.payload.card,
+          validationErrors: action.payload.validationErrors ?? [],
+          error: null,
+        },
+        // Clear any existing chat state when connecting to a new/different agent
         messages: [],
         tasks: new Map(),
         currentTaskId: null,

@@ -12,7 +12,8 @@ export type {
   RawA2AEvent,
   SessionDetails,
   TaskState,
-  ThemeMode,
   ValidationError,
   ViewMode,
 } from "./inspector";
+
+export type { A2AUIMessage, DefaultA2AUIMessage, WithA2ADataParts } from "./ui-message";

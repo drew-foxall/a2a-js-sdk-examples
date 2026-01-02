@@ -41,8 +41,8 @@
     "format:write": "pnpm exec biome format --write ."
   },
   "dependencies": {
-    "@ai-sdk/provider": "3.0.0-beta.16",
-    "@ai-sdk/provider-utils": "4.0.0-beta.41",
+    "@ai-sdk/provider": "3.0.0",
+    "@ai-sdk/provider-utils": "4.0.1",
     "@drew-foxall/a2a-js-sdk": "^0.4.2"
   },
   "devDependencies": {
@@ -52,7 +52,7 @@
     "vitest": "^4.0.14"
   },
   "peerDependencies": {
-    "ai": ">=6.0.0-beta.0"
+    "ai": ">=6.0.0"
   },
   "packageManager": "pnpm@10.23.0",
   "engines": {

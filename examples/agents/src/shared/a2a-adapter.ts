@@ -969,14 +969,8 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       contextId: contextId,
       status: {
         state: "working",
-        message: {
-          kind: "message",
-          role: "agent",
-          messageId: uuidv4(),
-          parts: [{ kind: "text", text: this.config.workingMessage }],
-          taskId: taskId,
-          contextId: contextId,
-        },
+        // NOTE: Intentionally no message in "working" state.
+        // Status text is ephemeral and should not be accumulated with streamed output.
         timestamp: new Date().toISOString(),
       },
       final: false,

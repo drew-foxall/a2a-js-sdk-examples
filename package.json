@@ -86,9 +86,9 @@
   },
   "pnpm": {
     "overrides": {
-      "@ai-sdk/provider": "3.0.0-beta.16",
       "@types/react": "19.2.7",
-      "@types/react-dom": "19.2.3"
+      "@types/react-dom": "19.2.3",
+      "zod": "4.1.13"
     },
     "onlyBuiltDependencies": [
       "canvas",

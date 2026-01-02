@@ -172,7 +172,7 @@ export const aiSdkChatRoutes = new Elysia({ prefix: "/ai-sdk-chat" }).post(
       const providerOptions = contextId ? { a2a: { contextId } } : {};
 
       // Convert UIMessage[] (from useChat) to ModelMessage[] (for streamText)
-      const modelMessages = convertToModelMessages(messages);
+      const modelMessages = await convertToModelMessages(messages);
 
       // Use createUIMessageStream to have full control over what we emit
       return createUIMessageStreamResponse({

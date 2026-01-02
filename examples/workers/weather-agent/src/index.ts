@@ -76,7 +76,6 @@ const config = defineWorkerConfig<WeatherEnv>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Looking up weather forecast...",
   },
 
   healthCheckExtras: (env: WeatherEnv) => ({

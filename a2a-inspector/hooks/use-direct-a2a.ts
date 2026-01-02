@@ -74,7 +74,13 @@ function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
  *
  * @see https://elysiajs.com/eden/treaty/response.html#stream-response
  */
-export function useDirectA2A(agentUrl: string | null): {
+export function useDirectA2A(
+  agentUrl: string | null,
+  options?: {
+    readonly initialMessages?: ChatMessage[];
+    readonly initialRawEvents?: RawA2AEvent[];
+  }
+): {
   messages: ChatMessage[];
   rawEvents: RawA2AEvent[];
   isStreaming: boolean;
@@ -85,8 +91,8 @@ export function useDirectA2A(agentUrl: string | null): {
 } {
   const { dispatch, log, state } = useInspector();
   const authConfig = useAuthConfig();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => options?.initialMessages ?? []);
+  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>(() => options?.initialRawEvents ?? []);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [sessionStartedAt, setSessionStartedAt] = useState<Date | null>(null);

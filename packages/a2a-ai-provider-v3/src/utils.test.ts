@@ -19,12 +19,19 @@ describe("mapTaskStateToFinishReason", () => {
     ["failed", "error"],
     ["auth-required", "error"],
     ["rejected", "error"],
-    ["working", "unknown"],
-    ["submitted", "unknown"],
+    ["working", "other"],
+    ["submitted", "other"],
     [null, "stop"],
     [undefined, "stop"],
   ] as const)("maps %s → %s", (state, expected) => {
-    expect(mapTaskStateToFinishReason(state)).toBe(expected);
+    const result = mapTaskStateToFinishReason(state);
+    expect(result.unified).toBe(expected);
+    // raw should match state or be undefined for null/undefined
+    if (state === null || state === undefined) {
+      expect(result.raw).toBeUndefined();
+    } else {
+      expect(result.raw).toBe(state);
+    }
   });
 });
 

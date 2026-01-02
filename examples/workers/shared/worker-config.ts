@@ -243,8 +243,8 @@ export interface WorkerLogger {
  * The agent must have generate() and stream() methods for execution.
  */
 export interface A2ACompatibleAgent {
-  generate: (params: { prompt: string }) => Promise<{ text: string }>;
-  stream: (params: { prompt: string }) => Promise<{ text: Promise<string> }>;
+  generate: (params: { prompt: string }) => PromiseLike<{ text: string }>;
+  stream: (params: { prompt: string }) => PromiseLike<{ text: PromiseLike<string> }>;
 }
 
 export type AgentFactory<TEnv> = (
@@ -431,8 +431,6 @@ export function createA2AExecutor<TEnv extends BaseWorkerEnv>(
 
   const adapterOptions: A2AAdapterConfig = {
     mode: config.adapterOptions?.mode ?? DEFAULT_ADAPTER_OPTIONS.mode ?? "stream",
-    workingMessage:
-      config.adapterOptions?.workingMessage ?? `Processing with ${config.agentName}...`,
     debug: config.adapterOptions?.debug ?? DEFAULT_ADAPTER_OPTIONS.debug,
     includeHistory: config.adapterOptions?.includeHistory,
     parseTaskState: config.adapterOptions?.parseTaskState,

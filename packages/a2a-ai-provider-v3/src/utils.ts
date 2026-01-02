@@ -68,17 +68,17 @@ import { fromJSONObject, toJSONObject, toJSONObjectOrNull } from "./types.js";
 export function mapFinishReason(event: TaskStatusUpdateEvent): LanguageModelV3FinishReason {
   const state = event.status.state;
 
-  if (state === "completed") return "stop";
-  if (state === "input-required") return "stop";
-  if (state === "auth-required") return "error";
-  if (state === "failed") return "error";
-  if (state === "canceled") return "stop";
-  if (state === "rejected") return "error";
-  if (state === "submitted") return "stop";
-  if (state === "unknown") return "unknown";
-  if (state === "working") return "unknown";
+  if (state === "completed") return { unified: "stop", raw: state };
+  if (state === "input-required") return { unified: "stop", raw: state };
+  if (state === "auth-required") return { unified: "error", raw: state };
+  if (state === "failed") return { unified: "error", raw: state };
+  if (state === "canceled") return { unified: "stop", raw: state };
+  if (state === "rejected") return { unified: "error", raw: state };
+  if (state === "submitted") return { unified: "stop", raw: state };
+  if (state === "unknown") return { unified: "other", raw: state };
+  if (state === "working") return { unified: "other", raw: state };
 
-  return "unknown";
+  return { unified: "other", raw: undefined };
 }
 
 /**
@@ -107,26 +107,26 @@ export function mapFinishReason(event: TaskStatusUpdateEvent): LanguageModelV3Fi
 export function mapTaskStateToFinishReason(
   taskState?: TaskState | null
 ): LanguageModelV3FinishReason {
-  if (!taskState) return "stop";
+  if (!taskState) return { unified: "stop", raw: undefined };
 
   switch (taskState) {
     case "completed":
-      return "stop";
+      return { unified: "stop", raw: taskState };
     case "input-required":
-      return "stop";
+      return { unified: "stop", raw: taskState };
     case "auth-required":
-      return "error";
+      return { unified: "error", raw: taskState };
     case "failed":
-      return "error";
+      return { unified: "error", raw: taskState };
     case "canceled":
-      return "stop";
+      return { unified: "stop", raw: taskState };
     case "rejected":
-      return "error";
+      return { unified: "error", raw: taskState };
     case "submitted":
     case "working":
-      return "unknown";
+      return { unified: "other", raw: taskState };
     default:
-      return "unknown";
+      return { unified: "other", raw: undefined };
   }
 }
 

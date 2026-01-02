@@ -238,7 +238,6 @@ app.all("/*", async (c, next) => {
   // - Observability via Workflow DevKit traces
   const agentExecutor: AgentExecutor = new DurableA2AAdapter<[string]>(imageGeneratorWorkflow, {
     workflowArgs: [c.env.OPENAI_API_KEY],
-    workingMessage: "Generating image (with durability)...",
     debug: false,
   });
 

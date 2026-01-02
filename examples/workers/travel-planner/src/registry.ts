@@ -4,7 +4,7 @@
  * Worker-specific agent discovery using Service Bindings or HTTP fallback.
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 import type { PlannerEnv, WorkerRegisteredAgent } from "./types.js";
 
 // Default worker URLs (deployed endpoints)

@@ -147,7 +147,7 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
       doStream: async () => {
         await applyDelay();
 
-        // Build chunks for streaming (AI SDK v6 format)
+        // Build chunks for streaming (AI SDK v6 stable format)
         const chunks: Array<
           | { type: "text-start"; id: string }
           | { type: "text-delta"; id: string; delta: string }
@@ -155,9 +155,11 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
           | { type: "tool-call"; toolCallId: string; toolName: string; input: string }
           | {
               type: "finish";
-              finishReason: "stop" | "tool-calls";
-              logprobs: undefined;
-              usage: { inputTokens: number; outputTokens: number; totalTokens: number };
+              finishReason: { unified: "stop" | "tool-calls"; raw: undefined };
+              usage: {
+                inputTokens: { total: number | undefined; noCache: undefined; cacheRead: undefined; cacheWrite: undefined };
+                outputTokens: { total: number | undefined; text: undefined; reasoning: undefined };
+              };
             }
         > = [];
 
@@ -186,12 +188,10 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
         chunks.push({ type: "text-end", id: "text-1" });
         chunks.push({
           type: "finish",
-          finishReason: toolCalls && toolCalls.length > 0 ? "tool-calls" : "stop",
-          logprobs: undefined,
+          finishReason: { unified: toolCalls && toolCalls.length > 0 ? "tool-calls" : "stop", raw: undefined },
           usage: {
-            inputTokens: usage.inputTokens ?? 10,
-            outputTokens: usage.outputTokens ?? 20,
-            totalTokens: (usage.inputTokens ?? 10) + (usage.outputTokens ?? 20),
+            inputTokens: { total: usage.inputTokens ?? 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+            outputTokens: { total: usage.outputTokens ?? 20, text: undefined, reasoning: undefined },
           },
         });
 
@@ -228,11 +228,10 @@ export function createMockModel(options: MockModelOptions = {}): LanguageModel {
       content.push({ type: "text", text: response });
 
       return {
-        finishReason: toolCalls && toolCalls.length > 0 ? "tool-calls" : "stop",
+        finishReason: { unified: toolCalls && toolCalls.length > 0 ? "tool-calls" : "stop", raw: undefined },
         usage: {
-          inputTokens: usage.inputTokens ?? 10,
-          outputTokens: usage.outputTokens ?? 20,
-          totalTokens: (usage.inputTokens ?? 10) + (usage.outputTokens ?? 20),
+          inputTokens: { total: usage.inputTokens ?? 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: usage.outputTokens ?? 20, text: undefined, reasoning: undefined },
         },
         content,
         warnings: [],

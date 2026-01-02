@@ -266,7 +266,6 @@ app.all("/*", async (c, next) => {
     travelPlannerWorkflow,
     {
       workflowArgs: [workflowConfig],
-      workingMessage: "Planning your trip (with durability)...",
       includeHistory: true,
       debug: false,
     }

@@ -49,13 +49,13 @@
 import {
   type LanguageModelV3,
   type LanguageModelV3CallOptions,
-  type LanguageModelV3CallWarning,
   type LanguageModelV3Content,
   type LanguageModelV3FilePart,
   type LanguageModelV3FinishReason,
   type LanguageModelV3Prompt,
   type LanguageModelV3StreamPart,
   type LanguageModelV3Usage,
+  type SharedV3Warning,
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import { convertAsyncIteratorToReadableStream, generateId } from "@ai-sdk/provider-utils";
@@ -224,7 +224,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
   // ===========================================================================
 
   private prepareCallArgs(options: LanguageModelV3CallOptions) {
-    const warnings: LanguageModelV3CallWarning[] = [];
+    const warnings: SharedV3Warning[] = [];
     const messages = this.convertPromptToMessages(options.prompt);
 
     if (options.tools && Object.keys(options.tools).length > 0) {
@@ -329,7 +329,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
 
   private createStreamTransform(
     options: LanguageModelV3CallOptions,
-    warnings: LanguageModelV3CallWarning[]
+    warnings: SharedV3Warning[]
   ): TransformStream<A2AStreamEventData, LanguageModelV3StreamPart> {
     let isFirstChunk = true;
     const activeTextIds = new Set<string>();
@@ -337,7 +337,11 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
     // We use taskId instead of messageId because some A2A agents send different messageIds
     // for each delta but the same taskId for all events in a task.
     const completedTaskIds = new Set<string>();
-    let finishReason: LanguageModelV3FinishReason = "unknown";
+    // Track the last streamed full text snapshot for a given stream id (taskId).
+    // Many A2A agents send "status-update" messages as cumulative snapshots, not true deltas.
+    // We convert snapshots -> deltas so the AI SDK message builds correctly while streaming.
+    const streamedTextById = new Map<string, string>();
+    let finishReason: LanguageModelV3FinishReason = { unified: "other", raw: undefined };
     let a2aMetadata: A2aProviderMetadata = createEmptyMetadata();
 
     return new TransformStream<A2AStreamEventData, LanguageModelV3StreamPart>({
@@ -363,7 +367,8 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
             finishReason,
             controller,
             activeTextIds,
-            completedTaskIds
+            completedTaskIds,
+            streamedTextById
           ));
         } else if (event.kind === "artifact-update") {
           a2aMetadata = this.handleArtifactUpdate(event, a2aMetadata, controller, activeTextIds);
@@ -373,7 +378,8 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
             controller,
             activeTextIds,
             completedTaskIds,
-            isFirstChunk
+            isFirstChunk,
+            streamedTextById
           ));
         } else if (event.kind === "message") {
           ({ a2aMetadata, finishReason } = this.handleMessageEvent(
@@ -411,7 +417,8 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
     currentFinishReason: LanguageModelV3FinishReason,
     controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
     activeTextIds: Set<string>,
-    completedTaskIds: Set<string>
+    completedTaskIds: Set<string>,
+    streamedTextById: Map<string, string>
   ) {
     const taskState = event.status?.state ?? null;
     const taskId = event.taskId;
@@ -421,116 +428,99 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
     // =========================================================================
     //
     // This section handles streaming text content from A2A status-update events.
-    // Understanding A2A protocol semantics is critical for correct behavior.
     //
-    // ## A2A Protocol Semantics
+    // ## Strategy: Single Stream + Final in Metadata
     //
-    // A2A agents send status-update events with different states:
+    // All status updates (working AND completed) emit to the SAME text stream ID.
+    // This creates a single text part that accumulates deltas via useChat.
     //
-    // 1. "working" state:
-    //    - Message contains DELTA text (incremental chunks)
-    //    - May include status indicators like "Processing your request..."
-    //    - These are streamed to show real-time progress
+    // For "completed" state, we emit only the DELTA (difference between final
+    // and accumulated). The full authoritative text is stored in providerMetadata
+    // (`a2aMetadata.finalText`) for persistence and rehydration.
     //
-    // 2. "completed" state:
-    //    - Message contains the FULL AUTHORITATIVE text (not a delta)
-    //    - This REPLACES all accumulated working deltas
-    //    - This is the final response that should be displayed
+    // ## Trade-offs
     //
-    // ## The Problem
-    //
-    // AI SDK's useChat hook accumulates all text-delta events. There's no native
-    // "replace" mechanism. If we emit both working deltas AND completed content
-    // to the same text stream, they get concatenated:
-    //
-    //   Working deltas: "Processing..." + "Hello" + " world"
-    //   Completed:      "Hello world"
-    //   Result:         "Processing...Hello worldHello world" (WRONG!)
-    //
-    // ## Our Solution
-    //
-    // We emit the completed content as a SEPARATE text stream (different ID).
-    // This creates two text parts in the AI SDK message. The client then uses
-    // the LAST text part as the authoritative content.
-    //
-    //   Text Part 1 (working stream): "Processing...Hello world"
-    //   Text Part 2 (completed stream): "Hello world"
-    //   Client uses: Text Part 2 (CORRECT!)
+    // - ✅ Smooth streaming (single text part, no flash)
+    // - ✅ Correct persistence (finalText saved in metadata)
+    // - ⚠️ If agent sends non-cumulative updates, accumulated text may be wrong
+    // - ⚠️ Live view may differ from persisted view (persisted is authoritative)
     //
     // ## Implementation Notes
     //
     // - We track by taskId (not messageId) because A2A agents may send different
     //   messageIds for each delta but the same taskId for all events in a task.
     // - activeTextIds tracks open text streams (for text-start/text-end pairing)
-    // - completedTaskIds tracks tasks that have finished (to avoid re-emitting)
-    //
-    // ## Debugging Tips
-    //
-    // If you see duplicated content in the UI:
-    // 1. Check if completed content is being emitted to the same stream as deltas
-    // 2. Verify the client is using the last text part (see AISDKView.tsx onFinish)
-    // 3. Add logging here to see taskState, taskId, and hasStreamedContentForTask
+    // - streamedTextById tracks accumulated text to compute deltas
+    // - finalText in metadata is the authoritative content for persistence
     //
     // =========================================================================
     if (event.status?.message?.parts) {
-      const isLastChunk = event.final ?? false;
-
-      // Use taskId as the text stream ID - it's consistent across all events
-      // for a single task, unlike messageId which may change per delta
       const textStreamId = taskId;
       const isCompletedState = taskState === "completed";
-      const hasStreamedContentForTask =
-        activeTextIds.has(textStreamId) || completedTaskIds.has(taskId);
+
+      // Extract the text from this event's message parts
+      const snapshotText = event.status.message.parts
+        .filter(isTextPart)
+        .map((p) => p.text)
+        .join("");
+
+      // Compute what we've already streamed
+      const prevText = streamedTextById.get(textStreamId) ?? "";
 
       if (isCompletedState) {
-        // COMPLETED STATE: Emit authoritative content
-        //
-        // If we've already streamed working deltas, emit completed content
-        // as a NEW text stream to create a separate text part.
-        // The client will use the last text part as authoritative.
-        if (hasStreamedContentForTask) {
-          // Close the working stream first
-          if (activeTextIds.has(textStreamId)) {
-            controller.enqueue({ type: "text-end", id: textStreamId });
-            activeTextIds.delete(textStreamId);
+        // COMPLETED STATE: emit delta (difference from accumulated), then close stream
+        // The full authoritative text is stored in a2aMetadata.finalText for persistence
+
+        if (snapshotText.length > 0) {
+          // Compute delta: if final extends accumulated, emit only the extension
+          // If final doesn't start with accumulated, emit full final (accumulated was wrong)
+          const delta = snapshotText.startsWith(prevText)
+            ? snapshotText.slice(prevText.length)
+            : prevText.length === 0
+              ? snapshotText // Nothing accumulated yet, emit full text
+              : ""; // Final differs from accumulated; don't emit (finalText in metadata is authoritative)
+
+          if (delta.length > 0) {
+            this.enqueueParts(
+              controller,
+              [{ kind: "text", text: delta }],
+              textStreamId,
+              false,
+              activeTextIds
+            );
           }
-          // Emit completed content with a DIFFERENT ID to create a new text part
-          // The "-completed" suffix ensures it's a distinct stream
-          const completedStreamId = `${textStreamId}-completed`;
-          this.enqueueParts(
-            controller,
-            event.status.message.parts,
-            completedStreamId,
-            true, // isLastChunk - completed is always final
-            activeTextIds
-          );
-        } else {
-          // Non-streaming agent: no prior deltas, emit content directly
-          this.enqueueParts(
-            controller,
-            event.status.message.parts,
-            textStreamId,
-            true, // isLastChunk
-            activeTextIds
-          );
         }
+
+        // Close the stream
+        if (activeTextIds.has(textStreamId)) {
+          controller.enqueue({ type: "text-end", id: textStreamId });
+          activeTextIds.delete(textStreamId);
+        }
+
+        streamedTextById.set(textStreamId, snapshotText);
         completedTaskIds.add(taskId);
       } else {
-        // WORKING STATE: Emit as streaming delta
-        //
-        // These deltas are accumulated by AI SDK. The completed state
-        // will emit authoritative content that the client uses to replace
-        // these accumulated deltas.
-        this.enqueueParts(
-          controller,
-          event.status.message.parts,
-          textStreamId,
-          isLastChunk,
-          activeTextIds
-        );
-        if (isLastChunk) {
-          completedTaskIds.add(taskId);
+        // WORKING STATE: emit delta (difference from previous snapshot)
+        if (snapshotText.length > 0) {
+          // Compute true delta if snapshot is cumulative, otherwise emit full snapshot
+          const delta = snapshotText.startsWith(prevText)
+            ? snapshotText.slice(prevText.length)
+            : snapshotText;
+
+          if (delta.length > 0) {
+            this.enqueueParts(
+              controller,
+              [{ kind: "text", text: delta }],
+              textStreamId,
+              false,
+              activeTextIds
+            );
+          }
+          streamedTextById.set(textStreamId, snapshotText);
         }
+
+        // IMPORTANT: Do NOT close the stream for working updates.
+        // Stream stays open until completed state arrives.
       }
     }
 
@@ -617,42 +607,65 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
    * If we've already streamed content via status-update events, we skip emitting
    * the task content to avoid duplication.
    *
-   * IMPORTANT: Task events use `event.id` for the task ID, while status-update
-   * events use `event.taskId`. Both refer to the same task.
+   * Uses `taskId` consistently (same as status-update events) for stream tracking.
    */
   private handleTaskEvent(
     event: A2AStreamEventData & { kind: "task" },
     controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
     activeTextIds: Set<string>,
     completedTaskIds: Set<string>,
-    isFirstChunk: boolean
+    isFirstChunk: boolean,
+    streamedTextById: Map<string, string>
   ) {
     const a2aMetadata = extractA2aMetadata(event);
     const finishReason = mapTaskStateToFinishReason(event.status?.state);
 
-    // IMPORTANT: For "task" events, the task ID is in event.id
-    // (not event.taskId like status-update events)
-    const taskId = event.id;
+    // Use taskId consistently (matches status-update events)
+    // Fall back to event.id if taskId is not present
+    const taskId = "taskId" in event && typeof event.taskId === "string" ? event.taskId : event.id;
 
     if (isFirstChunk) {
       controller.enqueue({ type: "response-metadata", ...getResponseMetadata(event) });
     }
 
-    // Skip emitting task content if we've already streamed via status-update events.
-    // The status-update handler already emitted the authoritative completed content.
-    if (event.status?.message) {
-      const hasStreamedContent = activeTextIds.has(taskId) || completedTaskIds.has(taskId);
+    // Check if we've already streamed content for this task
+    const hasStreamedContent = activeTextIds.has(taskId) || completedTaskIds.has(taskId);
 
+    // If we already streamed via status-update events, we may still need to emit
+    // a small tail delta if the final task message contains additional text.
+    if (event.status?.message) {
       if (hasStreamedContent) {
-        // Already streamed content for this task - just close the stream if open
+        const fullText = event.status.message.parts
+          .filter(isTextPart)
+          .map((p) => p.text)
+          .join("");
+        const prevText = streamedTextById.get(taskId) ?? "";
+        const delta = fullText?.startsWith(prevText) ? fullText.slice(prevText.length) : "";
+        if (delta.length > 0) {
+          this.enqueueParts(
+            controller,
+            [{ kind: "text", text: delta }],
+            taskId,
+            false,
+            activeTextIds
+          );
+          streamedTextById.set(taskId, fullText);
+        }
+
+        // Close any open stream
         if (activeTextIds.has(taskId)) {
           controller.enqueue({ type: "text-end", id: taskId });
           activeTextIds.delete(taskId);
         }
-        // Skip emitting - would duplicate the streamed content
+        // Skip emitting full content - would duplicate the streamed content
       } else {
         // No prior streaming - this is a non-streaming response, emit the content
         this.enqueueParts(controller, event.status.message.parts, taskId, true, activeTextIds);
+        const fullText = event.status.message.parts
+          .filter(isTextPart)
+          .map((p) => p.text)
+          .join("");
+        if (fullText) streamedTextById.set(taskId, fullText);
       }
     }
 
@@ -687,7 +700,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
       metadata: toJSONObjectOrNull(event.metadata),
     };
 
-    return { a2aMetadata, finishReason: "stop" as const };
+    return { a2aMetadata, finishReason: { unified: "stop" as const, raw: undefined } };
   }
 
   // ===========================================================================
@@ -726,7 +739,9 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
         activeTextIds.add(id);
       }
 
-      const textContent = textParts.map((p) => p.text).join(" ");
+      // A2A text parts already contain their own spacing; avoid injecting extra spaces
+      // which breaks word-chunking and causes inconsistent streaming assembly.
+      const textContent = textParts.map((p) => p.text).join("");
       controller.enqueue({ type: "text-delta", id, delta: textContent });
 
       if (isLastChunk) {
@@ -752,9 +767,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
             return { kind: "text" as const, text: part.text } satisfies TextPart;
           }
           if (part.type === "file") {
-            // Safe cast: part.type === "file" guarantees this is LanguageModelV3FilePart.
-            // TypeScript can't narrow discriminated unions across function boundaries,
-            // so we cast explicitly after the type check.
+            // In AI SDK v6 stable, FilePart has data/mediaType/filename directly on it
             return this.convertFilePartToA2A(part as LanguageModelV3FilePart);
           }
           throw new Error(`Unsupported part type: ${part.type}`);
@@ -857,7 +870,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
 
     // Uint8Array → base64
     if (isUint8Array(part.data)) {
-      const binary = Array.from(part.data, (byte) => String.fromCharCode(byte)).join("");
+      const binary = Array.from(part.data, (byte: number) => String.fromCharCode(byte)).join("");
       return {
         kind: "file",
         file: { mimeType: part.mediaType, name: part.filename, bytes: btoa(binary) },
@@ -874,6 +887,18 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
   // ===========================================================================
 
   private createEmptyUsage(): LanguageModelV3Usage {
-    return { inputTokens: undefined, outputTokens: undefined, totalTokens: undefined };
+    return {
+      inputTokens: {
+        total: undefined,
+        noCache: undefined,
+        cacheRead: undefined,
+        cacheWrite: undefined,
+      },
+      outputTokens: {
+        total: undefined,
+        text: undefined,
+        reasoning: undefined,
+      },
+    };
   }
 }

@@ -78,7 +78,6 @@ const executor = new A2AAdapter(myAgent, {
 const executor = new A2AAdapter(myAgent, {
   mode: "stream",
   includeHistory: true, // Pass previous messages to agent
-  workingMessage: 'Thinking...',
   debug: true,
 });
 ```

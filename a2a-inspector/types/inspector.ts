@@ -49,6 +49,10 @@ export interface RawA2AEvent {
   kind: A2AEventKind;
   /** The original A2A event */
   event: A2AStreamEvent;
+  /** Task ID associated with this event (if available) */
+  taskId?: string;
+  /** Message ID associated with this event (if available) */
+  messageId?: string;
   /** Validation errors for this event */
   validationErrors: ValidationError[];
   /** Extracted text content (if any) */
@@ -142,10 +146,6 @@ export type ViewMode = "direct" | "ai-sdk";
 export type MessageDisplayMode = "raw" | "pretty";
 
 /**
- * Theme mode.
- */
-export type ThemeMode = "light" | "dark" | "system";
-
 /**
  * Authentication type for agent connections.
  */

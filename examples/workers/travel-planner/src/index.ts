@@ -89,7 +89,6 @@ app.all("/*", async (c) => {
   // Wrap with A2A adapter for protocol handling
   const agentExecutor = new A2AAdapter(plannerAgent, {
     mode: "stream",
-    workingMessage: "Planning your trip...",
     includeHistory: true,
   });
 

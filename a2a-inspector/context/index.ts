@@ -6,5 +6,3 @@ export {
   useInspector,
   useMessages,
 } from "./inspector-context";
-
-export { ThemeProvider, useTheme } from "./theme-context";

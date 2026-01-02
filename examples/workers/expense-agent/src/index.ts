@@ -63,7 +63,6 @@ const config = defineWorkerConfig<WorkerEnvWithRedis>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Processing expense request...",
   },
 
   taskStore: {

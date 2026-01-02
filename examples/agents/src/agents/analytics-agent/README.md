@@ -206,7 +206,6 @@ import { A2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter";
 
 const adapter = new A2AAdapter(agent, {
   mode: "stream",
-  workingMessage: "Generating chart...",
   // STREAM MODE ONLY: parse artifacts from accumulated text
   parseArtifacts: (accumulatedText) => extractCharts(accumulatedText),
   // OPTIONAL: generate artifacts after completion (async)

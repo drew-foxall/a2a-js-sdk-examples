@@ -65,7 +65,6 @@ const config = defineWorkerConfig<WorkerEnvWithRedis>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Generating image...",
   },
 
   taskStore: {

@@ -29,9 +29,17 @@ describe("A2AAdapter", () => {
                 { type: "text-end", id: "text-1" },
                 {
                   type: "finish",
-                  finishReason: "stop",
+                  finishReason: { unified: "stop", raw: undefined },
                   logprobs: undefined,
-                  usage: { inputTokens: 5, outputTokens: 10, totalTokens: 15 },
+                  usage: {
+                    inputTokens: {
+                      total: 5,
+                      noCache: undefined,
+                      cacheRead: undefined,
+                      cacheWrite: undefined,
+                    },
+                    outputTokens: { total: 10, text: undefined, reasoning: undefined },
+                  },
                 },
               ],
             }),
@@ -52,8 +60,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Hello, world!" }],
             warnings: [],
           }),
@@ -80,8 +96,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test" }],
             warnings: [],
           }),
@@ -102,8 +126,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test" }],
             warnings: [],
           }),
@@ -123,8 +155,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test" }],
             warnings: [],
           }),
@@ -196,9 +236,17 @@ describe("A2AAdapter", () => {
                 { type: "text-end", id: "text-1" },
                 {
                   type: "finish",
-                  finishReason: "stop",
+                  finishReason: { unified: "stop", raw: undefined },
                   logprobs: undefined,
-                  usage: { inputTokens: 5, outputTokens: 10, totalTokens: 15 },
+                  usage: {
+                    inputTokens: {
+                      total: 5,
+                      noCache: undefined,
+                      cacheRead: undefined,
+                      cacheWrite: undefined,
+                    },
+                    outputTokens: { total: 10, text: undefined, reasoning: undefined },
+                  },
                 },
               ],
             }),
@@ -222,8 +270,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test" }],
             warnings: [],
           }),
@@ -259,8 +315,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test" }],
             warnings: [],
           }),
@@ -309,8 +373,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Hello! Nice to meet you!" }],
             warnings: [],
           }),
@@ -343,8 +415,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Generated report" }],
             warnings: [],
           }),
@@ -373,8 +453,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test response" }],
             warnings: [],
           }),
@@ -399,8 +487,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Async response" }],
             warnings: [],
           }),
@@ -434,8 +530,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "test" }],
             warnings: [],
           }),
@@ -503,8 +607,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Should not be called" }],
             warnings: [],
           }),
@@ -549,8 +661,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Original response\nSTATUS: OK" }],
             warnings: [],
           }),
@@ -582,8 +702,16 @@ describe("A2AAdapter", () => {
       const testAgent = new ToolLoopAgent({
         model: new MockLanguageModelV3({
           doGenerate: async () => ({
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            finishReason: { unified: "stop", raw: undefined },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: undefined,
+                cacheRead: undefined,
+                cacheWrite: undefined,
+              },
+              outputTokens: { total: 20, text: undefined, reasoning: undefined },
+            },
             content: [{ type: "text", text: "Response" }],
             warnings: [],
           }),

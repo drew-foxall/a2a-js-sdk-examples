@@ -9,7 +9,7 @@ import {
   Sparkle,
 } from "@phosphor-icons/react";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -25,12 +25,17 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { extractExamplesFromCard } from "@/components/connection";
 import { JsonViewerButton } from "@/components/debug/json-viewer-modal";
 import { EventsDropdown, KindChip, ValidationStatus } from "@/components/message";
 import { SessionDetailsPanel } from "@/components/session";
 import { Button } from "@/components/ui/button";
 import { useConnection } from "@/context";
+import { useChatHistoryEnabled } from "@/hooks/use-chat-history";
 import { useDirectA2A } from "@/hooks/use-direct-a2a";
+import { formatChatTitle } from "@/lib/chat-title";
+import { addMessage, chatExists, createChat, notifyChatsUpdated } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { ChatMessage, MessageDisplayMode, RawA2AEvent } from "@/types";
 
@@ -39,6 +44,10 @@ import type { ChatMessage, MessageDisplayMode, RawA2AEvent } from "@/types";
  */
 interface DirectA2AViewProps {
   readonly className?: string;
+  readonly agentId?: string;
+  readonly chatId?: string;
+  readonly initialMessages?: ChatMessage[];
+  readonly initialRawEvents?: RawA2AEvent[];
 }
 
 /**
@@ -49,19 +58,132 @@ interface DirectA2AViewProps {
  * - "Pretty" mode: Aggregates events into logical messages with dropdown for constituent events
  * - "Raw Events" mode: Shows all A2A events as separate messages with kind chips
  */
-export function DirectA2AView({ className }: DirectA2AViewProps): React.JSX.Element {
+export function DirectA2AView({
+  className,
+  agentId,
+  chatId,
+  initialMessages,
+  initialRawEvents,
+}: DirectA2AViewProps): React.JSX.Element {
   const { agentUrl, status, agentCard } = useConnection();
+  const directOptions = useMemo(() => {
+    return {
+      ...(initialMessages ? { initialMessages } : {}),
+      ...(initialRawEvents ? { initialRawEvents } : {}),
+    };
+  }, [initialMessages, initialRawEvents]);
   const { messages, rawEvents, isStreaming, sendMessage, clearMessages, session } = useDirectA2A(
-    agentUrl || null
+    agentUrl || null,
+    directOptions
   );
+  const { enabled: historyEnabled, setEnabled: setHistoryEnabled } = useChatHistoryEnabled({
+    isLoggedIn: false,
+  });
   const [displayMode, setDisplayMode] = useState<MessageDisplayMode>("pretty");
   const [showSessionDetails, setShowSessionDetails] = useState(false);
+  const persistedIdsRef = useRef<Set<string>>(new Set());
+
+  // Seed persisted ids from loaded history (so we don't re-add on mount)
+  useEffect(() => {
+    if (!agentId || !chatId) return;
+    if (!initialMessages || initialMessages.length === 0) return;
+    for (const m of initialMessages) {
+      const isUser = m.role === "user" && Boolean(m.content.trim());
+      const isAgent = m.role === "agent" && Boolean(m.content.trim());
+      if (isUser || isAgent) {
+        persistedIdsRef.current.add(m.id);
+      }
+    }
+  }, [agentId, chatId, initialMessages]);
+
+  // Persist messages to IndexedDB (client-side history) when chat context is provided.
+  useEffect(() => {
+    // Only persist when routed chat context is available.
+    const agentIdSafe = agentId;
+    const chatIdSafe = chatId;
+    if (!agentIdSafe || !chatIdSafe) return;
+    if (!historyEnabled) return;
+    if (messages.length === 0) return;
+
+    async function persistNewMessages(agentIdSafe: string, chatIdSafe: string): Promise<void> {
+      // Ensure the chat exists once we have our first message.
+      const chatAlreadyExists = await chatExists(chatIdSafe);
+      if (!chatAlreadyExists) {
+        await createChat({
+          id: chatIdSafe,
+          agentId: agentIdSafe,
+          title: formatChatTitle(new Date()),
+        });
+      }
+
+      for (const msg of messages) {
+        if (persistedIdsRef.current.has(msg.id)) continue;
+
+        if (msg.role === "user") {
+          const metadata = {
+            ...(typeof session.contextId === "string" ? { contextId: session.contextId } : {}),
+            ...(typeof session.taskId === "string" ? { taskId: session.taskId } : {}),
+          };
+
+          const base = {
+            id: msg.id,
+            chatId: chatIdSafe,
+            role: "user" as const,
+            content: msg.content,
+          };
+          await addMessage(Object.keys(metadata).length > 0 ? { ...base, metadata } : base);
+          persistedIdsRef.current.add(msg.id);
+          notifyChatsUpdated();
+          continue;
+        }
+
+        if (msg.role === "agent") {
+          const doneStreaming = msg.isStreaming !== true;
+          const hasContent = Boolean(msg.content.trim());
+          if (!doneStreaming || !hasContent) {
+            continue;
+          }
+
+          const metadata = {
+            ...(msg.rawEvents && msg.rawEvents.length > 0 ? { a2aEvents: msg.rawEvents } : {}),
+            ...(typeof session.contextId === "string" ? { contextId: session.contextId } : {}),
+            ...(typeof session.taskId === "string" ? { taskId: session.taskId } : {}),
+          };
+
+          const base = {
+            id: msg.id,
+            chatId: chatIdSafe,
+            role: "assistant" as const,
+            content: msg.content,
+          };
+          await addMessage(Object.keys(metadata).length > 0 ? { ...base, metadata } : base);
+          persistedIdsRef.current.add(msg.id);
+          notifyChatsUpdated();
+        }
+      }
+    }
+
+    void persistNewMessages(agentIdSafe, chatIdSafe);
+  }, [agentId, chatId, historyEnabled, messages, session.contextId, session.taskId]);
+
+  // Extract examples from agent card for suggestions
+  const suggestions = useMemo(() => {
+    if (!agentCard) return [];
+    return extractExamplesFromCard(agentCard).slice(0, 8);
+  }, [agentCard]);
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
       if (message.text.trim()) {
         await sendMessage(message.text);
       }
+    },
+    [sendMessage]
+  );
+
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      sendMessage(suggestion);
     },
     [sendMessage]
   );
@@ -83,7 +205,7 @@ export function DirectA2AView({ className }: DirectA2AViewProps): React.JSX.Elem
   }
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
+    <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className)}>
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-border bg-background px-4 py-3">
         <div className="flex items-center gap-2">
@@ -138,13 +260,36 @@ export function DirectA2AView({ className }: DirectA2AViewProps): React.JSX.Elem
       </Conversation>
 
       {/* Input - Fixed at bottom */}
-      <div className="shrink-0 border-t border-border bg-background p-4">
+      <div className="shrink-0 border-t border-border bg-background p-4 space-y-3">
+        {/* Suggestions - show when available */}
+        {suggestions.length > 0 && (
+          <Suggestions>
+            {suggestions.map((suggestion) => (
+              <Suggestion
+                key={suggestion}
+                suggestion={suggestion}
+                onClick={handleSuggestionClick}
+                disabled={isStreaming}
+              />
+            ))}
+          </Suggestions>
+        )}
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             placeholder={`Message ${agentCard?.name ?? "the agent"}...`}
             disabled={isStreaming}
           />
           <PromptInputFooter>
+            <Button
+              type="button"
+              variant={historyEnabled ? "secondary" : "outline"}
+              size="sm"
+              className="h-8 px-2 text-xs"
+              aria-pressed={historyEnabled}
+              onClick={() => setHistoryEnabled(!historyEnabled)}
+            >
+              History {historyEnabled ? "On" : "Off"}
+            </Button>
             <PromptInputTools />
             <PromptInputSubmit
               disabled={isStreaming}

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Nunito_Sans } from "next/font/google";
 import type { ReactNode } from "react";
-import { DebugConsole } from "@/components/debug";
-import { InspectorProvider, ThemeProvider } from "@/context";
+
+import { ThemeProvider } from "@/components/theme-provider";
+import { InspectorProvider } from "@/context";
+
 import "./globals.css";
 
 const nunitoSans = Nunito_Sans({
@@ -28,11 +30,13 @@ export default function RootLayout({ children }: RootLayoutProps): React.JSX.Ele
   return (
     <html lang="en" suppressHydrationWarning className={nunitoSans.variable}>
       <body className={`${nunitoSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <ThemeProvider>
-          <InspectorProvider>
-            {children}
-            <DebugConsole />
-          </InspectorProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <InspectorProvider>{children}</InspectorProvider>
         </ThemeProvider>
       </body>
     </html>

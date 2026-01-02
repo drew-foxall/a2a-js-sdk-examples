@@ -12,6 +12,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { nanoid } from "nanoid";
+import Image from "next/image";
 import {
   type ChangeEvent,
   type ChangeEventHandler,
@@ -293,7 +294,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
         <div className="relative size-5 shrink-0">
           <div className="absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded bg-background transition-opacity group-hover:opacity-0">
             {isImage ? (
-              <img
+              <Image
                 alt={filename || "attachment"}
                 className="size-5 object-cover"
                 height={20}
@@ -327,7 +328,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
         <div className="w-auto space-y-3">
           {isImage && (
             <div className="flex max-h-96 w-96 items-center justify-center overflow-hidden rounded-md border">
-              <img
+              <Image
                 alt={filename || "attachment preview"}
                 className="max-h-full max-w-full object-contain"
                 height={384}

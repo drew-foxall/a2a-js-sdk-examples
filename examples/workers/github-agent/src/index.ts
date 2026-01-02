@@ -89,7 +89,6 @@ const config = defineWorkerConfig<GitHubEnv>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Querying GitHub...",
     // Agent-owned routing step (AI SDK "Routing" pattern).
     //
     // This agent can handle both quick Q&A (Message) and tool-heavy workflows (Task).

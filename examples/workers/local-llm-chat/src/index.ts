@@ -64,7 +64,6 @@ const config = defineWorkerConfig<WorkerEnvWithRedis>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Thinking...",
     includeHistory: true,
   },
 

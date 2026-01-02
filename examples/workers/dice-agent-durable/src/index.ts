@@ -234,7 +234,6 @@ app.all("/*", async (c, next) => {
   // - Result caching across restarts
   // - Observability via Workflow DevKit traces
   const agentExecutor: AgentExecutor = new DurableA2AAdapter(diceAgentWorkflow, {
-    workingMessage: "Rolling dice (with durability)...",
     debug: false,
   });
 

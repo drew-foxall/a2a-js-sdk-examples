@@ -50,8 +50,16 @@ describe("Weather Agent", () => {
   it("should respond to weather queries", async () => {
     const mockModel = new MockLanguageModelV3({
       doGenerate: async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 20, outputTokens: 40, totalTokens: 60 },
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 20,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 40, text: undefined, reasoning: undefined },
+        },
         content: [
           {
             type: "text",

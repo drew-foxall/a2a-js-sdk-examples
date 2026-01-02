@@ -46,6 +46,15 @@ const nextConfig: NextConfig = {
   // - Vercel's edge network (native streaming support, no buffering)
   // - HTTP/1.1 defaults (keep-alive connections)
   // No custom headers() config needed for Vercel deployments
+
+  images: {
+    remotePatterns: [
+      // Allow loading remote images from arbitrary agents/attachments.
+      // We use this for Agent Card icons and chat attachment previews.
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" },
+    ],
+  },
 };
 
 export default nextConfig;

@@ -55,7 +55,6 @@ const agent = createDefenderAgent(model);
 
 const agentExecutor = new A2AAdapter(agent, {
   mode: "stream",
-  workingMessage: "Thinking...",
   debug: false,
 });
 
