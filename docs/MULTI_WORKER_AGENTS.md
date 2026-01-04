@@ -15,12 +15,12 @@ Multi-worker agents consist of:
 
 The Travel Planner is a multi-agent orchestrator that coordinates weather and accommodation searches.
 
-| Worker | Package Name | Port | Description |
-|--------|-------------|------|-------------|
-| Travel Planner | `a2a-travel-planner-worker` | 8787 | Orchestrator agent |
-| Weather Agent | `a2a-weather-agent-worker` | 8788 | Weather information specialist |
-| Airbnb Agent | `a2a-airbnb-agent-worker` | 8789 | Accommodation search specialist |
-| Airbnb MCP Server | `airbnb-mcp-server-worker` | 8790 | MCP server for Airbnb API |
+| Worker | Package Name | Port | Inspector | Description |
+|--------|-------------|------|-----------|-------------|
+| Travel Planner | `a2a-travel-planner-worker` | 8787 | 9230 | Orchestrator agent |
+| Weather Agent | `a2a-weather-agent-worker` | 8788 | 9231 | Weather information specialist |
+| Airbnb Agent | `a2a-airbnb-agent-worker` | 8789 | 9232 | Accommodation search specialist |
+| Airbnb MCP Server | `airbnb-mcp-server-worker` | 8790 | 9233 | MCP server for Airbnb API |
 
 ## Running Multi-Worker Agents
 
@@ -74,22 +74,27 @@ examples/workers/
 
 ### Step 2: Assign Unique Ports
 
-Each worker needs a unique port for local development. Update `package.json`:
+Each worker needs unique **worker port** AND **inspector port** for local development. Update `package.json`:
 
 ```json
 {
   "name": "my-orchestrator-worker",
   "scripts": {
-    "dev": "wrangler dev --port 8791",
+    "dev": "wrangler dev --port 8791 --inspector-port 9234",
     "deploy": "wrangler deploy"
   }
 }
 ```
 
 **Port Convention**:
-- 8787-8790: Travel Planner group
-- 8791-8800: Reserved for future multi-worker agents
-- 8801+: Available for new multi-worker groups
+
+| Group | Worker Ports | Inspector Ports |
+|-------|-------------|-----------------|
+| Travel Planner | 8787-8790 | 9230-9233 |
+| Future Group 1 | 8791-8795 | 9234-9238 |
+| Future Group 2 | 8796-8800 | 9239-9243 |
+
+> **Important**: The inspector port is used for Node.js debugging. All workers default to 9230, causing conflicts when running concurrently.
 
 ### Step 3: Add Root Scripts
 
