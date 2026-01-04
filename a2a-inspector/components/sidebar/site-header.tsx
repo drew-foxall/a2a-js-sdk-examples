@@ -2,7 +2,7 @@
 
 import { Lightning, List } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AgentCardPanel } from "@/components/agent/agent-card-panel";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -17,8 +17,16 @@ import { getAgentById, type StoredAgent } from "@/lib/storage";
  */
 export function SiteHeader(): React.JSX.Element {
   const params = useParams<{ agentId?: string; chatId?: string }>();
+  const router = useRouter();
   const { toggleSidebar } = useSidebar();
   const [agent, setAgent] = useState<StoredAgent | null>(null);
+
+  // Navigate to home without any query params to prevent auto-connect loop
+  const handleBackToHome = (e: React.MouseEvent): void => {
+    e.preventDefault();
+    // Use replace to avoid building up history, and explicitly go to "/" without params
+    router.push("/");
+  };
 
   // Load current agent for breadcrumb
   useEffect(() => {
@@ -65,12 +73,13 @@ export function SiteHeader(): React.JSX.Element {
           {agent?.card && (
             <AgentCardPanel agentName={agent.name} agentUrl={agent.url} card={agent.card} />
           )}
-          <Link
-            href="/"
+          <button
+            onClick={handleBackToHome}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
+            type="button"
           >
             ← Back to Home
-          </Link>
+          </button>
           <ModeToggle />
         </div>
       </div>

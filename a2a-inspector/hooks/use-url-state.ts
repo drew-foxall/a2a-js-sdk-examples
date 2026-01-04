@@ -68,18 +68,26 @@ export function useUrlState(): {
 /**
  * Hook to auto-connect to agent from URL on mount.
  * Should be used once at the app level.
+ * 
+ * NOTE: This only triggers on the root page (/) when there's an ?agent= param.
+ * It will NOT trigger when navigating from /agent/{id} back to /.
  */
 export function useAutoConnectFromUrl(connect: (url: string) => Promise<void>): void {
   const { agentFromUrl } = useUrlState();
   const connection = useConnection();
   const { log } = useInspector();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Only auto-connect if:
-    // 1. There's an agent URL in the URL params
-    // 2. We're not already connected or connecting
-    // 3. The URL agent is different from current agent
+    // 1. We're on the root page (not /agent/*)
+    // 2. There's an agent URL in the URL params
+    // 3. We're not already connected or connecting
+    // 4. The URL agent is different from current agent
+    const isRootPage = pathname === "/";
+    
     if (
+      isRootPage &&
       agentFromUrl &&
       connection.status === "disconnected" &&
       connection.agentUrl !== agentFromUrl
@@ -87,5 +95,5 @@ export function useAutoConnectFromUrl(connect: (url: string) => Promise<void>): 
       log("info", `Auto-connecting to agent from URL: ${agentFromUrl}`);
       connect(agentFromUrl);
     }
-  }, [agentFromUrl, connection.status, connection.agentUrl, connect, log]);
+  }, [agentFromUrl, connection.status, connection.agentUrl, connect, log, pathname]);
 }
