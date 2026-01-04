@@ -69,7 +69,7 @@
     "worker:deploy:airbnb": "pnpm --filter a2a-airbnb-agent-worker run deploy",
     "worker:deploy:planner": "pnpm --filter a2a-travel-planner-worker run deploy",
     "workers:deploy:all": "pnpm worker:deploy:hello-world && pnpm worker:deploy:dice && pnpm worker:deploy:currency && pnpm worker:deploy:weather && pnpm worker:deploy:airbnb-mcp && pnpm worker:deploy:airbnb && pnpm worker:deploy:planner",
-    "multi:travel-planner": "turbo run dev --filter=airbnb-mcp-server-worker --filter=a2a-weather-agent-worker --filter=a2a-airbnb-agent-worker --filter=a2a-travel-planner-worker --concurrency=4",
+    "multi:travel-planner": "turbo run dev --filter=airbnb-mcp-server-worker --filter=a2a-weather-agent-worker --filter=a2a-airbnb-agent-worker --filter=a2a-travel-planner-worker --concurrency=5",
     "multi:travel-planner:deploy": "turbo run deploy --filter=airbnb-mcp-server-worker --filter=a2a-weather-agent-worker --filter=a2a-airbnb-agent-worker --filter=a2a-travel-planner-worker",
     "smoke:workers": "tsx scripts/smoke-test-workers.ts",
     "smoke:workers:quick": "tsx scripts/smoke-test-workers.ts --quick",

@@ -98,11 +98,13 @@ Add grouped commands to root `package.json`:
 ```json
 {
   "scripts": {
-    "multi:my-agent": "turbo run dev --filter=my-orchestrator-worker --filter=specialist-a-worker --filter=specialist-b-worker --concurrency=3",
+    "multi:my-agent": "turbo run dev --filter=my-orchestrator-worker --filter=specialist-a-worker --filter=specialist-b-worker --concurrency=4",
     "multi:my-agent:deploy": "turbo run deploy --filter=my-orchestrator-worker --filter=specialist-a-worker --filter=specialist-b-worker"
   }
 }
 ```
+
+> **Note**: Turbo requires `--concurrency` to be at least `n+1` for `n` persistent tasks (dev servers). For 3 workers, use `--concurrency=4`.
 
 ### Step 4: Configure Service Bindings
 
@@ -192,7 +194,7 @@ turbo run dev --filter=worker-a --filter=worker-b --dry-run
 1. **Consistent Port Numbering**: Use sequential ports within a group
 2. **Document Dependencies**: List all required workers in README
 3. **Fallback URLs**: Always configure HTTP fallbacks for local development
-4. **Concurrency Limit**: Match `--concurrency` to worker count
+4. **Concurrency Limit**: Set `--concurrency` to at least `n+1` for `n` workers (Turbo requirement)
 5. **Single Deploy Command**: Keep deployment atomic with one command
 
 ## Related Documentation
