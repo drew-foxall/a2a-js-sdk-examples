@@ -339,7 +339,7 @@ def create_agent():
   "dependencies": {
     "@octokit/rest": "^20.0.0",
     "ai": "6.0.0-beta.99",
-    "zod": "^4.1.13"
+    "zod": "4.3.4"
   }
 }
 ```

@@ -32,8 +32,16 @@ describe("Coder Agent", () => {
   it("should respond to code generation requests", async () => {
     const mockModel = new MockLanguageModelV3({
       doGenerate: async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 30, outputTokens: 60, totalTokens: 90 },
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 30,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 60, text: undefined, reasoning: undefined },
+        },
         content: [
           {
             type: "text",

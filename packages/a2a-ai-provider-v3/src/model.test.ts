@@ -82,7 +82,7 @@ describe("A2A Flow: Request/Response", () => {
       prompt: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
     });
 
-    expect(result.finishReason).toBe("stop");
+    expect(result.finishReason).toEqual({ unified: "stop", raw: "completed" });
     expect(result.content[0]).toEqual({ type: "text", text: "Hello from agent!" });
 
     const meta = result.providerMetadata?.a2a as A2aProviderMetadata;
@@ -278,7 +278,7 @@ describe("A2A Flow: Error States", () => {
       prompt: [{ role: "user", content: [{ type: "text", text: "Fail" }] }],
     });
 
-    expect(result.finishReason).toBe("error");
+    expect(result.finishReason).toEqual({ unified: "error", raw: "failed" });
   });
 
   it("throws on tool usage (unsupported)", async () => {
@@ -343,7 +343,8 @@ describe("A2A Flow: Streaming", () => {
   it("streams text deltas from status-update events", async () => {
     mockGetAgentCard.mockResolvedValue({ capabilities: { streaming: true } });
 
-    // Simulate incremental text chunks via TaskStatusUpdateEvent
+    // Simulate CUMULATIVE text snapshots via TaskStatusUpdateEvent
+    // Each update contains the full text accumulated so far (realistic agent behavior)
     const chunk1: TaskStatusUpdateEvent = {
       kind: "status-update",
       taskId: "task-123",
@@ -373,7 +374,8 @@ describe("A2A Flow: Streaming", () => {
           kind: "message",
           messageId: "msg-2",
           role: "agent",
-          parts: [{ kind: "text", text: "World!" }],
+          // Cumulative: includes previous text + new content
+          parts: [{ kind: "text", text: "Hello World! " }],
         },
       },
     };
@@ -390,7 +392,8 @@ describe("A2A Flow: Streaming", () => {
           kind: "message",
           messageId: "msg-final",
           role: "agent",
-          parts: [{ kind: "text", text: "Complete" }],
+          // Cumulative: full final text
+          parts: [{ kind: "text", text: "Hello World! Complete." }],
         },
       },
     };
@@ -417,23 +420,31 @@ describe("A2A Flow: Streaming", () => {
       parts.push(value as { type: string; delta?: string; id?: string });
     }
 
-    // Should have text-start, text-delta events for each chunk
+    // Should have text-start, text-delta events
     const textStarts = parts.filter((p) => p.type === "text-start");
     const textDeltas = parts.filter((p) => p.type === "text-delta");
     const textEnds = parts.filter((p) => p.type === "text-end");
 
-    // Verify text deltas were emitted (critical for streaming UX)
+    // Verify text deltas were emitted (true deltas computed from cumulative snapshots)
     expect(textDeltas.length).toBeGreaterThan(0);
     expect(textDeltas.some((p) => p.delta === "Hello ")).toBe(true);
-    expect(textDeltas.some((p) => p.delta === "World!")).toBe(true);
-    expect(textDeltas.some((p) => p.delta === "Complete")).toBe(true);
+    expect(textDeltas.some((p) => p.delta === "World! ")).toBe(true);
+    expect(textDeltas.some((p) => p.delta === "Complete.")).toBe(true);
 
-    // Verify text streams were properly started and ended
-    expect(textStarts.length).toBeGreaterThan(0);
-    expect(textEnds.length).toBeGreaterThan(0);
+    // Should have exactly ONE text stream (single stream ID for entire task)
+    expect(textStarts.length).toBe(1);
+    expect(textEnds.length).toBe(1);
 
-    // Verify finish event
-    expect(parts.some((p) => p.type === "finish")).toBe(true);
+    // All deltas should use the same stream ID
+    const streamIds = new Set(textDeltas.map((p) => p.id));
+    expect(streamIds.size).toBe(1);
+
+    // Verify finish event with finalText in metadata
+    const finishPart = parts.find((p) => p.type === "finish") as
+      | { providerMetadata?: { a2a?: { finalText?: string } } }
+      | undefined;
+    expect(finishPart).toBeDefined();
+    expect(finishPart?.providerMetadata?.a2a?.finalText).toBe("Hello World! Complete.");
   });
 
   it("falls back to non-streaming when unsupported", async () => {

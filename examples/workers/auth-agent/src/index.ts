@@ -222,7 +222,6 @@ app.all("/*", async (c) => {
       createAgentCard: () => agentCard,
       adapterOptions: {
         mode: "stream",
-        workingMessage: isDemoMode ? "Processing request (demo mode)..." : "Processing request...",
         includeHistory: true,
         debug: isDemoMode,
       },

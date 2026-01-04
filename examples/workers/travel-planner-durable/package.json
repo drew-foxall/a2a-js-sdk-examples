@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/openai": "3.0.0-beta.61",
+    "@ai-sdk/openai": "3.0.1",
     "@drew-foxall/a2a-ai-provider-v3": "^1.0.0",
     "@drew-foxall/a2a-ai-sdk-adapter": "workspace:*",
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
@@ -22,15 +22,15 @@
     "@upstash/redis": "^1.35.0",
     "a2a-agents": "workspace:*",
     "a2a-workers-shared": "workspace:*",
-    "ai": "6.0.0-beta.99",
+    "ai": "6.0.3",
     "hono": "^4.10.7",
     "workflow": "4.0.1-beta.24",
-    "zod": "^4.1.13"
+    "zod": "4.3.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
     "vitest": "^2.1.0",
-    "wrangler": "^4.51.0",
+    "wrangler": "^4.56.0",
     "@types/node": "^24.10.1"
   }
 }

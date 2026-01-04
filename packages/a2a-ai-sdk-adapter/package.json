@@ -83,12 +83,12 @@
     "@types/node": "^24.10.1",
     "@types/uuid": "^11.0.0",
     "@vitest/ui": "^4.0.14",
-    "ai": "6.0.0-beta.99",
+    "ai": "6.0.3",
     "typescript": "^5.9.3",
     "uuid": "^13.0.0",
     "vitest": "^4.0.14",
     "workflow": "4.0.1-beta.32",
-    "zod": "^4.1.13"
+    "zod": "4.3.4"
   },
   "packageManager": "pnpm@10.23.0",
   "engines": {

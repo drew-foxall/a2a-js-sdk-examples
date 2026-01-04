@@ -160,7 +160,7 @@ const responseTypeSchema = z.object({
     .describe(
       'The response type: "message" for immediate stateless response, "task" for stateful tracked operation'
     ),
-  reasoning: z.string().optional().describe("Brief reasoning for the classification"),
+  reasoningText: z.string().optional().describe("Brief reasoning for the classification"),
 });
 
 /**

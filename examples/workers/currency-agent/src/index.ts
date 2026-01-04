@@ -99,7 +99,6 @@ const config = defineWorkerConfig<BaseWorkerEnv>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Looking up exchange rates...",
     parseTaskState,
     generateArtifacts: generateConversionArtifacts,
   },

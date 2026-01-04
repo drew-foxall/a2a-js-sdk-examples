@@ -1,13 +1,14 @@
 "use client";
 
 import { CircleNotch, Plug, PlugsConnected } from "@phosphor-icons/react";
-import { type FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useConnection } from "@/context";
 import { useAgentConnection } from "@/hooks/use-agent-connection";
-import { useAutoConnectFromUrl, useUrlState } from "@/hooks/use-url-state";
+import { addAgent } from "@/lib/storage";
 
 interface ConnectionFormProps {
   /** Compact mode for sidebar display */
@@ -16,7 +17,10 @@ interface ConnectionFormProps {
 
 /**
  * Connection form for entering agent URL and connecting/disconnecting.
- * Supports URL state persistence - agent URL is synced to URL params.
+ *
+ * On successful connection from the home page, saves the agent to storage
+ * and redirects to /agent/{id}. URL state is managed by Next.js routing,
+ * not query parameters.
  */
 // Placeholder varies by environment - localhost for dev, generic example for prod
 const PLACEHOLDER_URL =
@@ -25,29 +29,40 @@ const PLACEHOLDER_URL =
     : "Enter agent URL (e.g., https://your-agent.example.com)";
 
 export function ConnectionForm({ compact = false }: ConnectionFormProps): React.JSX.Element {
+  const router = useRouter();
   const connection = useConnection();
   const { connect, disconnect, isConnecting } = useAgentConnection();
-  const { agentFromUrl } = useUrlState();
 
-  // Initialize URL from: URL params > connection state > empty
-  const [url, setUrl] = useState(() => agentFromUrl || connection.agentUrl || "");
-
-  // Update local state when URL params change (e.g., navigating to a shared link)
-  useEffect(() => {
-    if (agentFromUrl && agentFromUrl !== url) {
-      setUrl(agentFromUrl);
-    }
-  }, [agentFromUrl, url]);
-
-  // Auto-connect from URL on mount
-  useAutoConnectFromUrl(connect);
+  // Local URL input state
+  const [url, setUrl] = useState("");
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
+
     if (connection.status === "connected") {
       disconnect();
-    } else {
-      await connect(url);
+      return;
+    }
+
+    // Connect and get the result
+    const result = await connect(url);
+
+    // If connection succeeded and we're not in compact mode, save and redirect
+    if (result && !compact) {
+      try {
+        const stored = await addAgent({
+          url: url,
+          card: result.card,
+        });
+
+        // Disconnect before navigating to ensure clean state
+        disconnect();
+
+        // Navigate to the agent page
+        router.push(`/agent/${stored.id}`);
+      } catch (error) {
+        console.error("Failed to save agent or navigate:", error);
+      }
     }
   };
 

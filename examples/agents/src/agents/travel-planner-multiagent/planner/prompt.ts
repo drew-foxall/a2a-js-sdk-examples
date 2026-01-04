@@ -27,6 +27,8 @@ export function getTravelPlannerPrompt(config: PlannerPromptConfig): string {
 
 **Core Directives:**
 
+* **No Status Messages:** NEVER output status messages like "Processing your request..." or "Let me check..." before calling tools. Call tools directly without preamble.
+
 * **Task Delegation:** Utilize the \`sendMessage\` function to assign actionable tasks to remote agents.
 
 * **Contextual Awareness for Remote Agents:** If a remote agent repeatedly requests user confirmation, assume it lacks access to the full conversation history. In such cases, enrich the task description with all necessary contextual information relevant to that specific agent.

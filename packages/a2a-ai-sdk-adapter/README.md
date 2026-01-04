@@ -101,7 +101,6 @@ constructor(agent: ToolLoopAgent<never, TTools, never>, config: A2AAdapterConfig
 | `systemPrompt` | `string` | No | System prompt for the agent (default: generic A2A prompt) |
 | `maxSteps` | `number` | No | Max tool call iterations (default: 5) |
 | `includeHistory` | `boolean` | No | Include conversation history (default: false) |
-| `workingMessage` | `string` | No | Initial status message (default: "Processing...") |
 | `logger` | `A2ALogger` | No | Custom logger (default: `ConsoleLogger`) |
 | `parseArtifacts` | `(text: string, context: ArtifactGenerationContext) => ParsedArtifacts \| ParsedArtifact[]` | No | Parse artifacts from text (stream mode only) |
 | `generateArtifacts` | `(context: ArtifactGenerationContext) => Promise<Artifact[]>` | No | Generate artifacts asynchronously |
@@ -550,13 +549,11 @@ import { diceAgentWorkflow } from "a2a-agents";
 
 // Wrap a durable workflow for A2A protocol
 const executor = new DurableA2AAdapter(diceAgentWorkflow, {
-  workingMessage: "Rolling dice (with durability)...",
 });
 
 // For workflows with additional arguments:
 const imageExecutor = new DurableA2AAdapter(imageGeneratorWorkflow, {
   workflowArgs: [env.OPENAI_API_KEY], // Additional args after messages
-  workingMessage: "Generating image...",
 });
 ```
 
@@ -601,7 +598,6 @@ The durability stack consists of three layers working together:
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
 | `workflowArgs` | `TArgs` | No | Additional arguments to pass to the workflow (after messages) |
-| `workingMessage` | `string` | No | Initial status message (default: "Processing...") |
 | `includeHistory` | `boolean` | No | Include conversation history (default: false) |
 | `parseTaskState` | `(text: string) => TaskState` | No | Custom task state parser |
 | `generateArtifacts` | `(context) => Promise<Artifact[]>` | No | Generate artifacts after completion |

@@ -43,8 +43,16 @@ describe("Movie Agent", () => {
   it("should respond to movie queries", async () => {
     const mockModel = new MockLanguageModelV3({
       doGenerate: async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 20, outputTokens: 40, totalTokens: 60 },
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 20,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 40, text: undefined, reasoning: undefined },
+        },
         content: [
           {
             type: "text",
@@ -58,9 +66,6 @@ describe("Movie Agent", () => {
     const agent = createMovieAgent(mockModel);
     const result = await agent.generate({
       prompt: "Tell me about Inception",
-      options: {
-        contextId: "test-context-123",
-      },
     });
 
     expect(result.text).toBeDefined();

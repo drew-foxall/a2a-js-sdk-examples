@@ -74,7 +74,6 @@ const config = defineWorkerConfig<BaseWorkerEnv>({
 
   adapterOptions: {
     mode: "generate",
-    workingMessage: "Rolling dice...",
     // Dice rolls and primality checks are immediate and self-contained.
     // Prefer stateless Message responses (agent can still choose Task for continuations if needed).
     selectResponseType: () => "message",

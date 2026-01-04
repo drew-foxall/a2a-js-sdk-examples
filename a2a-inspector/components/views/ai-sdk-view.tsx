@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport, isTextUIPart } from "ai";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -28,17 +28,28 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { extractExamplesFromCard } from "@/components/connection";
 import { JsonViewerButton } from "@/components/debug/json-viewer-modal";
 import { EventsDropdown, KindChip, ValidationStatus } from "@/components/message";
 import { SessionDetailsPanel } from "@/components/session";
 import { Button } from "@/components/ui/button";
 import { useConnection, useInspector } from "@/context";
+import { useChatHistoryEnabled } from "@/hooks/use-chat-history";
+import { getStringProp } from "@/lib/a2a-type-guards";
+import { formatChatTitle } from "@/lib/chat-title";
+import { addMessage, chatExists, createChat, notifyChatsUpdated } from "@/lib/storage";
 import { cn } from "@/lib/utils";
-import { type A2AEventData, a2aDataPartSchemas } from "@/schemas/a2a-events";
+import { type A2AEventData, a2aDataPartSchemas, a2aEventDataSchema } from "@/schemas/a2a-events";
 import type { MessageDisplayMode, RawA2AEvent, ValidationError } from "@/types";
+import type { A2AUIMessage } from "@/types/ui-message";
 
 interface AISDKViewProps {
   readonly className?: string;
+  readonly agentId?: string;
+  readonly chatId?: string;
+  readonly initialMessages?: A2AUIMessage[];
+  readonly initialRawEvents?: RawA2AEvent[];
 }
 
 /**
@@ -56,6 +67,12 @@ function toRawA2AEvent(data: A2AEventData, index: number): RawA2AEvent {
     event: data.event as RawA2AEvent["event"],
     validationErrors: [], // TODO: Add validation
   };
+  if (typeof data.taskId === "string") {
+    result.taskId = data.taskId;
+  }
+  if (typeof data.messageId === "string") {
+    result.messageId = data.messageId;
+  }
   // Only add textContent if it exists
   if (data.textContent !== undefined) {
     result.textContent = data.textContent;
@@ -73,17 +90,35 @@ function toRawA2AEvent(data: A2AEventData, index: number): RawA2AEvent {
  * Uses AI Elements components following the chatbot pattern from:
  * https://sdk.vercel.ai/elements/examples/chatbot
  */
-export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
+export function AISDKView({
+  className,
+  agentId,
+  chatId,
+  initialMessages,
+  initialRawEvents,
+}: AISDKViewProps): React.JSX.Element {
   const { agentUrl, status: connectionStatus, agentCard } = useConnection();
   const { log } = useInspector();
+  const { enabled: historyEnabled, setEnabled: setHistoryEnabled } = useChatHistoryEnabled({
+    isLoggedIn: false,
+  });
   const contextIdRef = useRef<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [displayMode, setDisplayMode] = useState<MessageDisplayMode>("pretty");
   const [showSessionDetails, setShowSessionDetails] = useState(false);
+  const persistedUserIdsRef = useRef<Set<string>>(new Set());
+  const persistedAssistantIdsRef = useRef<Set<string>>(new Set());
 
   // Store raw A2A events received via data parts
-  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>([]);
+  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>(() => initialRawEvents ?? []);
   const eventCountRef = useRef(0);
+  const rawEventsRef = useRef<RawA2AEvent[]>(rawEvents);
+  const lastTaskIdRef = useRef<string | null>(null);
+  const assistantMessageTaskIdMapRef = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    rawEventsRef.current = rawEvents;
+  }, [rawEvents]);
 
   // Create a transport with the API endpoint and dynamic body
   // Enable smoothStream for a better streaming UX - this is processed server-side
@@ -107,7 +142,7 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
     [agentUrl]
   );
 
-  const { messages, sendMessage, status, error, setMessages } = useChat({
+  const { messages, sendMessage, status, error, setMessages } = useChat<A2AUIMessage>({
     transport,
     // Register the A2A event data part schema
     dataPartSchemas: a2aDataPartSchemas,
@@ -117,9 +152,8 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
     // Receive raw A2A events via onData callback
     onData: (dataPart) => {
       if (dataPart.type === "data-a2a-event") {
-        // Type narrowing: after checking dataPart.type, we know data matches A2AEventData
-        // The schema in a2aDataPartSchemas validates this structure at runtime
-        const eventData = dataPart.data as A2AEventData;
+        // Validate/parse for correctness and typing (avoids casts).
+        const eventData: A2AEventData = a2aEventDataSchema.parse(dataPart.data);
         const rawEvent = toRawA2AEvent(eventData, eventCountRef.current++);
 
         log("event", `A2A Event: ${eventData.kind}`, eventData.event, "inbound");
@@ -130,64 +164,204 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
         if (eventData.contextId && !contextIdRef.current) {
           contextIdRef.current = eventData.contextId;
         }
+        if (typeof eventData.taskId === "string") {
+          lastTaskIdRef.current = eventData.taskId;
+        }
       }
     },
-    onFinish: ({ message }: { message: UIMessage }) => {
+    onFinish: ({
+      message,
+      providerOptions,
+    }: {
+      message: UIMessage;
+      providerOptions?: Record<string, unknown>;
+    }) => {
       // =========================================================================
-      // A2A STREAM DEDUPLICATION - CLIENT SIDE
+      // A2A STREAM COMPLETION - CORRECTION & PERSISTENCE
       // =========================================================================
       //
-      // This handler works in conjunction with the A2A provider (model.ts) to
-      // ensure the correct final message is displayed after streaming completes.
+      // The authoritative final text is in providerMetadata.a2a.finalText.
+      // If this differs from accumulated stream text (e.g., agent sent non-cumulative
+      // status updates), we REPLACE the message content with the authoritative text.
       //
-      // ## Background
-      //
-      // A2A protocol sends two types of content:
-      // 1. "working" state: Streaming deltas (may include status like "Processing...")
-      // 2. "completed" state: Full authoritative text that should REPLACE deltas
-      //
-      // The A2A provider emits these as SEPARATE text streams, creating multiple
-      // text parts in the AI SDK message:
-      //   - Text Part 1: Accumulated working deltas ("Processing...Hello world")
-      //   - Text Part 2: Completed authoritative text ("Hello world")
-      //
-      // ## Our Strategy
-      //
-      // When multiple text parts exist, use only the LAST one (the completed
-      // content) and discard earlier parts (accumulated working deltas).
-      //
-      // See also: packages/a2a-ai-provider-v3/src/model.ts handleStatusUpdate()
       // =========================================================================
       const textParts = (message.parts ?? []).filter(isTextUIPart);
-      const lastTextPart = textParts[textParts.length - 1];
+      const streamedText = textParts.map((p) => p.text).join("");
+
+      // Extract finalText from provider metadata (authoritative content)
+      const a2aMetadata = providerOptions?.a2a as Record<string, unknown> | undefined;
+      const finalText =
+        typeof a2aMetadata?.finalText === "string" ? a2aMetadata.finalText : streamedText;
 
       log("info", "AI SDK message completed", {
         role: message.role,
-        textPartsCount: textParts.length,
-        content: lastTextPart?.text.substring(0, 100) ?? "",
+        streamedLength: streamedText.length,
+        finalTextLength: finalText.length,
+        contentPreview: finalText.substring(0, 100),
       });
 
-      // Multiple text parts = streaming agent that sent working deltas + completed
-      // Use only the last text part (authoritative completed content)
-      if (textParts.length > 1 && lastTextPart) {
+      // If finalText differs from streamed text, replace message content with authoritative text
+      // This handles agents that send non-cumulative status updates (streaming shows garbage)
+      if (finalText && finalText !== streamedText) {
         setMessages((msgs) =>
           msgs.map((m) =>
             m.id === message.id
               ? {
                   ...m,
                   parts: [
-                    // Preserve non-text parts (step-start, tool calls, etc.)
+                    // Preserve non-text parts
                     ...(m.parts ?? []).filter((p) => !isTextUIPart(p)),
-                    // Replace all text parts with just the authoritative last one
-                    { type: "text" as const, text: lastTextPart.text },
+                    // Replace all text parts with authoritative final text
+                    { type: "text" as const, text: finalText },
                   ],
                 }
               : m
           )
         );
       }
+
+      // Associate this assistant message with the most recent taskId (for correct "kind" labeling)
+      if (message.role === "assistant") {
+        const fallbackTaskId =
+          rawEventsRef.current
+            .slice()
+            .reverse()
+            .find((e) => typeof e.taskId === "string")?.taskId ?? null;
+        const taskId = lastTaskIdRef.current ?? fallbackTaskId;
+        if (typeof taskId === "string") {
+          assistantMessageTaskIdMapRef.current.set(message.id, taskId);
+        }
+      }
+
+      // Persist the final assistant message when chat context is present.
+      // Use finalText (from metadata) as the authoritative content.
+      if (
+        historyEnabled &&
+        agentId &&
+        chatId &&
+        message.role === "assistant" &&
+        !persistedAssistantIdsRef.current.has(message.id)
+      ) {
+        const agentIdSafe = agentId;
+        const chatIdSafe = chatId;
+        const contentToSave = finalText.trim();
+        if (contentToSave.length > 0) {
+          void (async (agentIdSafe: string, chatIdSafe: string) => {
+            const exists = await chatExists(chatIdSafe);
+            if (!exists) {
+              // Usually created when the first user message is persisted.
+              // Fallback: create with a generic title if we somehow got here first.
+              await createChat({
+                id: chatIdSafe,
+                agentId: agentIdSafe,
+                title: formatChatTitle(new Date()),
+              });
+            }
+
+            // Best-effort task id extraction from raw events
+            const taskEvent = rawEvents.find((e: RawA2AEvent) => e.kind === "task");
+            let taskId: string | undefined;
+            if (taskEvent) {
+              const maybeId = getStringProp(taskEvent.event, "id");
+              if (maybeId) taskId = maybeId;
+            }
+
+            const metadata = {
+              // Store finalText explicitly so rehydration uses authoritative content
+              finalText: contentToSave,
+              ...(message.parts ? { uiParts: message.parts } : {}),
+              ...(rawEvents.length > 0 ? { a2aEvents: rawEvents } : {}),
+              ...(typeof contextIdRef.current === "string"
+                ? { contextId: contextIdRef.current }
+                : {}),
+              ...(typeof taskId === "string" ? { taskId } : {}),
+            };
+
+            const base = {
+              id: message.id,
+              chatId: chatIdSafe,
+              role: "assistant" as const,
+              content: contentToSave,
+            };
+            await addMessage({ ...base, metadata });
+
+            persistedAssistantIdsRef.current.add(message.id);
+            notifyChatsUpdated();
+          })(agentIdSafe, chatIdSafe);
+        }
+      }
     },
   });
+
+  // Initialize message history when navigating to an existing chat.
+  useEffect(() => {
+    if (!agentId || !chatId) return;
+    if (!initialMessages || initialMessages.length === 0) return;
+    if (messages.length > 0) return;
+
+    // Seed persisted-id sets so we don't re-store loaded history.
+    for (const m of initialMessages) {
+      if (m.role === "user") persistedUserIdsRef.current.add(m.id);
+      if (m.role === "assistant") persistedAssistantIdsRef.current.add(m.id);
+    }
+
+    // Seed event counter so new events won't collide with loaded history ids
+    eventCountRef.current = initialRawEvents?.length ?? rawEvents.length;
+
+    setMessages(initialMessages);
+  }, [
+    agentId,
+    chatId,
+    initialMessages,
+    initialRawEvents,
+    messages.length,
+    rawEvents.length,
+    setMessages,
+  ]);
+
+  // Persist user messages when they appear (useChat generates the id internally).
+  useEffect(() => {
+    const agentIdSafe = agentId;
+    const chatIdSafe = chatId;
+    if (!agentIdSafe || !chatIdSafe) return;
+    if (!historyEnabled) return;
+    if (messages.length === 0) return;
+
+    async function persistUsers(agentIdSafe: string, chatIdSafe: string): Promise<void> {
+      const existing = await chatExists(chatIdSafe);
+      if (!existing) {
+        await createChat({
+          id: chatIdSafe,
+          agentId: agentIdSafe,
+          title: formatChatTitle(new Date()),
+        });
+      }
+
+      for (const m of messages) {
+        if (m.role !== "user") continue;
+        if (persistedUserIdsRef.current.has(m.id)) continue;
+
+        const text = (m.parts ?? [])
+          .filter(isTextUIPart)
+          .map((p) => p.text)
+          .join("")
+          .trim();
+        if (!text) continue;
+
+        const base = {
+          id: m.id,
+          chatId: chatIdSafe,
+          role: "user" as const,
+          content: text,
+        };
+        await addMessage(m.parts ? { ...base, metadata: { uiParts: m.parts } } : base);
+        persistedUserIdsRef.current.add(m.id);
+        notifyChatsUpdated();
+      }
+    }
+
+    void persistUsers(agentIdSafe, chatIdSafe);
+  }, [agentId, chatId, historyEnabled, messages]);
 
   const handleClear = useCallback(() => {
     setMessages([]);
@@ -215,6 +389,21 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
 
   const isConnected = connectionStatus === "connected";
   const isLoading = status === "submitted" || status === "streaming";
+
+  // Extract examples from agent card for suggestions
+  const suggestions = useMemo(() => {
+    if (!agentCard) return [];
+    return extractExamplesFromCard(agentCard).slice(0, 8);
+  }, [agentCard]);
+
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      if (status !== "ready") return;
+      log("info", `Sending suggestion via AI SDK: ${suggestion}`, undefined, "outbound");
+      sendMessage({ text: suggestion });
+    },
+    [status, sendMessage, log]
+  );
 
   // Build session details from raw events
   const session = useMemo(() => {
@@ -256,7 +445,7 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
   }
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
+    <div className={cn("flex h-full min-h-0 min-w-0 flex-col overflow-hidden", className)}>
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-border bg-background px-4 py-3">
         <div className="flex items-center gap-2">
@@ -298,8 +487,8 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
         </div>
       )}
 
-      {/* Messages - Using AI Elements Conversation pattern */}
-      <Conversation className="min-h-0 flex-1">
+      {/* Messages - Scrollable area (AI Elements pattern) */}
+      <Conversation className="h-full">
         <ConversationContent>
           {displayMode === "pretty" ? (
             <PrettyMessages
@@ -322,21 +511,51 @@ export function AISDKView({ className }: AISDKViewProps): React.JSX.Element {
         </div>
       )}
 
-      {/* Input - Using AI Elements PromptInput pattern */}
-      <div className="shrink-0 border-t border-border bg-background p-4">
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputTextarea
-            placeholder={`Message ${agentCard?.name ?? "the agent"}...`}
-            disabled={isLoading}
-            value={inputValue}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInputValue(e.target.value)}
-          />
-          <PromptInputFooter>
-            <PromptInputTools />
-            <PromptInputSubmit disabled={isLoading} status={status} />
-          </PromptInputFooter>
-        </PromptInput>
-      </div>
+      {/* Suggestions - separate container for proper stacking */}
+      {suggestions.length > 0 && (
+        <div className="shrink-0 border-t border-border bg-background px-4 pt-3">
+          <Suggestions>
+            {suggestions.map((suggestion) => (
+              <Suggestion
+                key={suggestion}
+                suggestion={suggestion}
+                onClick={handleSuggestionClick}
+                disabled={isLoading}
+              />
+            ))}
+          </Suggestions>
+        </div>
+      )}
+
+      {/* Input - Direct sibling to Conversation (AI Elements pattern) */}
+      <PromptInput
+        onSubmit={handleSubmit}
+        className={cn(
+          "shrink-0 border-t border-border bg-background p-4",
+          suggestions.length > 0 && "border-t-0 pt-3"
+        )}
+      >
+        <PromptInputTextarea
+          placeholder={`Message ${agentCard?.name ?? "the agent"}...`}
+          disabled={isLoading}
+          value={inputValue}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInputValue(e.target.value)}
+        />
+        <PromptInputFooter>
+          <Button
+            type="button"
+            variant={historyEnabled ? "secondary" : "outline"}
+            size="sm"
+            className="h-8 px-2 text-xs"
+            aria-pressed={historyEnabled}
+            onClick={() => setHistoryEnabled(!historyEnabled)}
+          >
+            History {historyEnabled ? "On" : "Off"}
+          </Button>
+          <PromptInputTools />
+          <PromptInputSubmit disabled={isLoading} status={status} />
+        </PromptInputFooter>
+      </PromptInput>
     </div>
   );
 }
@@ -409,17 +628,26 @@ function PrettyMessages({
     );
   }
 
-  // Get the most recent kind from raw events for the current message
+  // Get the kind for this message from raw events
+  // The FIRST event determines the type (task, message, etc.) - just like A2A protocol
   const getMessageKind = (messageIndex: number) => {
-    // Find events that correspond to this message (rough heuristic)
     const agentMessageCount = messages.filter((m: UIMessage) => m.role === "assistant").length;
     if (messageIndex < agentMessageCount && rawEvents.length > 0) {
-      // Get the last event for this message
       const eventsPerMessage = Math.ceil(rawEvents.length / Math.max(agentMessageCount, 1));
       const startIdx = messageIndex * eventsPerMessage;
       const endIdx = Math.min(startIdx + eventsPerMessage, rawEvents.length);
       const relevantEvents = rawEvents.slice(startIdx, endIdx);
-      return relevantEvents[relevantEvents.length - 1]?.kind;
+
+      // Use the FIRST event's kind - this tells us what type of response this is
+      const firstEvent = relevantEvents[0];
+      if (!firstEvent) return undefined;
+
+      // status-update events are part of a task, so display as "task"
+      if (firstEvent.kind === "status-update") {
+        return "task";
+      }
+
+      return firstEvent.kind;
     }
     return undefined;
   };
@@ -460,50 +688,58 @@ function PrettyMessages({
         const validationErrors = isAssistant ? getValidationErrors(currentAgentIndex) : [];
         const messageEvents = isAssistant ? getMessageEvents(currentAgentIndex) : [];
 
+        // Combine all text parts into a single string for display
+        // This handles edge cases where multiple text parts exist
+        const combinedText = message.parts
+          .filter((p): p is { type: "text"; text: string } => p.type === "text")
+          .map((p) => p.text)
+          .join("");
+
+        if (!combinedText) {
+          return null; // No text content to display
+        }
+
         return (
-          <div key={message.id}>
-            {message.parts.map((part, i) => {
-              switch (part.type) {
-                case "text":
-                  return (
-                    <Message key={`${message.id}-${i}`} from={message.role}>
-                      <MessageContent>
-                        {isAssistant ? (
-                          <div className="space-y-2">
-                            {/* Header with kind chip and validation status */}
-                            <div className="flex items-center gap-2">
-                              {kind && <KindChip kind={kind} showIcon />}
-                              {validationErrors.length > 0 && (
-                                <ValidationStatus errors={validationErrors} />
-                              )}
-                            </div>
+          <Message key={message.id} from={message.role}>
+            <MessageContent>
+              {isAssistant ? (
+                <div className="space-y-2">
+                  {/* Header with kind chip and validation status */}
+                  <div className="flex items-center gap-2">
+                    {kind && <KindChip kind={kind} showIcon />}
+                    {validationErrors.length > 0 && <ValidationStatus errors={validationErrors} />}
+                  </div>
 
-                            {/* Message content */}
-                            <MessageResponse>{part.text}</MessageResponse>
+                  {/* Message content - combined text from all parts */}
+                  <MessageResponse>{combinedText}</MessageResponse>
 
-                            {/* Events dropdown - shows constituent A2A events */}
-                            {messageEvents.length > 0 && <EventsDropdown events={messageEvents} />}
-                          </div>
-                        ) : (
-                          <span>{part.text}</span>
-                        )}
-                      </MessageContent>
-                    </Message>
-                  );
-                default:
-                  return null;
-              }
-            })}
-          </div>
+                  {/* Events dropdown - shows constituent A2A events */}
+                  {messageEvents.length > 0 && <EventsDropdown events={messageEvents} />}
+                </div>
+              ) : (
+                <span>{combinedText}</span>
+              )}
+            </MessageContent>
+          </Message>
         );
       })}
-      {/* Loading indicator while streaming */}
-      {isLoading && messages.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
-          <CircleNotch className="h-4 w-4 animate-spin" />
-          <span>Agent is responding...</span>
-        </div>
-      )}
+      {/* Loading indicator - only show when waiting for FIRST token (no content yet) */}
+      {isLoading &&
+        (() => {
+          const lastMessage = messages[messages.length - 1];
+          const lastMessageHasContent =
+            lastMessage?.role === "assistant" &&
+            lastMessage.parts.some(
+              (p): p is { type: "text"; text: string } => p.type === "text" && p.text.length > 0
+            );
+          // Only show spinner if we don't have any content yet
+          return !lastMessageHasContent;
+        })() && (
+          <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
+            <CircleNotch className="h-4 w-4 animate-spin" />
+            <span>Agent is responding...</span>
+          </div>
+        )}
     </>
   );
 }

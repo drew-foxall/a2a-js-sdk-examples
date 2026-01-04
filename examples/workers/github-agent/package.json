@@ -10,21 +10,21 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "3.0.0-beta.54",
-    "@ai-sdk/google": "3.0.0-beta.48",
-    "@ai-sdk/openai": "3.0.0-beta.61",
+    "@ai-sdk/anthropic": "3.0.1",
+    "@ai-sdk/google": "3.0.1",
+    "@ai-sdk/openai": "3.0.1",
     "@drew-foxall/a2a-ai-sdk-adapter": "workspace:*",
     "@drew-foxall/a2a-js-sdk": "^0.4.2",
     "@octokit/rest": "^21.0.0",
     "a2a-agents": "workspace:*",
-    "ai": "6.0.0-beta.99",
+    "ai": "6.0.3",
     "hono": "^4.10.7",
-    "zod": "^4.1.13",
+    "zod": "4.3.4",
     "a2a-workers-shared": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
-    "wrangler": "^4.51.0",
+    "wrangler": "^4.56.0",
     "@types/node": "^24.10.1"
   }
 }

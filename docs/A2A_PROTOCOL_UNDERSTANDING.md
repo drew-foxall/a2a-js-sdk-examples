@@ -73,10 +73,7 @@ with the actual response, resulting in:
 "Processing your greeting...Hello! How can I assist you today? 😊"
 ```
 
-**Root Cause**: The `workingMessage` is being sent as a `TextPart` inside the
-status update's message. Per A2A protocol, this message field is for conveying
-information, but when the status is `working`, the content should be understood
-as a status indicator, not response content.
+**Root Cause**: Sending text as a `TextPart` inside "working" status updates causes it to be accumulated with the actual response. Per A2A protocol, when the status is `working`, clients should show their own "Agent is working..." indicator rather than expecting text content from the server.
 
 ### Proposed Solutions
 
@@ -210,7 +207,6 @@ This works around AI SDK's accumulation behavior while preserving streaming UX.
 - `packages/a2a-ai-sdk-adapter/src/adapter.ts` - `publishWorkingStatus()` method
 - `packages/a2a-ai-provider-v3/src/model.ts` - `handleStatusUpdate()` method
 - `a2a-inspector/components/views/AISDKView.tsx` - `onFinish` handler
-- `examples/workers/hello-world/src/index.ts` - `workingMessage` config
 
 ## Task vs Message Response
 
@@ -272,7 +268,6 @@ The gap is in `A2AAdapter` which always creates Tasks.
 1. ~~**Fix the adapter** - Update `publishWorkingStatus()` to not include TextPart~~ ✅ Done
 2. **Add Message-only mode to A2AAdapter** - For simple, stateless agents
 3. **Add DataPart support** - For proper status metadata
-4. **Update all agents** - Remove or fix `workingMessage` usage
-5. **Add protocol validation** - Warn when TextPart used in working status
-6. **Hello World agent** - Switch to Message-only mode once available
+4. **Add protocol validation** - Warn when TextPart used in working status
+5. **Hello World agent** - Switch to Message-only mode once available
 

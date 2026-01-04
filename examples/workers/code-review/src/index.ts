@@ -62,7 +62,6 @@ const config = defineWorkerConfig<BaseWorkerEnv>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Reviewing code...",
   },
 });
 

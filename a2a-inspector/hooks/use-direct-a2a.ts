@@ -53,9 +53,10 @@ function isSSEChunk(chunk: unknown): chunk is SSEChunk {
 
 /**
  * Type guard to check if event data contains an error.
+ * Guards against non-object values (e.g., raw SSE strings).
  */
-function isErrorEventData(data: StreamedA2AEvent | { error: string }): data is { error: string } {
-  return "error" in data;
+function isErrorEventData(data: unknown): data is { error: string } {
+  return data !== null && typeof data === "object" && "error" in data;
 }
 
 /**
@@ -74,7 +75,13 @@ function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
  *
  * @see https://elysiajs.com/eden/treaty/response.html#stream-response
  */
-export function useDirectA2A(agentUrl: string | null): {
+export function useDirectA2A(
+  agentUrl: string | null,
+  options?: {
+    readonly initialMessages?: ChatMessage[];
+    readonly initialRawEvents?: RawA2AEvent[];
+  }
+): {
   messages: ChatMessage[];
   rawEvents: RawA2AEvent[];
   isStreaming: boolean;
@@ -85,8 +92,8 @@ export function useDirectA2A(agentUrl: string | null): {
 } {
   const { dispatch, log, state } = useInspector();
   const authConfig = useAuthConfig();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => options?.initialMessages ?? []);
+  const [rawEvents, setRawEvents] = useState<RawA2AEvent[]>(() => options?.initialRawEvents ?? []);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [sessionStartedAt, setSessionStartedAt] = useState<Date | null>(null);
@@ -147,6 +154,10 @@ export function useDirectA2A(agentUrl: string | null): {
       let accumulatedContent = "";
       let aggregatedValidationErrors: ValidationError[] = [];
       let primaryKind: A2AEventKind = "message";
+      // Streaming state based on A2A event type:
+      // - Message: single payload, complete on arrival → false
+      // - Task/status-update: streaming until state === "completed"
+      let messageIsStreaming = true;
 
       try {
         // Convert auth config to headers
@@ -199,11 +210,17 @@ export function useDirectA2A(agentUrl: string | null): {
           log("event", "Received stream chunk", chunk, "inbound");
 
           // Handle SSE format (from sse() helper)
-          let eventData: StreamedA2AEvent | { error: string };
+          let eventData: unknown;
           if (isSSEChunk(chunk)) {
             eventData = chunk.data;
           } else {
             eventData = chunk;
+          }
+
+          // Skip non-object chunks (e.g., raw SSE strings)
+          if (eventData === null || typeof eventData !== "object") {
+            log("warning", "Skipping non-object chunk", { chunk, type: typeof eventData });
+            continue;
           }
 
           // Handle error events
@@ -247,7 +264,14 @@ export function useDirectA2A(agentUrl: string | null): {
             continue;
           }
 
-          const { event, validationErrors } = eventData;
+          // Type guard: ensure we have a valid StreamedA2AEvent
+          if (!("event" in eventData)) {
+            log("warning", "Chunk missing 'event' property", eventData);
+            continue;
+          }
+
+          const streamedEvent = eventData as StreamedA2AEvent;
+          const { event, validationErrors } = streamedEvent;
           const kind = getEventKind(event);
           const textContent = extractTextFromEvent(event);
 
@@ -274,13 +298,17 @@ export function useDirectA2A(agentUrl: string | null): {
           // Process different event types
           switch (event.kind) {
             case "message": {
+              // Message is a single complete payload - no streaming
               primaryKind = "message";
+              messageIsStreaming = false;
               accumulatedContent += textContent;
               break;
             }
 
             case "task": {
+              // Task streaming depends on status state
               primaryKind = "task";
+              messageIsStreaming = event.status.state !== "completed";
               setCurrentTask(event);
               taskIdRef.current = event.id;
               dispatch({
@@ -302,9 +330,11 @@ export function useDirectA2A(agentUrl: string | null): {
 
             case "status-update": {
               if (!isTaskStatusUpdateEvent(event)) break;
+              // Status-update streaming depends on status state
               if (!primaryKind || primaryKind === "message") {
                 primaryKind = "status-update";
               }
+              messageIsStreaming = event.status.state !== "completed";
 
               dispatch({
                 type: "UPDATE_TASK",
@@ -328,9 +358,11 @@ export function useDirectA2A(agentUrl: string | null): {
 
             case "artifact-update": {
               if (!isTaskArtifactUpdateEvent(event)) break;
+              // Artifact updates mean task is still working
               if (!primaryKind || primaryKind === "message") {
                 primaryKind = "artifact-update";
               }
+              messageIsStreaming = true;
 
               dispatch({
                 type: "UPDATE_TASK",
@@ -347,7 +379,7 @@ export function useDirectA2A(agentUrl: string | null): {
             }
           }
 
-          // Update the aggregated message
+          // Update the aggregated message with streaming state based on event type
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === agentMessageId
@@ -357,13 +389,15 @@ export function useDirectA2A(agentUrl: string | null): {
                     kind: primaryKind,
                     rawEvents: [...messageEvents],
                     validationErrors: aggregatedValidationErrors,
+                    isStreaming: messageIsStreaming,
                   }
                 : msg
             )
           );
         }
 
-        // Mark streaming as complete
+        // Ensure streaming is marked complete when stream ends
+        // (handles edge case where stream closes without explicit completion event)
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === agentMessageId

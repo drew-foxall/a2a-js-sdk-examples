@@ -37,6 +37,10 @@
       "persistent": true,
       "dependsOn": ["#dev:inspector"]
     },
+    "deploy": {
+      "cache": false,
+      "dependsOn": ["^build"]
+    },
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]

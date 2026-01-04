@@ -25,7 +25,7 @@ import type {
   SendMessageResult,
 } from "a2a-agents";
 import { generateText } from "ai";
-import { z } from "zod";
+import { z } from 'zod';
 import type { WorkerAgentRegistry } from "./registry.js";
 
 // ============================================================================

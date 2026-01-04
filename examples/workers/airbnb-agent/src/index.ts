@@ -121,7 +121,6 @@ app.all("/*", async (c, next) => {
         createAgentCard: () => agentCard,
         adapterOptions: {
           mode: "stream",
-          workingMessage: "Searching for Airbnb accommodations...",
           includeHistory: true,
         },
       },

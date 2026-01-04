@@ -270,6 +270,15 @@ export interface A2aProviderMetadata extends JSONObject {
   inputRequired: boolean;
 
   /**
+   * True when the agent requires authentication to proceed.
+   *
+   * This is a convenience flag equivalent to `taskState === "auth-required"`.
+   * When true, the client should authenticate and retry the request.
+   * Check the agent's `AgentCard.securitySchemes` for supported auth methods.
+   */
+  authRequired: boolean;
+
+  /**
    * The agent's status message with all content parts.
    *
    * Contains the full response including TextParts, FileParts, and DataParts.
@@ -406,6 +415,20 @@ export interface A2aProviderOptions {
    * configuration separate from message content.
    */
   requestMetadata?: Record<string, unknown>;
+
+  /**
+   * Controls whether `status-update` events in the "working" state stream their text
+   * into the assistant message.
+   *
+   * When `false`, the provider will **not** emit text deltas for working status updates,
+   * but will still emit the authoritative "completed" text when the task completes.
+   *
+   * This avoids UIs rendering multiple text parts (working + completed) and prevents
+   * "double message" flicker during streaming.
+   *
+   * @default true
+   */
+  streamWorkingStatusText?: boolean;
 }
 
 // =============================================================================
@@ -478,6 +501,9 @@ export function isA2aProviderOptions(value: unknown): value is A2aProviderOption
   if ("customParts" in obj && !isSerializedPartArray(obj.customParts)) return false;
   if ("metadata" in obj && !isRecordStringUnknown(obj.metadata)) return false;
   if ("requestMetadata" in obj && !isRecordStringUnknown(obj.requestMetadata)) return false;
+  if ("streamWorkingStatusText" in obj && typeof obj.streamWorkingStatusText !== "boolean") {
+    return false;
+  }
 
   return true;
 }
@@ -545,6 +571,7 @@ export function createEmptyMetadata(): A2aProviderMetadata {
     contextId: null,
     taskState: null,
     inputRequired: false,
+    authRequired: false,
     statusMessage: null,
     finalText: null,
     artifacts: [],

@@ -27,7 +27,6 @@
  * // Content Editor (generate mode - simple awaited response)
  * const executor = new A2AAdapter(agent, {
  *   mode: 'generate',
- *   workingMessage: "Editing content...",
  * });
  *
  * // Movie Agent (generate mode with custom state)
@@ -41,7 +40,6 @@
  * const executor = new A2AAdapter(agent, {
  *   mode: 'stream',
  *   parseArtifacts: extractCodeBlocks,  // Real-time code extraction
- *   workingMessage: "Generating code...",
  * });
  *
  * // Analytics Agent (generate mode with async artifacts)
@@ -408,20 +406,6 @@ export interface A2AAdapterConfig {
   /**
    * Working status message to show while agent is processing.
    *
-   * @deprecated This option is no longer used. Status messages should not be
-   * included as TextParts in "working" status updates because AI SDK clients
-   * accumulate all text-delta events, causing status messages to be concatenated
-   * with actual response content.
-   *
-   * Instead, clients should display a generic "Agent is working..." indicator
-   * when they receive a status-update with state="working".
-   *
-   * See: docs/A2A_PROTOCOL_UNDERSTANDING.md for detailed explanation
-   *
-   * @default "Processing your request..." (but not used)
-   */
-  workingMessage?: string;
-
   /**
    * Whether to enable debug logging
    *
@@ -519,7 +503,6 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
     this.config = {
       mode: config.mode,
       includeHistory: config?.includeHistory ?? false,
-      workingMessage: config?.workingMessage || "Processing your request...",
       debug: config?.debug ?? false,
       // Optional configs
       parseArtifacts: config?.parseArtifacts,
@@ -1194,9 +1177,6 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
       contextId: contextId,
       status: {
         state: "working",
-        // NOTE: No message included - see comment above for rationale
-        // The workingMessage config is intentionally not used here to avoid
-        // status text being accumulated with response content in AI SDK clients
         timestamp: new Date().toISOString(),
       },
       final: false,

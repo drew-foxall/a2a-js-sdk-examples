@@ -13,8 +13,16 @@ describe("Analytics Agent", () => {
   it("should respond to chart requests", async () => {
     const mockModel = new MockLanguageModelV3({
       doGenerate: async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 20, outputTokens: 30, totalTokens: 50 },
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 20,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 30, text: undefined, reasoning: undefined },
+        },
         content: [
           { type: "text", text: "I'll create a bar chart showing your quarterly sales data." },
         ],

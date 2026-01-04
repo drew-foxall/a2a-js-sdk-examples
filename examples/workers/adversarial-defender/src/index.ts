@@ -59,7 +59,6 @@ const config = defineWorkerConfig<WorkerEnvWithRedis>({
 
   adapterOptions: {
     mode: "stream",
-    workingMessage: "Thinking...",
   },
 
   taskStore: {

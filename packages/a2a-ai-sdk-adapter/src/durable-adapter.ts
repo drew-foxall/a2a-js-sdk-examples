@@ -33,9 +33,7 @@
  * import { DurableA2AAdapter } from "@drew-foxall/a2a-ai-sdk-adapter/durable";
  * import { diceAgentWorkflow } from "a2a-agents/dice-agent/workflow";
  *
- * const executor = new DurableA2AAdapter(diceAgentWorkflow, {
- *   workingMessage: "Rolling dice (with durability)...",
- * });
+ * const executor = new DurableA2AAdapter(diceAgentWorkflow);
  * ```
  *
  * For workflows with additional parameters:
@@ -44,7 +42,6 @@
  *
  * const executor = new DurableA2AAdapter(imageGeneratorWorkflow, {
  *   workflowArgs: [env.OPENAI_API_KEY], // Additional args after messages
- *   workingMessage: "Generating image...",
  * });
  * ```
  */
@@ -106,20 +103,6 @@ export interface DurableA2AAdapterConfig<TArgs extends unknown[] = []> {
    * workflowArgs: [{ agentUrls: [...], fallbacks: {...} }]
    */
   workflowArgs?: TArgs;
-
-  /**
-   * Working status message to show while workflow is processing.
-   *
-   * @deprecated This option is no longer used. Status messages should not be
-   * included as TextParts in "working" status updates because AI SDK clients
-   * accumulate all text-delta events, causing status messages to be concatenated
-   * with actual response content.
-   *
-   * See: docs/A2A_PROTOCOL_UNDERSTANDING.md for detailed explanation
-   *
-   * @default "Processing your request..." (but not used)
-   */
-  workingMessage?: string;
 
   /**
    * Whether to include conversation history in workflow calls.
@@ -192,7 +175,6 @@ export class DurableA2AAdapter<TArgs extends unknown[] = []> implements AgentExe
     config: DurableA2AAdapterConfig<TArgs> = {}
   ) {
     this.config = {
-      workingMessage: config.workingMessage ?? "Processing your request...",
       includeHistory: config.includeHistory ?? false,
       debug: config.debug ?? false,
       // Optional configs

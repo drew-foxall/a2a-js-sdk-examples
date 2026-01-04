@@ -78,7 +78,6 @@ const executor = new A2AAdapter(myAgent, {
 const executor = new A2AAdapter(myAgent, {
   mode: "stream",
   includeHistory: true, // Pass previous messages to agent
-  workingMessage: 'Thinking...',
   debug: true,
 });
 ```
@@ -133,7 +132,6 @@ describe('myAgent', () => {
 | `parseTaskState` | `(text: string) => TaskState` | Parse custom task states from response | Returns `"completed"` |
 | `transformResponse` | `(result: any) => string` | Transform agent response before A2A message | Returns `result.text` |
 | `includeHistory` | `boolean` | Include conversation history in agent calls | `false` |
-| `workingMessage` | `string` | Message to show while processing | `"Processing your request..."` |
 | `debug` | `boolean` | Log debug information | `true` |
 
 ### Examples

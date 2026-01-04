@@ -369,7 +369,9 @@ Access A2A-specific information via `result.providerMetadata.a2a`:
 | `contextId` | `string \| null` | Context ID for conversation continuity |
 | `taskState` | `TaskState \| null` | Current task state |
 | `inputRequired` | `boolean` | True when agent needs more input |
+| `authRequired` | `boolean` | True when agent needs authentication |
 | `statusMessage` | `object \| null` | Full status message with parts |
+| `finalText` | `string \| null` | Authoritative final text (for streaming) |
 | `artifacts` | `array` | Task artifacts with parts and metadata |
 | `metadata` | `object \| null` | Task-level extension metadata |
 
@@ -398,7 +400,8 @@ This provider supports the [A2A protocol](https://a2a-protocol.org/):
 | DataPart | ✅ | For custom events |
 | Artifacts | ✅ | Exposed via providerMetadata |
 | Task states | ✅ | All states mapped |
-| input-required | ✅ | Explicit flag in metadata |
+| input-required | ✅ | Explicit `inputRequired` flag |
+| auth-required | ✅ | Explicit `authRequired` flag |
 | contextId | ✅ | Conversation continuity |
 | Agent discovery | ✅ | Well-known URI support |
 | Push notifications | ❌ | AI SDK limitation |

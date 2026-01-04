@@ -17,8 +17,16 @@ describe("Hello World Agent", () => {
   it("should respond to greetings", async () => {
     const mockModel = new MockLanguageModelV3({
       doGenerate: async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 10,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 20, text: undefined, reasoning: undefined },
+        },
         content: [{ type: "text", text: "Hello! How can I help you today?" }],
         warnings: [],
       }),

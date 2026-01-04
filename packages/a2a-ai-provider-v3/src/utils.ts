@@ -53,12 +53,12 @@ import { fromJSONObject, toJSONObject, toJSONObjectOrNull } from "./types.js";
  * |-----------|---------------------|-------|
  * | completed | "stop" | Normal completion |
  * | input-required | "stop" | Check `inputRequired` flag for details |
- * | auth-required | "error" | Agent needs authentication |
+ * | auth-required | "error" | Agent needs authentication, check `authRequired` flag |
  * | failed | "error" | Task processing failed |
  * | canceled | "stop" | Task was canceled |
  * | rejected | "error" | Agent rejected the request |
- * | submitted | "stop" | (Rare) Task queued |
- * | working | "unknown" | Still processing |
+ * | submitted | "other" | Task queued but not yet processing |
+ * | working | "other" | Still processing |
  *
  * @param event - A2A TaskStatusUpdateEvent from streaming
  * @returns AI SDK finish reason
@@ -68,17 +68,18 @@ import { fromJSONObject, toJSONObject, toJSONObjectOrNull } from "./types.js";
 export function mapFinishReason(event: TaskStatusUpdateEvent): LanguageModelV3FinishReason {
   const state = event.status.state;
 
-  if (state === "completed") return "stop";
-  if (state === "input-required") return "stop";
-  if (state === "auth-required") return "error";
-  if (state === "failed") return "error";
-  if (state === "canceled") return "stop";
-  if (state === "rejected") return "error";
-  if (state === "submitted") return "stop";
-  if (state === "unknown") return "unknown";
-  if (state === "working") return "unknown";
+  if (state === "completed") return { unified: "stop", raw: state };
+  if (state === "input-required") return { unified: "stop", raw: state };
+  if (state === "auth-required") return { unified: "error", raw: state };
+  if (state === "failed") return { unified: "error", raw: state };
+  if (state === "canceled") return { unified: "stop", raw: state };
+  if (state === "rejected") return { unified: "error", raw: state };
+  // "submitted" means task queued but not yet processing - use "other" not "stop"
+  if (state === "submitted") return { unified: "other", raw: state };
+  if (state === "unknown") return { unified: "other", raw: state };
+  if (state === "working") return { unified: "other", raw: state };
 
-  return "unknown";
+  return { unified: "other", raw: undefined };
 }
 
 /**
@@ -107,26 +108,27 @@ export function mapFinishReason(event: TaskStatusUpdateEvent): LanguageModelV3Fi
 export function mapTaskStateToFinishReason(
   taskState?: TaskState | null
 ): LanguageModelV3FinishReason {
-  if (!taskState) return "stop";
+  if (!taskState) return { unified: "stop", raw: undefined };
 
   switch (taskState) {
     case "completed":
-      return "stop";
+      return { unified: "stop", raw: taskState };
     case "input-required":
-      return "stop";
+      return { unified: "stop", raw: taskState };
     case "auth-required":
-      return "error";
+      return { unified: "error", raw: taskState };
     case "failed":
-      return "error";
+      return { unified: "error", raw: taskState };
     case "canceled":
-      return "stop";
+      return { unified: "stop", raw: taskState };
     case "rejected":
-      return "error";
+      return { unified: "error", raw: taskState };
     case "submitted":
     case "working":
-      return "unknown";
+    case "unknown":
+      return { unified: "other", raw: taskState };
     default:
-      return "unknown";
+      return { unified: "other", raw: undefined };
   }
 }
 
@@ -490,6 +492,7 @@ export function extractA2aMetadata(response: Task | Message): A2aProviderMetadat
       contextId: response.contextId ?? null,
       taskState: taskState,
       inputRequired: taskState === "input-required",
+      authRequired: taskState === "auth-required",
       statusMessage,
       finalText,
       artifacts,
@@ -508,6 +511,7 @@ export function extractA2aMetadata(response: Task | Message): A2aProviderMetadat
     contextId: response.contextId ?? null,
     taskState: null,
     inputRequired: false,
+    authRequired: false,
     statusMessage: {
       messageId: response.messageId,
       role: response.role,
