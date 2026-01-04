@@ -55,15 +55,23 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
       if (connection.status !== "connected" || !connection.agentCard) return;
 
       redirectedRef.current = true;
+      
       try {
         const stored = await addAgent({
           url: connection.agentUrl,
           card: connection.agentCard,
         });
-        router.push(`/agent/${stored.id}`);
-      } finally {
-        // Ensure root does not remain in a connected state
+        
+        // Disconnect BEFORE navigating to ensure clean state
         disconnect();
+        
+        // Navigate to the agent page
+        router.push(`/agent/${stored.id}`);
+      } catch (error) {
+        // Reset redirect ref so user can try again
+        redirectedRef.current = false;
+        console.error("Failed to save agent or navigate:", error);
+        // Don't disconnect on error - let user see the error state
       }
     }
 
