@@ -2,7 +2,7 @@
 
 import { CircleNotch, Plug, PlugsConnected } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -32,24 +32,27 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
   const router = useRouter();
   const connection = useConnection();
   const { connect, disconnect, isConnecting } = useAgentConnection();
-  const redirectedRef = useRef(false);
 
   // Local URL input state
   const [url, setUrl] = useState("");
 
-  // On successful connection from the root view, save agent and redirect to /agent/{id}
-  useEffect(() => {
-    async function saveAndRedirect(): Promise<void> {
-      if (redirectedRef.current) return;
-      if (compact) return;
-      if (connection.status !== "connected" || !connection.agentCard) return;
-
-      redirectedRef.current = true;
-      
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    
+    if (connection.status === "connected") {
+      disconnect();
+      return;
+    }
+    
+    // Connect and get the result
+    const result = await connect(url);
+    
+    // If connection succeeded and we're not in compact mode, save and redirect
+    if (result && !compact) {
       try {
         const stored = await addAgent({
-          url: connection.agentUrl,
-          card: connection.agentCard,
+          url: url,
+          card: result.card,
         });
         
         // Disconnect before navigating to ensure clean state
@@ -58,21 +61,8 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
         // Navigate to the agent page
         router.push(`/agent/${stored.id}`);
       } catch (error) {
-        redirectedRef.current = false;
         console.error("Failed to save agent or navigate:", error);
       }
-    }
-
-    void saveAndRedirect();
-  }, [compact, connection.status, connection.agentCard, connection.agentUrl, router, disconnect]);
-
-  const handleSubmit = async (e: FormEvent): Promise<void> => {
-    e.preventDefault();
-    if (connection.status === "connected") {
-      disconnect();
-    } else {
-      redirectedRef.current = false;
-      await connect(url);
     }
   };
 

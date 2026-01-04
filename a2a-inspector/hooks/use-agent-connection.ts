@@ -12,6 +12,14 @@ interface ValidationError {
 }
 
 /**
+ * Result of a successful connection.
+ */
+export interface ConnectionResult {
+  card: import("@drew-foxall/a2a-js-sdk").AgentCard;
+  validationErrors: ValidationError[];
+}
+
+/**
  * Hook for managing agent connection.
  * Handles connecting to agents, fetching agent cards, and managing connection state.
  * Includes authentication headers from the current auth configuration.
@@ -19,7 +27,7 @@ interface ValidationError {
  * Note: URL state is managed by Next.js routing (/agent/{id}), not query params.
  */
 export function useAgentConnection(): {
-  connect: (url: string) => Promise<void>;
+  connect: (url: string) => Promise<ConnectionResult | null>;
   disconnect: () => void;
   isConnecting: boolean;
 } {
@@ -28,10 +36,10 @@ export function useAgentConnection(): {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const connect = useCallback(
-    async (agentUrl: string) => {
+    async (agentUrl: string): Promise<ConnectionResult | null> => {
       if (!agentUrl.trim()) {
         dispatch({ type: "SET_CONNECTION_ERROR", payload: "Agent URL is required" });
-        return;
+        return null;
       }
 
       setIsConnecting(true);
@@ -66,7 +74,7 @@ export function useAgentConnection(): {
               : "Failed to connect to agent";
           dispatch({ type: "SET_CONNECTION_ERROR", payload: errorMessage });
           log("error", errorMessage, response.error);
-          return;
+          return null;
         }
 
         const { data } = response;
@@ -76,7 +84,7 @@ export function useAgentConnection(): {
           const errorMsg = data?.error || "Unknown error";
           dispatch({ type: "SET_CONNECTION_ERROR", payload: errorMsg });
           log("error", `Connection failed: ${errorMsg}`);
-          return;
+          return null;
         }
 
         dispatch({
@@ -102,10 +110,14 @@ export function useAgentConnection(): {
             data.validationErrors
           );
         }
+
+        // Return the result for imperative handling
+        return { card: data.card, validationErrors: data.validationErrors };
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error occurred";
         dispatch({ type: "SET_CONNECTION_ERROR", payload: message });
         log("error", `Connection error: ${message}`, error);
+        return null;
       } finally {
         setIsConnecting(false);
       }
