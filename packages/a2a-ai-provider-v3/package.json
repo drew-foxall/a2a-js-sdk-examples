@@ -1,6 +1,6 @@
 {
   "name": "@drew-foxall/a2a-ai-provider-v3",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "AI SDK LanguageModelV3 provider for A2A protocol - enables agent-to-agent communication",
   "author": "Drew Foxall",

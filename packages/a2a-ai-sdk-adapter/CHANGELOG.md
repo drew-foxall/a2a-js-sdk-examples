@@ -5,15 +5,24 @@ All notable changes to `@drew-foxall/a2a-ai-sdk-adapter` will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-01-04
 
 ### Changed
 - **BREAKING**: Minimum Node.js version increased to >=24.0.0 (Active LTS - Krypton)
 - Updated pnpm version to 10.23.0
-- GitHub Actions workflows now use `lts/*` for automatic LTS tracking
+- Updated peer dependency `@drew-foxall/a2a-js-sdk` to `^0.4.2`
+- Updated peer dependency `ai` to `^6.0.0`
+- Updated peer dependency `workflow` to `4.0.1-beta.32`
+- Added `zod` as optional peer dependency (`>=4.0.0`)
 
 ### Removed
+- **BREAKING**: Removed `workingMessage` configuration option
+  - Status messages should be handled at the protocol layer, not added to agent output
+  - This prevents false data being added to agent responses
 - Support for Node.js 20.x, 22.x, and earlier versions
+
+### Fixed
+- Updated internal dependencies for Node.js 24 compatibility
 
 ## [1.0.2] - 2025-11-25
 

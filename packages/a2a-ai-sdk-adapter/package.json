@@ -1,6 +1,6 @@
 {
   "name": "@drew-foxall/a2a-ai-sdk-adapter",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Unified adapter bridging Vercel AI SDK ToolLoopAgent with A2A protocol",
   "type": "module",
   "main": "dist/index.js",
