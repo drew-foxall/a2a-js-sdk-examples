@@ -2,7 +2,7 @@
 
 import { CircleNotch, Plug, PlugsConnected } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,10 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
   const connection = useConnection();
   const { connect, disconnect, isConnecting } = useAgentConnection();
   const { agentFromUrl } = useUrlState();
+  
+  // Track whether a connection was initiated on THIS page load
+  // This prevents redirecting when navigating back to home with stale context state
+  const connectionInitiatedRef = useRef(false);
   const redirectedRef = useRef(false);
 
   // Initialize URL from: URL params > connection state > empty
@@ -43,8 +47,13 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
     }
   }, [agentFromUrl, url]);
 
-  // Auto-connect from URL on mount
-  useAutoConnectFromUrl(connect);
+  // Auto-connect from URL on mount - mark as initiated if it triggers
+  const handleAutoConnect = useCallback(async (agentUrl: string) => {
+    connectionInitiatedRef.current = true;
+    await connect(agentUrl);
+  }, [connect]);
+  
+  useAutoConnectFromUrl(handleAutoConnect);
 
   // On successful connection from the root view, immediately save the agent and route to /agent/[agentId].
   // Then disconnect so the root page never has a "connected" state.
@@ -52,6 +61,8 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
     async function saveAndRedirect(): Promise<void> {
       if (redirectedRef.current) return;
       if (compact) return;
+      // Only redirect if connection was initiated on THIS page load
+      if (!connectionInitiatedRef.current) return;
       if (connection.status !== "connected" || !connection.agentCard) return;
 
       redirectedRef.current = true;
@@ -83,6 +94,8 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
     if (connection.status === "connected") {
       disconnect();
     } else {
+      // Mark that connection was initiated on this page
+      connectionInitiatedRef.current = true;
       redirectedRef.current = false;
       await connect(url);
     }
