@@ -50,6 +50,11 @@ AI_MODEL = "gpt-4o-mini"
 
 # Local development fallback URLs (Service Bindings don't work with wrangler dev)
 # These are only used when Service Bindings are not available
+# Port assignments (see docs/MULTI_WORKER_AGENTS.md):
+#   - Travel Planner: 8787
+#   - Weather Agent: 8788
+#   - Airbnb Agent: 8789
+#   - Airbnb MCP Server: 8790
 WEATHER_AGENT_URL_FALLBACK = "http://localhost:8788/.well-known/agent-card.json"
 AIRBNB_AGENT_URL_FALLBACK = "http://localhost:8789/.well-known/agent-card.json"
 

@@ -20,6 +20,8 @@ AI_PROVIDER = "openai"
 AI_MODEL = "gpt-4o-mini"
 # URL of the Airbnb MCP Server (deployed Worker)
 AIRBNB_MCP_URL = "https://airbnb-mcp-server.aisdk-a2a.workers.dev"
+# Local development URL (port 8790 - see docs/MULTI_WORKER_AGENTS.md)
+AIRBNB_MCP_URL_LOCAL = "http://localhost:8790"
 
 # Service binding to the MCP server for faster calls
 [[services]]

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --port 8788",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit"

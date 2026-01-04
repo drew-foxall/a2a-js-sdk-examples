@@ -79,8 +79,17 @@ const plannerAgent = createPlannerAgent({
 
 ## Deployment
 
+### Single Command (Recommended)
+
 ```bash
-# Deploy all three workers
+# Deploy all Travel Planner workers at once
+pnpm multi:travel-planner:deploy
+```
+
+### Individual Workers
+
+```bash
+# Deploy each worker separately
 pnpm --filter a2a-weather-agent-worker run deploy
 pnpm --filter a2a-airbnb-agent-worker run deploy
 pnpm --filter a2a-travel-planner-worker run deploy
@@ -138,14 +147,38 @@ curl -X POST https://a2a-travel-planner.aisdk-a2a.workers.dev/ \
 
 ## Local Development
 
-```bash
-# Start the worker locally
-cd examples/workers/travel-planner
-pnpm run dev
+### Single Command (Recommended)
 
-# Note: Service Bindings require all workers running locally
-# or use HTTP fallback URLs in .dev.vars
+```bash
+# From repository root, start all Travel Planner workers concurrently
+pnpm multi:travel-planner
 ```
+
+This starts all required workers on their designated ports:
+- Travel Planner: http://localhost:8787
+- Weather Agent: http://localhost:8788
+- Airbnb Agent: http://localhost:8789
+- Airbnb MCP Server: http://localhost:8790
+
+### Individual Workers
+
+```bash
+# Terminal 1: Airbnb MCP Server
+pnpm worker:airbnb-mcp
+
+# Terminal 2: Weather Agent
+pnpm worker:weather
+
+# Terminal 3: Airbnb Agent
+pnpm worker:airbnb
+
+# Terminal 4: Travel Planner
+pnpm worker:planner
+```
+
+**Note**: Service Bindings don't work with `wrangler dev`. Workers communicate via HTTP fallback URLs configured in `wrangler.toml`.
+
+For more details, see [Multi-Worker Agents Guide](../../../docs/MULTI_WORKER_AGENTS.md).
 
 ## URLs
 

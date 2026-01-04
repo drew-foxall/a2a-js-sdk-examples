@@ -241,14 +241,31 @@ curl -X POST https://a2a-hello-world.YOUR-SUBDOMAIN.workers.dev/ \
 
 ```bash
 # Start individual workers locally
-pnpm worker:hello-world      # http://localhost:8787
-pnpm worker:dice             # http://localhost:8787
-pnpm worker:currency         # http://localhost:8787
-pnpm worker:weather          # http://localhost:8788
-pnpm worker:airbnb-agent     # http://localhost:8789
-pnpm worker:airbnb-mcp-server # http://localhost:8790
-pnpm worker:planner          # http://localhost:8787
+pnpm worker:hello-world       # http://localhost:8787
+pnpm worker:dice              # http://localhost:8787
+pnpm worker:currency          # http://localhost:8787
+pnpm worker:weather           # http://localhost:8788
+pnpm worker:airbnb            # http://localhost:8789
+pnpm worker:airbnb-mcp        # http://localhost:8790
+pnpm worker:planner           # http://localhost:8787
 ```
+
+### Multi-Worker Agents
+
+Some agents require multiple workers running together. Use grouped commands:
+
+```bash
+# Start Travel Planner (all 4 workers concurrently)
+pnpm multi:travel-planner
+
+# Deploy Travel Planner (all workers at once)
+pnpm multi:travel-planner:deploy
+```
+
+See [Multi-Worker Agents Guide](../../docs/MULTI_WORKER_AGENTS.md) for details on:
+- Port assignments for each worker
+- Adding new multi-worker agent groups
+- Service Binding configuration
 
 ### Deployment
 
@@ -258,9 +275,12 @@ pnpm worker:deploy:hello-world
 pnpm worker:deploy:dice
 pnpm worker:deploy:currency
 pnpm worker:deploy:weather
-pnpm worker:deploy:airbnb-mcp-server
-pnpm worker:deploy:airbnb-agent
+pnpm worker:deploy:airbnb-mcp
+pnpm worker:deploy:airbnb
 pnpm worker:deploy:planner
+
+# Deploy multi-worker agent groups
+pnpm multi:travel-planner:deploy
 
 # Deploy all workers
 pnpm workers:deploy:all
