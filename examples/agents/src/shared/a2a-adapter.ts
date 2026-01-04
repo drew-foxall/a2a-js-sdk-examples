@@ -27,7 +27,6 @@
  * // Content Editor (generate mode - simple awaited response)
  * const executor = new A2AAdapter(agent, {
  *   mode: 'generate',
- *   workingMessage: "Editing content...",
  * });
  *
  * // Movie Agent (generate mode with custom state)
@@ -41,7 +40,6 @@
  * const executor = new A2AAdapter(agent, {
  *   mode: 'stream',
  *   parseArtifacts: extractCodeBlocks,  // Real-time code extraction
- *   workingMessage: "Generating code...",
  * });
  *
  * // Analytics Agent (generate mode with async artifacts)
@@ -352,13 +350,6 @@ export interface A2AAdapterConfig {
   includeHistory?: boolean;
 
   /**
-   * Working status message to show while agent is processing.
-   *
-   * @default "Processing your request..."
-   */
-  workingMessage?: string;
-
-  /**
    * Whether to enable debug logging
    *
    * @default false
@@ -449,7 +440,6 @@ export class A2AAdapter<TTools extends ToolSet = ToolSet> implements AgentExecut
     this.config = {
       mode: config.mode,
       includeHistory: config?.includeHistory ?? false,
-      workingMessage: config?.workingMessage || "Processing your request...",
       debug: config?.debug ?? false,
       // Optional configs
       parseArtifacts: config?.parseArtifacts,

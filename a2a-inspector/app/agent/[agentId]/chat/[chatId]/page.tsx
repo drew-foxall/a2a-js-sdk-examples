@@ -170,7 +170,7 @@ export default function ChatPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden pb-12">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden pb-12">
       {/* View Mode Toggle */}
       <div className="shrink-0 border-b border-border bg-card/30 px-4 py-2">
         <div className="flex gap-2">
@@ -192,7 +192,7 @@ export default function ChatPage(): React.JSX.Element {
       </div>
 
       {/* Chat View */}
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {viewMode === "direct" ? (
           <DirectA2AView
             className="h-full"

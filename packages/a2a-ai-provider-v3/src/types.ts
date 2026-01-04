@@ -270,6 +270,15 @@ export interface A2aProviderMetadata extends JSONObject {
   inputRequired: boolean;
 
   /**
+   * True when the agent requires authentication to proceed.
+   *
+   * This is a convenience flag equivalent to `taskState === "auth-required"`.
+   * When true, the client should authenticate and retry the request.
+   * Check the agent's `AgentCard.securitySchemes` for supported auth methods.
+   */
+  authRequired: boolean;
+
+  /**
    * The agent's status message with all content parts.
    *
    * Contains the full response including TextParts, FileParts, and DataParts.
@@ -562,6 +571,7 @@ export function createEmptyMetadata(): A2aProviderMetadata {
     contextId: null,
     taskState: null,
     inputRequired: false,
+    authRequired: false,
     statusMessage: null,
     finalText: null,
     artifacts: [],

@@ -53,12 +53,12 @@ import { fromJSONObject, toJSONObject, toJSONObjectOrNull } from "./types.js";
  * |-----------|---------------------|-------|
  * | completed | "stop" | Normal completion |
  * | input-required | "stop" | Check `inputRequired` flag for details |
- * | auth-required | "error" | Agent needs authentication |
+ * | auth-required | "error" | Agent needs authentication, check `authRequired` flag |
  * | failed | "error" | Task processing failed |
  * | canceled | "stop" | Task was canceled |
  * | rejected | "error" | Agent rejected the request |
- * | submitted | "stop" | (Rare) Task queued |
- * | working | "unknown" | Still processing |
+ * | submitted | "other" | Task queued but not yet processing |
+ * | working | "other" | Still processing |
  *
  * @param event - A2A TaskStatusUpdateEvent from streaming
  * @returns AI SDK finish reason
@@ -74,7 +74,8 @@ export function mapFinishReason(event: TaskStatusUpdateEvent): LanguageModelV3Fi
   if (state === "failed") return { unified: "error", raw: state };
   if (state === "canceled") return { unified: "stop", raw: state };
   if (state === "rejected") return { unified: "error", raw: state };
-  if (state === "submitted") return { unified: "stop", raw: state };
+  // "submitted" means task queued but not yet processing - use "other" not "stop"
+  if (state === "submitted") return { unified: "other", raw: state };
   if (state === "unknown") return { unified: "other", raw: state };
   if (state === "working") return { unified: "other", raw: state };
 
@@ -124,6 +125,7 @@ export function mapTaskStateToFinishReason(
       return { unified: "error", raw: taskState };
     case "submitted":
     case "working":
+    case "unknown":
       return { unified: "other", raw: taskState };
     default:
       return { unified: "other", raw: undefined };
@@ -490,6 +492,7 @@ export function extractA2aMetadata(response: Task | Message): A2aProviderMetadat
       contextId: response.contextId ?? null,
       taskState: taskState,
       inputRequired: taskState === "input-required",
+      authRequired: taskState === "auth-required",
       statusMessage,
       finalText,
       artifacts,
@@ -508,6 +511,7 @@ export function extractA2aMetadata(response: Task | Message): A2aProviderMetadat
     contextId: response.contextId ?? null,
     taskState: null,
     inputRequired: false,
+    authRequired: false,
     statusMessage: {
       messageId: response.messageId,
       role: response.role,

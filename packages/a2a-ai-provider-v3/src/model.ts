@@ -552,6 +552,7 @@ export class A2aV3LanguageModel implements LanguageModelV3 {
       contextId: event.contextId ?? null,
       taskState,
       inputRequired: taskState === "input-required",
+      authRequired: taskState === "auth-required",
       statusMessage: statusMessage ?? metadata.statusMessage,
       finalText,
     };

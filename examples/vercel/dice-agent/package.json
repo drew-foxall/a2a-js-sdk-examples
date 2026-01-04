@@ -20,7 +20,7 @@
     "a2a-agents": "workspace:*",
     "ai": "6.0.3",
     "hono": "^4.10.7",
-    "zod": "^4.1.13"
+    "zod": "4.3.4"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",

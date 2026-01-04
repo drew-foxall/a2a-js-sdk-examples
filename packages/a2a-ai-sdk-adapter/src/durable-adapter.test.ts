@@ -107,7 +107,6 @@ describe("DurableA2AAdapter", () => {
       expect(typeof minimal.cancelTask).toBe("function");
 
       const full = new DurableA2AAdapter(workflow, {
-        workingMessage: "Processing...",
         includeHistory: true,
         parseTaskState: (text) => (text.includes("error") ? "failed" : "completed"),
         generateArtifacts: async () => [],
@@ -138,7 +137,7 @@ describe("DurableA2AAdapter", () => {
 
     it("should publish task lifecycle events", async () => {
       const workflow = createMockWorkflow();
-      const adapter = new DurableA2AAdapter(workflow, { workingMessage: "Custom message" });
+      const adapter = new DurableA2AAdapter(workflow);
       const eventBus = createMockEventBus();
       const context = createMockRequestContext(createMockUserMessage());
 

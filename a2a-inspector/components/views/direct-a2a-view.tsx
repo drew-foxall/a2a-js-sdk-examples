@@ -205,7 +205,7 @@ export function DirectA2AView({
   }
 
   return (
-    <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className)}>
+    <div className={cn("flex h-full min-h-0 min-w-0 flex-col overflow-hidden", className)}>
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between border-b border-border bg-background px-4 py-3">
         <div className="flex items-center gap-2">
@@ -247,8 +247,8 @@ export function DirectA2AView({
         </div>
       )}
 
-      {/* Messages - Scrollable area that fills remaining space */}
-      <Conversation className="min-h-0 flex-1">
+      {/* Messages - Scrollable area (AI Elements pattern) */}
+      <Conversation className="h-full">
         <ConversationContent>
           {displayMode === "pretty" ? (
             <PrettyMessages messages={messages} agentName={agentCard?.name ?? undefined} />
@@ -259,10 +259,9 @@ export function DirectA2AView({
         <ConversationScrollButton />
       </Conversation>
 
-      {/* Input - Fixed at bottom */}
-      <div className="shrink-0 border-t border-border bg-background p-4 space-y-3">
-        {/* Suggestions - show when available */}
-        {suggestions.length > 0 && (
+      {/* Suggestions - separate container for proper stacking */}
+      {suggestions.length > 0 && (
+        <div className="shrink-0 border-t border-border bg-background px-4 pt-3">
           <Suggestions>
             {suggestions.map((suggestion) => (
               <Suggestion
@@ -273,31 +272,39 @@ export function DirectA2AView({
               />
             ))}
           </Suggestions>
+        </div>
+      )}
+
+      {/* Input - Direct sibling to Conversation (AI Elements pattern) */}
+      <PromptInput
+        onSubmit={handleSubmit}
+        className={cn(
+          "shrink-0 border-t border-border bg-background p-4",
+          suggestions.length > 0 && "border-t-0 pt-3"
         )}
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputTextarea
-            placeholder={`Message ${agentCard?.name ?? "the agent"}...`}
+      >
+        <PromptInputTextarea
+          placeholder={`Message ${agentCard?.name ?? "the agent"}...`}
+          disabled={isStreaming}
+        />
+        <PromptInputFooter>
+          <Button
+            type="button"
+            variant={historyEnabled ? "secondary" : "outline"}
+            size="sm"
+            className="h-8 px-2 text-xs"
+            aria-pressed={historyEnabled}
+            onClick={() => setHistoryEnabled(!historyEnabled)}
+          >
+            History {historyEnabled ? "On" : "Off"}
+          </Button>
+          <PromptInputTools />
+          <PromptInputSubmit
             disabled={isStreaming}
+            {...(isStreaming ? { status: "streaming" as const } : {})}
           />
-          <PromptInputFooter>
-            <Button
-              type="button"
-              variant={historyEnabled ? "secondary" : "outline"}
-              size="sm"
-              className="h-8 px-2 text-xs"
-              aria-pressed={historyEnabled}
-              onClick={() => setHistoryEnabled(!historyEnabled)}
-            >
-              History {historyEnabled ? "On" : "Off"}
-            </Button>
-            <PromptInputTools />
-            <PromptInputSubmit
-              disabled={isStreaming}
-              {...(isStreaming ? { status: "streaming" as const } : {})}
-            />
-          </PromptInputFooter>
-        </PromptInput>
-      </div>
+        </PromptInputFooter>
+      </PromptInput>
     </div>
   );
 }
@@ -379,10 +386,14 @@ function PrettyMessages({
                   )}
                 </div>
 
-                {/* Message content with smooth streaming effect */}
+                {/* Message content - smooth animation only for completed messages */}
                 <SmoothMessageResponse
                   text={message.content || "..."}
-                  smooth={{ enabled: true, delayInMs: 15, chunking: "word" }}
+                  smooth={{
+                    enabled: !message.isStreaming,
+                    delayInMs: 15,
+                    chunking: "word",
+                  }}
                 />
 
                 {/* Events dropdown */}

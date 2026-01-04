@@ -126,7 +126,7 @@ describe("A2A Flow: Input-Required", () => {
       prompt: [{ role: "user", content: [{ type: "text", text: "Plan a trip" }] }],
     });
 
-    const meta1 = turn1.providerOptions?.a2a as A2aProviderMetadata;
+    const meta1 = turn1.providerMetadata?.a2a as A2aProviderMetadata;
     expect(meta1.inputRequired).toBe(true);
     expect(meta1.taskId).toBe("task-input-123");
 

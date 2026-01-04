@@ -119,8 +119,6 @@ export interface ResponseTypeSelectionContext {
 export interface WorkerAdapterOptions {
   /** Adapter mode: "stream" for SSE, "generate" for single response */
   mode?: "stream" | "generate";
-  /** Message shown while processing */
-  workingMessage?: string;
   /** Enable debug logging */
   debug?: boolean;
   /** Include conversation history */

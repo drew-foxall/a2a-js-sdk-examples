@@ -20,7 +20,8 @@ describe("mapTaskStateToFinishReason", () => {
     ["auth-required", "error"],
     ["rejected", "error"],
     ["working", "other"],
-    ["submitted", "other"],
+    ["submitted", "other"], // Task queued but not yet processing
+    ["unknown", "other"],
     [null, "stop"],
     [undefined, "stop"],
   ] as const)("maps %s → %s", (state, expected) => {

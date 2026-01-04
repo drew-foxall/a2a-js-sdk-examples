@@ -19,12 +19,12 @@ interface AgentLayoutProps {
  */
 export default function AgentLayout({ children }: AgentLayoutProps): React.JSX.Element {
   return (
-    <div className="[--header-height:calc(--spacing(14))]">
-      <SidebarProvider className="flex flex-col">
+    <div className="h-screen [--header-height:calc(--spacing(14))]">
+      <SidebarProvider className="flex h-full flex-col">
         <SiteHeader />
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           <AppSidebar />
-          <SidebarInset className="min-w-0">{children}</SidebarInset>
+          <SidebarInset className="min-h-0 min-w-0">{children}</SidebarInset>
         </div>
       </SidebarProvider>
     </div>

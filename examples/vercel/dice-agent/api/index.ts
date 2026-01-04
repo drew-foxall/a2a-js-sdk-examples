@@ -243,8 +243,6 @@ app.all("/*", async (c, next) => {
 
   const agentExecutor: AgentExecutor = new A2AAdapter(agent, {
     mode: "generate",
-    // NOTE: workingMessage is deprecated - status messages should not be
-    // included as TextParts. See docs/A2A_PROTOCOL_UNDERSTANDING.md
     debug: false,
     // TODO: When selectResponseType is implemented, this agent should use
     // "message" mode since dice rolls are immediate and self-contained.
