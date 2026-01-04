@@ -50,6 +50,38 @@ pnpm multi:travel-planner:deploy
 
 Workers are deployed concurrently. Service Bindings automatically connect them in production.
 
+## Local Development Secrets
+
+Workers that use AI providers require API keys. For local development, create `.dev.vars` files in each worker directory:
+
+### Travel Planner Group
+
+```bash
+# examples/workers/travel-planner/.dev.vars
+OPENAI_API_KEY=sk-proj-xxxxx
+
+# examples/workers/weather-agent/.dev.vars
+OPENAI_API_KEY=sk-proj-xxxxx
+
+# examples/workers/airbnb-agent/.dev.vars
+OPENAI_API_KEY=sk-proj-xxxxx
+```
+
+> **Note**: `.dev.vars` files are gitignored. Never commit API keys to the repository.
+
+For production deployment, use Wrangler secrets:
+
+```bash
+cd examples/workers/weather-agent
+wrangler secret put OPENAI_API_KEY
+
+cd examples/workers/airbnb-agent
+wrangler secret put OPENAI_API_KEY
+
+cd examples/workers/travel-planner
+wrangler secret put OPENAI_API_KEY
+```
+
 ## Adding a New Multi-Worker Agent
 
 ### Step 1: Create Worker Packages
