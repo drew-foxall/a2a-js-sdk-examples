@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { authConfigToHeaders } from "@/components/connection/auth-config-panel";
 import { useAuthConfig, useInspector } from "@/context";
 import { client } from "@/lib/eden";
-import { useUrlState } from "./use-url-state";
 
 interface ValidationError {
   field: string;
@@ -15,8 +14,9 @@ interface ValidationError {
 /**
  * Hook for managing agent connection.
  * Handles connecting to agents, fetching agent cards, and managing connection state.
- * Also syncs connection state with URL for persistence across refreshes.
  * Includes authentication headers from the current auth configuration.
+ * 
+ * Note: URL state is managed by Next.js routing (/agent/{id}), not query params.
  */
 export function useAgentConnection(): {
   connect: (url: string) => Promise<void>;
@@ -25,7 +25,6 @@ export function useAgentConnection(): {
 } {
   const { dispatch, log } = useInspector();
   const authConfig = useAuthConfig();
-  const { syncToUrl, clearUrl } = useUrlState();
   const [isConnecting, setIsConnecting] = useState(false);
 
   const connect = useCallback(
@@ -88,9 +87,6 @@ export function useAgentConnection(): {
           },
         });
 
-        // Sync successful connection to URL
-        syncToUrl(agentUrl);
-
         log("info", `Connected to ${data.card.name}`, data.card);
 
         if (data.validationErrors.length > 0) {
@@ -114,14 +110,13 @@ export function useAgentConnection(): {
         setIsConnecting(false);
       }
     },
-    [dispatch, log, syncToUrl, authConfig]
+    [dispatch, log, authConfig]
   );
 
   const disconnect = useCallback(() => {
     dispatch({ type: "DISCONNECT" });
-    clearUrl(); // Clear URL when disconnecting
     log("info", "Disconnected from agent");
-  }, [dispatch, log, clearUrl]);
+  }, [dispatch, log]);
 
   return {
     connect,
