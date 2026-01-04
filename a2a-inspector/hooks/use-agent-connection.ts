@@ -23,7 +23,7 @@ export interface ConnectionResult {
  * Hook for managing agent connection.
  * Handles connecting to agents, fetching agent cards, and managing connection state.
  * Includes authentication headers from the current auth configuration.
- * 
+ *
  * Note: URL state is managed by Next.js routing (/agent/{id}), not query params.
  */
 export function useAgentConnection(): {

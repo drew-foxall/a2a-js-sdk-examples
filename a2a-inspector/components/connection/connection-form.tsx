@@ -17,7 +17,7 @@ interface ConnectionFormProps {
 
 /**
  * Connection form for entering agent URL and connecting/disconnecting.
- * 
+ *
  * On successful connection from the home page, saves the agent to storage
  * and redirects to /agent/{id}. URL state is managed by Next.js routing,
  * not query parameters.
@@ -38,15 +38,15 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    
+
     if (connection.status === "connected") {
       disconnect();
       return;
     }
-    
+
     // Connect and get the result
     const result = await connect(url);
-    
+
     // If connection succeeded and we're not in compact mode, save and redirect
     if (result && !compact) {
       try {
@@ -54,10 +54,10 @@ export function ConnectionForm({ compact = false }: ConnectionFormProps): React.
           url: url,
           card: result.card,
         });
-        
+
         // Disconnect before navigating to ensure clean state
         disconnect();
-        
+
         // Navigate to the agent page
         router.push(`/agent/${stored.id}`);
       } catch (error) {

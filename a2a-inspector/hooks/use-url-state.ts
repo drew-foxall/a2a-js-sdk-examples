@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 
 /**
  * URL parameter keys for inspector state.
- * 
+ *
  * Note: Agent state is primarily managed via Next.js routing (/agent/{id}).
  * Query params are only used for specific features like view mode.
  */
@@ -14,7 +14,7 @@ const URL_PARAMS = {
 
 /**
  * Hook to read URL search parameters.
- * 
+ *
  * The primary source of truth for agent state is the URL path (/agent/{id}),
  * not query parameters. This hook is for reading optional params only.
  */

@@ -724,20 +724,22 @@ function PrettyMessages({
         );
       })}
       {/* Loading indicator - only show when waiting for FIRST token (no content yet) */}
-      {isLoading && (() => {
-        const lastMessage = messages[messages.length - 1];
-        const lastMessageHasContent = lastMessage?.role === "assistant" && 
-          lastMessage.parts.some((p): p is { type: "text"; text: string } => 
-            p.type === "text" && p.text.length > 0
-          );
-        // Only show spinner if we don't have any content yet
-        return !lastMessageHasContent;
-      })() && (
-        <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
-          <CircleNotch className="h-4 w-4 animate-spin" />
-          <span>Agent is responding...</span>
-        </div>
-      )}
+      {isLoading &&
+        (() => {
+          const lastMessage = messages[messages.length - 1];
+          const lastMessageHasContent =
+            lastMessage?.role === "assistant" &&
+            lastMessage.parts.some(
+              (p): p is { type: "text"; text: string } => p.type === "text" && p.text.length > 0
+            );
+          // Only show spinner if we don't have any content yet
+          return !lastMessageHasContent;
+        })() && (
+          <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
+            <CircleNotch className="h-4 w-4 animate-spin" />
+            <span>Agent is responding...</span>
+          </div>
+        )}
     </>
   );
 }
